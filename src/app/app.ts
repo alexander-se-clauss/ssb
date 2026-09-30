@@ -19,6 +19,7 @@ import {
 } from './character-select';
 import { CharacterSelectView } from './character-select-view';
 import { MenuPanel, type MenuContent } from './menu-panel';
+import { renderResults, resultHeading } from './results';
 import { renderPreview } from './stage-preview';
 import { adjustRule, optionRows, type RuleField } from './options';
 import { INITIAL_SCREEN, MAIN_MENU, go, nextScreens, type Screen } from './screens';
@@ -214,11 +215,20 @@ export class App {
             return stage ? renderPreview(stage) : null;
           },
         };
+      case 'results':
+        return {
+          heading: this.lastResult ? resultHeading(this.lastResult) : 'Results',
+          ...(this.lastResult ? { body: renderResults(this.lastResult) } : {}),
+          options: [
+            { label: 'Rematch', select: () => this.navigate('match') },
+            { label: 'Main menu', select: () => this.navigate('main-menu') },
+          ],
+          back: () => this.navigate('main-menu'),
+        };
       default:
-        // Placeholders until their sprint-1 issues replace them.
+        // The match has no menu; this only keeps the switch exhaustive.
         return {
           heading: LABELS[screen],
-          text: this.describe(screen),
           options: nextScreens(screen).map((to) => ({
             label: LABELS[to],
             select: () => this.navigate(to),
@@ -265,12 +275,6 @@ export class App {
   private changeRule(field: RuleField, delta: 1 | -1, row: number): void {
     this.rules = adjustRule(this.rules, field, delta);
     this.menu.show(this.menuFor('options'), row);
-  }
-
-  private describe(screen: Screen): string {
-    if (screen !== 'results' || !this.lastResult) return 'Placeholder screen';
-    const winner = this.lastResult.winner;
-    return winner === null ? 'Draw' : `Player ${winner + 1} wins`;
   }
 
   private startMatch(): void {

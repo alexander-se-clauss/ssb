@@ -92,3 +92,10 @@ describe('KO credit', () => {
     expect(fighter(state, 1).stocks).toBe(2);
   });
 });
+
+describe('damage dealt', () => {
+  it('survives a KO and respawn', () => {
+    const hitter = withFighter(timeMatch(), 1, { ...offStage, damageDealt: 42 });
+    expect(fighter(step(hitter, []), 1).damageDealt).toBe(42);
+  });
+});

@@ -76,6 +76,7 @@ export const resolveCombat = (
       next[attacker.slot] = {
         ...attackerNow,
         hitTargets: [...attackerNow.hitTargets, target.slot],
+        damageDealt: attackerNow.damageDealt + hitbox.attack.damage,
       };
       events.push({ type: 'hit', attacker: attacker.slot, target: target.slot, damage });
     }

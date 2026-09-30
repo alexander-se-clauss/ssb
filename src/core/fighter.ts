@@ -35,6 +35,7 @@ export const createFighter = (
     stocks,
     kos: 0,
     falls: 0,
+    damageDealt: 0,
     lastHitBy: null,
     hitstunFrames: 0,
     invulnerableFrames: 0,

@@ -28,6 +28,7 @@ describe('combat', () => {
     expect(target.velocity.x).toBeGreaterThan(0);
     expect(target.velocity.y).toBeGreaterThan(0);
     expect(target.lastHitBy).toBe(0);
+    expect(fighter(state, 0).damageDealt).toBe(JAB.damage);
     expect(state.events).toContainEqual({
       type: 'hit',
       attacker: 0,
