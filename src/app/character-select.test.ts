@@ -93,6 +93,17 @@ describe('menu actions from a player controller', () => {
     ]);
   });
 
+  it('moves again when rolling from one direction to another without neutral', () => {
+    const right = inputOf({ x: 1 });
+    const rightAndUp = inputOf({ x: 1, y: 1 });
+    const up = inputOf({ y: 1 });
+    expect(menuActions(0, right, rightAndUp)).toEqual([]);
+    expect(menuActions(0, rightAndUp, up)).toEqual([{ type: 'move', player: 0, dx: 0, dy: -1 }]);
+    expect(menuActions(0, inputOf({ x: 1, y: 0.2 }), inputOf({ x: 0.2, y: 1 }))).toEqual([
+      { type: 'move', player: 0, dx: 0, dy: -1 },
+    ]);
+  });
+
   it('maps up on the stick to moving up the grid', () => {
     expect(menuActions(0, NEUTRAL_INPUT, inputOf({ y: 1, jump: true }))).toEqual([
       { type: 'move', player: 0, dx: 0, dy: -1 },

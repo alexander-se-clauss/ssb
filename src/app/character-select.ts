@@ -75,6 +75,15 @@ export const reduceSelect = (
 const direction = (value: number): number =>
   value > STICK_THRESHOLD ? 1 : value < -STICK_THRESHOLD ? -1 : 0;
 
+/**
+ * The one grid step a stick position means: a diagonal counts along its stronger axis only.
+ * Stick up is +y, but the grid's row index grows downwards.
+ */
+const menuDirection = (input: PlayerInput): { dx: number; dy: number } =>
+  Math.abs(input.x) >= Math.abs(input.y)
+    ? { dx: direction(input.x), dy: 0 }
+    : { dx: 0, dy: -direction(input.y) };
+
 /** The menu actions one player's controller produced this frame (presses only, not holds). */
 export const menuActions = (
   player: PlayerSlot,
@@ -82,16 +91,14 @@ export const menuActions = (
   current: PlayerInput,
 ): SelectAction[] => {
   const actions: SelectAction[] = [];
-  // A diagonal push moves along its stronger axis only, so one push is one step.
-  const horizontal = Math.abs(current.x) >= Math.abs(current.y);
-  const dx = horizontal ? direction(current.x) : 0;
-  const dy = horizontal ? 0 : direction(current.y);
-  if (dx !== 0 && dx !== direction(previous.x)) {
-    actions.push({ type: 'move', player, dx, dy: 0 });
+  // A move fires whenever the effective direction changes, so rolling from one key or stick
+  // direction to another moves again without passing through neutral.
+  const now = menuDirection(current);
+  const before = menuDirection(previous);
+  const moving = now.dx !== 0 || now.dy !== 0;
+  if (moving && (now.dx !== before.dx || now.dy !== before.dy)) {
+    actions.push({ type: 'move', player, ...now });
   }
-  // Stick up is +y, but the grid's row index grows downwards.
-  if (dy !== 0 && dy !== direction(previous.y))
-    actions.push({ type: 'move', player, dx: 0, dy: -dy });
   if (pressed(current, previous, 'attack')) actions.push({ type: 'confirm', player });
   if (pressed(current, previous, 'special')) actions.push({ type: 'cancel', player });
   return actions;
