@@ -21,8 +21,35 @@ const startMatch = async (page: Page) => {
 
 test('the game boots into the title screen', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Title' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'SSB' })).toBeVisible();
+  await expect(page.getByText('Press start')).toBeVisible();
   expect(await screen(page)).toBe('title');
+});
+
+test('start opens the main menu, and Escape goes back', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('Space');
+  await expect.poll(() => screen(page)).toBe('main-menu');
+  await expect(page.getByRole('button')).toHaveText(['Versus', 'Options']);
+  await page.keyboard.press('Escape');
+  await expect.poll(() => screen(page)).toBe('title');
+});
+
+test('Versus leads to character select', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('button', { name: 'Versus' })).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('character-select');
+});
+
+test('Options leads to the options screen', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByRole('button', { name: 'Options' })).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('options');
 });
 
 test('a match starts from the menus, renders and simulates', async ({ page }) => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { INITIAL_SCREEN, SCREENS, canGo, go, nextScreens } from './screens';
+import { INITIAL_SCREEN, MAIN_MENU, SCREENS, canGo, go, nextScreens } from './screens';
 
 describe('screen state machine', () => {
   it('boots into the title screen', () => {
@@ -51,5 +51,16 @@ describe('screen state machine', () => {
       }
     }
     expect([...seen].sort()).toEqual([...SCREENS].sort());
+  });
+});
+
+describe('main menu', () => {
+  it('offers Versus and Options', () => {
+    expect(MAIN_MENU.map((entry) => entry.label)).toEqual(['Versus', 'Options']);
+  });
+
+  it('leads to character select and options', () => {
+    expect(MAIN_MENU.map((entry) => entry.to)).toEqual(['character-select', 'options']);
+    for (const entry of MAIN_MENU) expect(canGo('main-menu', entry.to)).toBe(true);
   });
 });

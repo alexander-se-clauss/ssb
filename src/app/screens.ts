@@ -37,3 +37,14 @@ export const go = (from: Screen, to: Screen): Screen => {
   if (!canGo(from, to)) throw new Error(`Screen change not allowed: ${from} -> ${to}`);
   return to;
 };
+
+export interface MenuEntry {
+  readonly label: string;
+  readonly to: Screen;
+}
+
+/** The main menu, top to bottom. Escape goes back to the title screen. */
+export const MAIN_MENU: readonly MenuEntry[] = [
+  { label: 'Versus', to: 'character-select' },
+  { label: 'Options', to: 'options' },
+];
