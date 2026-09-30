@@ -18,7 +18,3 @@ export const BATTLEFIELD: StageDef = {
   ],
   blastZone: { left: -16, right: 16, bottom: -9, top: 14 },
 };
-
-export const STAGES: Readonly<Record<string, StageDef>> = {
-  [BATTLEFIELD.id]: BATTLEFIELD,
-};

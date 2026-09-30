@@ -2,16 +2,25 @@ import { FIGHTER } from './config';
 import { resolveCombat } from './combat';
 import { createFighter, updateFighter } from './fighter';
 import { NEUTRAL_INPUT } from './input';
+import { findCharacter, findStage } from './registry';
 import type { FighterState, GameEvent, MatchConfig, MatchState, PlayerInput } from './types';
 
+/** Builds the first state of a match. Throws on ids the registry does not know. */
 export const createMatch = (config: MatchConfig): MatchState => {
-  if (config.playerCount < 1) throw new Error('A match needs at least one player');
+  if (config.players.length < 1) throw new Error('A match needs at least one player');
+  const stage = findStage(config.stageId);
+  if (!stage) throw new Error(`Unknown stage "${config.stageId}"`);
+  for (const player of config.players) {
+    if (!findCharacter(player.characterId)) {
+      throw new Error(`Unknown character "${player.characterId}"`);
+    }
+  }
   return {
     frame: 0,
     phase: 'playing',
-    stage: config.stage,
-    fighters: Array.from({ length: config.playerCount }, (_, slot) =>
-      createFighter(slot, config.stage, config.stocks),
+    stage,
+    fighters: config.players.map((player, slot) =>
+      createFighter(slot, player.characterId, stage, config.stocks),
     ),
     events: [],
     winner: null,
@@ -30,7 +39,7 @@ const handleKo = (fighter: FighterState, state: MatchState, events: GameEvent[])
   if (stocks <= 0) {
     return { ...fighter, stocks: 0, action: 'eliminated', velocity: { x: 0, y: 0 } };
   }
-  const respawned = createFighter(fighter.slot, state.stage, stocks);
+  const respawned = createFighter(fighter.slot, fighter.characterId, state.stage, stocks);
   return {
     ...respawned,
     invulnerableFrames: FIGHTER.respawnInvulnerabilityFrames,

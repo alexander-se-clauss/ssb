@@ -23,6 +23,8 @@ export type FighterAction = 'idle' | 'run' | 'airborne' | 'jab' | 'hitstun' | 'e
 
 export interface FighterState {
   readonly slot: PlayerSlot;
+  /** Registry id of the character this fighter plays. */
+  readonly characterId: string;
   readonly position: Vec2;
   readonly velocity: Vec2;
   readonly facing: 1 | -1;
@@ -79,8 +81,22 @@ export interface MatchState {
   readonly winner: PlayerSlot | null;
 }
 
+/** A pickable fighter. Stats and moves join this as characters get their own (epic #7). */
+export interface CharacterDef {
+  readonly id: string;
+  readonly name: string;
+}
+
+export interface PlayerConfig {
+  /** Registry id, see `CHARACTERS`. */
+  readonly characterId: string;
+}
+
+/** What the menus hand to the core to start a match. Ids refer to the registry. */
 export interface MatchConfig {
-  readonly stage: StageDef;
-  readonly playerCount: number;
+  /** Registry id, see `STAGES`. */
+  readonly stageId: string;
+  /** One entry per player, in slot order. */
+  readonly players: readonly PlayerConfig[];
   readonly stocks: number;
 }

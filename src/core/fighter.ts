@@ -14,10 +14,16 @@ const DROP_THRESHOLD = -0.5;
 const FACE_THRESHOLD = 0.2;
 const MOVE_EPSILON = 0.001;
 
-export const createFighter = (slot: PlayerSlot, stage: StageDef, stocks: number): FighterState => {
+export const createFighter = (
+  slot: PlayerSlot,
+  characterId: string,
+  stage: StageDef,
+  stocks: number,
+): FighterState => {
   const spawn = stage.spawnPoints[slot % stage.spawnPoints.length] ?? { x: 0, y: 3 };
   return {
     slot,
+    characterId,
     position: spawn,
     velocity: { x: 0, y: 0 },
     facing: spawn.x > 0 ? -1 : 1,

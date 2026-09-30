@@ -2,7 +2,7 @@
  * Composition root: the only place that knows which concrete adapters are used.
  * Swapping keyboard for gamepad, or the local session for a network one, happens here.
  */
-import { BATTLEFIELD, createMatch, type MatchConfig } from '../core';
+import { BATTLEFIELD, CAPSULE, createMatch, type MatchConfig } from '../core';
 import { DomHud } from '../adapters/dom-hud/dom-hud';
 import {
   KeyboardInputSource,
@@ -15,7 +15,12 @@ import type { GameSession, GameView, InputSource } from '../ports';
 import { installDebugHandle } from './debug';
 import './style.css';
 
-const MATCH: MatchConfig = { stage: BATTLEFIELD, playerCount: 2, stocks: 3 };
+// Fixed until the menus (epic #1) build this config from the player's picks.
+const MATCH: MatchConfig = {
+  stageId: BATTLEFIELD.id,
+  players: [{ characterId: CAPSULE.id }, { characterId: CAPSULE.id }],
+  stocks: 3,
+};
 
 const container = document.querySelector<HTMLElement>('#app');
 if (!container) throw new Error('Missing #app container');
@@ -24,8 +29,11 @@ const inputs: InputSource[] = [
   new KeyboardInputSource(PLAYER_ONE_KEYS),
   new KeyboardInputSource(PLAYER_TWO_KEYS),
 ];
-const views: GameView[] = [new ThreeView(container, MATCH.stage), new DomHud(container)];
 let session: GameSession = new LocalGameSession(createMatch(MATCH));
+const views: GameView[] = [
+  new ThreeView(container, session.view().current.stage),
+  new DomHud(container),
+];
 
 const restart = (): void => {
   session.dispose();
