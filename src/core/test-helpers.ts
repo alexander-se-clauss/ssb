@@ -1,10 +1,15 @@
 import { inputOf } from './input';
 import { createMatch, step } from './simulation';
 import { BATTLEFIELD } from './stages';
+import { CAPSULE } from './registry';
 import type { FighterState, MatchState, PlayerInput } from './types';
 
 export const newMatch = (playerCount = 2, stocks = 3): MatchState =>
-  createMatch({ stage: BATTLEFIELD, playerCount, stocks });
+  createMatch({
+    stageId: BATTLEFIELD.id,
+    players: Array.from({ length: playerCount }, () => ({ characterId: CAPSULE.id })),
+    stocks,
+  });
 
 /** Runs `frames` steps with the given inputs held the whole time. */
 export const run = (
