@@ -56,7 +56,7 @@ in context.
    to revert.
 
 The `feature` skill encodes exactly this loop, so you can say "use the feature skill to add
-shielding" and get the process for free.
+an air dodge" and get the process for free.
 
 ## The harness in this repo
 
@@ -94,7 +94,7 @@ Add MCP servers sparingly: each one adds tool descriptions to every session's co
 ## Prompting tips that pay off
 
 - Point at files: "In `src/core/fighter.ts`, add ..." beats "add ...".
-- State the acceptance test: "Done when a test shows a fighter cannot jump while shielding."
+- State the acceptance test: "Done when a test shows a fighter cannot air dodge twice before landing."
 - Ask for the plan before the code when you are unsure what you want.
 - Start a fresh session for a new task. Long sessions accumulate stale context.
 - Run independent tasks in parallel sessions or git worktrees, not in one long conversation.

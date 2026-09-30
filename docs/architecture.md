@@ -56,7 +56,7 @@ browsers, rendering or networking.
 
 ## Moving logic to a server
 
-The seam is `GameSession`. The plan for M5:
+The seam is `GameSession`. The plan for online play (see "Later" in the product roadmap):
 
 1. Run `src/core` in Node on a server (it has no browser dependencies, enforced).
 2. Add `RemoteGameSession implements GameSession` in `src/adapters/remote-session`. `setInput`

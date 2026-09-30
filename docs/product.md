@@ -26,32 +26,55 @@ knock each other off a floating stage. No install, instant play, readable and fu
 - Leaving the blast zone costs a stock; respawn with brief invulnerability.
 - Last player with stocks wins.
 
+## Combat concept (planned)
+
+Smash meets Monster Hunter: defense is about commitment and timing, not a panic button.
+
+- **No shield.** Everyone can spot dodge, roll and air dodge (Ultimate style: directional,
+  actionable afterwards), each with invulnerability frames and recovery.
+- **Block and counter are per character.** Block soaks a hit (less damage and knockback,
+  pushback, can break). Counter is a timing window that strikes back automatically.
+- **Cancel windows** in each move say what it can flow into (next combo step, dodge, block,
+  counter). This gives each character a signature flow such as jab, jab, dodge-cancel, counter.
+- **Everything is move data.** Frames, bone-attached hitboxes, damage, knockback, cancel windows,
+  block and counter are fields, not per-character code. Specials can spawn objects
+  (projectiles, traps) with their own hitbox, movement, lifetime and damage.
+- Air jumps are per character (default one). Blast zones are large enough for off-stage combat.
+
 ## Non-goals (for now)
 
 - Using Nintendo characters, names, music or assets. All content is original.
-- Single-player story mode, items, or more than four players.
+- Single-player story mode, pickup items, or more than four players.
 - Mobile touch controls (later, maybe).
 
 ## Roadmap
 
-Milestones are small vertical slices. Each ends with a playable build.
+Epics and tasks are GitHub issues: each epic is an issue labelled `epic` with its tasks as
+sub-issues, and each task carries a `sprint-N` label. A sprint is a vertical slice that ends with
+a playable build; it is done when that build works, not on a date.
 
 - [x] **M0 Walking skeleton.** Two capsule fighters, one stage, run, jump, double jump,
       fast-fall, drop-through platforms, a jab, damage, knockback, stocks, KO and respawn,
       HUD, fixed-timestep loop, tests and CI.
-- [ ] **M1 Game feel.** Hitlag (freeze frames on hit), screen shake, dash and short hop, ledge
-      grab, shield and dodge, landing lag, particles on hit and KO.
-- [ ] **M2 A real move set.** Data-driven attacks (tilts, smashes, aerials, one special each),
-      a move definition format, a hitbox debug overlay.
-- [ ] **M3 Characters and content.** Two original fighters with distinct weight and speed,
-      glTF models and animations, a second stage, menus (character and stage select).
-- [ ] **M4 Input and players.** Gamepad support, rebindable keys, up to four players, a simple
-      CPU opponent.
-- [ ] **M5 Online.** Authoritative server running `src/core` in Node, WebSocket transport
-      behind `GameSession`, then rollback netcode experiments.
+- [ ] **S1 Menus.** Title screen, main menu, options (stock or time rules), Melee-style
+      character select grid, stage select, results. Epic #1.
+- [ ] **S2 Gamepad and body.** Gamepad adapter and menu navigation; fighters with head, torso,
+      arms and legs, basic poses and per-part hurtboxes. Epics #3, #4.
+- [ ] **S3 Move engine.** Move definition format (ADR), jab rebuilt as data, bone-attached
+      hitboxes, knockback and hitlag, cancel windows and combos, hitbox debug overlay. Epic #5.
+- [ ] **S4 Moves and dodges.** Tilts, standard smashes, aerials and landing lag; spot dodge,
+      roll and air dodge. Epics #5, #6.
+- [ ] **S5 Off-stage play.** Ledge grab and getups, larger blast zones in stage data, a camera
+      that follows fighters off-stage, helpless state; character definitions, per-character air
+      jumps, fighter 1. Epics #7, #8.
+- [ ] **S6 Guard and specials.** Block and counter, spawned objects and projectiles, particle
+      effects (fire, hit, KO), side and down specials, fighter 2. Epics #6, #7, #9.
+
+Later, not yet planned: screen shake, dash and short hop, charged smashes, rebindable keys, up to
+four players, a CPU opponent, glTF models, a second stage, and online play (authoritative server
+running `src/core` in Node, WebSocket transport behind `GameSession`, then rollback experiments).
 
 ## Open questions
 
-- Art direction: low-poly stylised, toon-shaded, or something else?
-- Names and themes for the first two original fighters.
-- Online model for M5: server-authoritative with prediction, or peer-to-peer rollback?
+Tracked in #10: dodge stamina, block direction, block and counter in the air, fighter names and
+themes, art direction, and the online model (server-authoritative or peer-to-peer rollback).
