@@ -25,12 +25,12 @@ browsers, rendering or networking.
 
 ## Layers
 
-| Layer    | Folder         | May import                         | Contains                                                |
-| -------- | -------------- | ---------------------------------- | ------------------------------------------------------- |
-| Core     | `src/core`     | core only                          | Types, physics, combat, stages, registry, `step`, clock |
-| Ports    | `src/ports`    | core                               | Interfaces between client and game                      |
-| Adapters | `src/adapters` | core (via index), ports, libraries | Keyboard, local session, Three.js, HUD                  |
-| App      | `src/app`      | everything                         | `main.ts` wiring, screens and menus, debug handle, CSS  |
+| Layer    | Folder         | May import                         | Contains                                                       |
+| -------- | -------------- | ---------------------------------- | -------------------------------------------------------------- |
+| Core     | `src/core`     | core only                          | Types, physics, combat, rules, stages, registry, `step`, clock |
+| Ports    | `src/ports`    | core                               | Interfaces between client and game                             |
+| Adapters | `src/adapters` | core (via index), ports, libraries | Keyboard, local session, Three.js, HUD                         |
+| App      | `src/app`      | everything                         | `main.ts` wiring, screens and menus, debug handle, CSS         |
 
 **Enforced:** ESLint `no-restricted-imports` per folder (`eslint.config.js`) and a separate
 `tsconfig.core.json` without DOM types, so `document` or `window` in core fails typecheck.

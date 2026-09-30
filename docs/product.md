@@ -21,10 +21,17 @@ knock each other off a floating stage. No install, instant play, readable and fu
 
 ## Core rules (current)
 
-- Each player has a damage percent (starts at 0%) and a number of stocks (lives).
+- Each player has a damage percent (starts at 0%).
 - Hits add damage and launch the target. Launch speed grows with damage.
-- Leaving the blast zone costs a stock; respawn with brief invulnerability.
-- Last player with stocks wins.
+- Leaving the blast zone is a KO; respawn with brief invulnerability.
+- Who wins depends on the match rules below (stock or time).
+
+## Match rules
+
+- **Stock:** each player has 1 to 9 lives; the last one with lives left wins.
+- **Time:** 1 to 10 minutes with unlimited respawns. Score is KOs minus falls, as in Smash; a
+  KO counts for whoever hit the fallen fighter last since it respawned, and a self-destruct is
+  only a fall. The best score wins when time runs out; a tie is a draw (sudden death later).
 
 ## Combat concept (planned)
 

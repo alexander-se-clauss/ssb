@@ -10,7 +10,14 @@ interface E2eFighter {
 interface Window {
   __SSB__?: {
     screen(): string;
-    state(): { frame: number; fighters: E2eFighter[] } | undefined;
+    state():
+      | {
+          frame: number;
+          fighters: E2eFighter[];
+          rules: { mode: string; stocks: number; timeLimitSeconds: number };
+        }
+      | undefined;
+    rules(): { mode: string; stocks: number; timeLimitSeconds: number };
     restart(): void;
   };
 }

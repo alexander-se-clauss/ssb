@@ -1,9 +1,22 @@
+import type { MatchRules } from './types';
+
 /**
  * Tuning constants. Units: distance in stage units (~1 unit = 1 metre), time in simulation frames.
  * Velocities are units per frame, accelerations units per frame squared.
  */
 export const TICK_RATE = 60;
 export const TICK_MS = 1000 / TICK_RATE;
+
+export const DEFAULT_RULES: MatchRules = { mode: 'stock', stocks: 3, timeLimitSeconds: 120 };
+
+/** What the options screen lets players pick. */
+export const RULE_LIMITS = {
+  minStocks: 1,
+  maxStocks: 9,
+  minTimeLimitSeconds: 60,
+  maxTimeLimitSeconds: 600,
+  timeLimitStepSeconds: 60,
+} as const;
 
 export const FIGHTER = {
   width: 0.8,
