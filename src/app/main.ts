@@ -11,7 +11,7 @@ import {
 } from '../adapters/keyboard-input/keyboard-input-source';
 import { LocalGameSession } from '../adapters/local-session/local-game-session';
 import { ThreeView } from '../adapters/three-renderer/three-view';
-import type { GameSession, GameView, InputSource } from '../ports';
+import { App } from './app';
 import { installDebugHandle } from './debug';
 import './style.css';
 
@@ -25,41 +25,22 @@ const MATCH: MatchConfig = {
 const container = document.querySelector<HTMLElement>('#app');
 if (!container) throw new Error('Missing #app container');
 
-const inputs: InputSource[] = [
-  new KeyboardInputSource(PLAYER_ONE_KEYS),
-  new KeyboardInputSource(PLAYER_TWO_KEYS),
-];
-let session: GameSession = new LocalGameSession(createMatch(MATCH));
-const views: GameView[] = [
-  new ThreeView(container, session.view().current.stage),
-  new DomHud(container),
-];
+const app = new App(
+  container,
+  {
+    inputs: [new KeyboardInputSource(PLAYER_ONE_KEYS), new KeyboardInputSource(PLAYER_TWO_KEYS)],
+    createSession: (config) => new LocalGameSession(createMatch(config)),
+    createViews: (root, stage) => [new ThreeView(root, stage), new DomHud(root)],
+  },
+  MATCH,
+);
 
-const restart = (): void => {
-  session.dispose();
-  session = new LocalGameSession(createMatch(MATCH));
-};
+installDebugHandle(app);
 
-installDebugHandle({ session: () => session, restart });
-
-window.addEventListener('keydown', (event) => {
-  if (event.code === 'KeyR' && session.view().current.phase === 'finished') restart();
-});
-
-const resize = (): void => {
-  for (const view of views) view.resize(container.clientWidth, container.clientHeight);
-};
-window.addEventListener('resize', resize);
-resize();
+window.addEventListener('resize', () => app.resize());
 
 const frame = (now: number): void => {
-  session.localSlots.forEach((slot, index) => {
-    const source = inputs[index];
-    if (source) session.setInput(slot, source.sample());
-  });
-  session.update(now);
-  const view = session.view();
-  for (const v of views) v.render(view);
+  app.frame(now);
   requestAnimationFrame(frame);
 };
 requestAnimationFrame(frame);
