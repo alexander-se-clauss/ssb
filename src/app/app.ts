@@ -1,7 +1,10 @@
 import type { MatchConfig, MatchState, StageDef } from '../core';
 import type { GameSession, GameView, InputSource, Unsubscribe } from '../ports';
-import { MenuPanel, type MenuOption } from './menu-panel';
-import { INITIAL_SCREEN, go, nextScreens, type Screen } from './screens';
+import { MenuPanel, type MenuContent } from './menu-panel';
+import { INITIAL_SCREEN, MAIN_MENU, go, nextScreens, type Screen } from './screens';
+
+/** Working title, shown on the title screen. */
+const GAME_NAME = 'SSB';
 
 /** How long the winner banner stays up before the results screen. */
 const RESULTS_DELAY_MS = 1500;
@@ -98,11 +101,39 @@ export class App {
       this.startMatch();
       return;
     }
-    const options: MenuOption[] = nextScreens(screen).map((to) => ({
-      label: LABELS[to],
-      select: () => this.navigate(to),
-    }));
-    this.menu.show(LABELS[screen], this.describe(screen), options);
+    this.menu.show(this.menuFor(screen));
+  }
+
+  private menuFor(screen: Screen): MenuContent {
+    switch (screen) {
+      case 'title':
+        return {
+          heading: GAME_NAME,
+          text: 'Press start (Enter or Space)',
+          variant: 'menu-title',
+          start: () => this.navigate('main-menu'),
+        };
+      case 'main-menu':
+        return {
+          heading: 'Main menu',
+          text: 'Esc to go back',
+          options: MAIN_MENU.map((entry) => ({
+            label: entry.label,
+            select: () => this.navigate(entry.to),
+          })),
+          back: () => this.navigate('title'),
+        };
+      default:
+        // Placeholders until their sprint-1 issues replace them.
+        return {
+          heading: LABELS[screen],
+          text: this.describe(screen),
+          options: nextScreens(screen).map((to) => ({
+            label: LABELS[to],
+            select: () => this.navigate(to),
+          })),
+        };
+    }
   }
 
   private leave(screen: Screen): void {

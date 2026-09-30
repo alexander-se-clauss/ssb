@@ -115,3 +115,21 @@ canvas {
   border-color: #f2c14e;
   background: rgb(242 193 78 / 20%);
 }
+
+.menu-title h1 {
+  font-size: 6rem;
+  letter-spacing: 0.1em;
+  text-shadow: 0 6px 24px rgb(0 0 0 / 50%);
+}
+
+.menu-title p {
+  font-size: 1.3rem;
+  color: #f2c14e;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.35;
+  }
+}

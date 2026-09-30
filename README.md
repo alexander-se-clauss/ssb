@@ -15,7 +15,7 @@ npm run dev      # open http://localhost:5173
 | P1     | A / D | W or Space | S                | F      |
 | P2     | ← / → | ↑          | ↓                | .      |
 
-Menus: arrow keys or W/S to move, Enter to pick. After a match, the results screen offers a
+Menus: Enter or Space to start, arrow keys or W/S to move, Enter to pick. Esc on the main menu returns to the title screen. After a match, the results screen offers a
 rematch or the main menu.
 
 ## Development
