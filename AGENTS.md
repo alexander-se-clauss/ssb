@@ -40,7 +40,7 @@ These rules are enforced by ESLint (`no-restricted-imports`) and by `tsconfig.co
 - Tests sit next to the code as `*.test.ts`. Use `src/core/test-helpers.ts` for scenarios.
 - New game rules come with a test that describes the behaviour, written first.
 - Formatting is Prettier's job (a hook runs it on every edit). Do not hand-format.
-- Commit messages: imperative mood, e.g. `Add shield action to fighters`.
+- Commit messages: imperative mood, e.g. `Add air dodge to fighters`.
 
 ## Definition of done
 
