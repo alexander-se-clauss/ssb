@@ -50,3 +50,37 @@ describe('match setup from registry ids', () => {
     expect(() => createMatch({ ...setup, players: [] })).toThrow(/at least one player/);
   });
 });
+
+describe('stage data', () => {
+  it('offers more than one stage to choose from', () => {
+    expect(STAGES.length).toBeGreaterThan(1);
+  });
+
+  it.each(STAGES.map((stage) => [stage.id, stage] as const))(
+    '%s has a platform under every spawn point, inside the blast zone',
+    (_id, stage) => {
+      expect(stage.spawnPoints.length).toBeGreaterThanOrEqual(2);
+      const zone = stage.blastZone;
+      for (const spawn of stage.spawnPoints) {
+        expect(spawn.x).toBeGreaterThan(zone.left);
+        expect(spawn.x).toBeLessThan(zone.right);
+        expect(spawn.y).toBeLessThan(zone.top);
+        const below = stage.platforms.some(
+          (p) => spawn.x >= p.bounds.left && spawn.x <= p.bounds.right && p.bounds.top <= spawn.y,
+        );
+        expect(below).toBe(true);
+      }
+    },
+  );
+
+  it('starts a match on the chosen stage', () => {
+    const other = STAGES[1];
+    if (!other) throw new Error('Expected a second stage');
+    const state = createMatch({
+      stageId: other.id,
+      players: [{ characterId: 'capsule' }, { characterId: 'capsule' }],
+      rules: DEFAULT_RULES,
+    });
+    expect(state.stage.id).toBe(other.id);
+  });
+});

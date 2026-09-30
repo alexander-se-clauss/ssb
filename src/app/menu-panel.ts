@@ -3,6 +3,8 @@
  * buttons. Up/Down (or W/S) move the focus, Enter picks, Left/Right (or A/D) change a setting,
  * Escape goes back. A menu without buttons (the title screen) waits for Enter or Space instead.
  */
+import { markHandled, wasHandled } from './key-events';
+
 export interface MenuOption {
   readonly label: string;
   readonly select: () => void;
@@ -20,6 +22,8 @@ export interface MenuContent {
   readonly start?: () => void;
   /** Escape. */
   readonly back?: () => void;
+  /** Drawn next to the buttons for the focused option, e.g. a stage preview. */
+  readonly preview?: (optionIndex: number) => Node | null;
 }
 
 const PREVIOUS_KEYS = new Set(['ArrowUp', 'KeyW']);
@@ -35,20 +39,20 @@ export class MenuPanel {
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
     const content = this.content;
-    if (!content) return;
+    if (!content || wasHandled(event)) return;
     // A held key must not click through several screens in a row.
     if (event.repeat) {
-      if (START_KEYS.has(event.code)) event.preventDefault();
+      if (START_KEYS.has(event.code)) markHandled(event);
       return;
     }
     if (event.code === 'Escape' && content.back) {
-      event.preventDefault();
+      markHandled(event);
       content.back();
       return;
     }
     if (this.buttons.length === 0) {
       if (START_KEYS.has(event.code) && content.start) {
-        event.preventDefault();
+        markHandled(event);
         content.start();
       }
       return;
@@ -57,7 +61,7 @@ export class MenuPanel {
     const adjust = content.options?.[index]?.adjust;
     const delta = LEFT_KEYS.has(event.code) ? -1 : RIGHT_KEYS.has(event.code) ? 1 : 0;
     if (adjust && delta !== 0) {
-      event.preventDefault();
+      markHandled(event);
       adjust(delta);
       return;
     }
@@ -65,7 +69,7 @@ export class MenuPanel {
     if (step === 0) return;
     const next = (index + step + this.buttons.length) % this.buttons.length;
     this.buttons[next]?.focus();
-    event.preventDefault();
+    markHandled(event);
   };
 
   constructor(container: HTMLElement) {
@@ -89,8 +93,21 @@ export class MenuPanel {
       button.addEventListener('click', option.select);
       return button;
     });
+    const preview = content.preview;
+    const previewBox = document.createElement('div');
+    previewBox.className = 'menu-preview';
+    previewBox.hidden = !preview;
+    if (preview) {
+      this.buttons.forEach((button, index) =>
+        button.addEventListener('focus', () => {
+          // Options without a preview (like Back) keep showing the last one.
+          const node = preview(index);
+          if (node) previewBox.replaceChildren(node);
+        }),
+      );
+    }
     this.root.className = content.variant ? `menu ${content.variant}` : 'menu';
-    this.root.replaceChildren(title, body, ...this.buttons);
+    this.root.replaceChildren(title, body, previewBox, ...this.buttons);
     this.root.hidden = false;
     this.content = content;
     (this.buttons[focus] ?? this.buttons[0])?.focus();

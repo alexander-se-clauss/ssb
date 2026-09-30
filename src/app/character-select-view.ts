@@ -1,3 +1,4 @@
+import { markHandled, wasHandled } from './key-events';
 import type { CharacterDef } from '../core';
 import type { SelectState } from './character-select';
 
@@ -25,12 +26,12 @@ export class CharacterSelectView {
   private ready = false;
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
-    if (!this.state || event.repeat) return;
+    if (!this.state || event.repeat || wasHandled(event)) return;
     if (event.code === 'Escape') {
-      event.preventDefault();
+      markHandled(event);
       this.callbacks.back();
     } else if (event.code === 'Enter' && this.ready) {
-      event.preventDefault();
+      markHandled(event);
       this.callbacks.start();
     }
   };

@@ -18,3 +18,17 @@ export const BATTLEFIELD: StageDef = {
   ],
   blastZone: { left: -16, right: 16, bottom: -9, top: 14 },
 };
+
+/** A Final Destination-style layout: one wide, flat stage with no platforms. */
+export const PLATEAU: StageDef = {
+  id: 'plateau',
+  name: 'Plateau',
+  platforms: [{ bounds: { left: -9, right: 9, bottom: -2, top: 0 }, passThrough: false }],
+  spawnPoints: [
+    { x: -4, y: 2 },
+    { x: 4, y: 2 },
+    { x: -1.5, y: 2 },
+    { x: 1.5, y: 2 },
+  ],
+  blastZone: { left: -18, right: 18, bottom: -9, top: 14 },
+};

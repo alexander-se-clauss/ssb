@@ -78,7 +78,7 @@ a playable build; it is done when that build works, not on a date.
       effects (fire, hit, KO), side and down specials, fighter 2. Epics #6, #7, #9.
 
 Later, not yet planned: screen shake, dash and short hop, charged smashes, rebindable keys, up to
-four players, a CPU opponent, glTF models, a second stage, and online play (authoritative server
+four players, a CPU opponent, glTF models, and online play (authoritative server
 running `src/core` in Node, WebSocket transport behind `GameSession`, then rollback experiments).
 
 ## Open questions
