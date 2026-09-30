@@ -2,7 +2,7 @@
  * Composition root: the only place that knows which concrete adapters are used.
  * Swapping keyboard for gamepad, or the local session for a network one, happens here.
  */
-import { BATTLEFIELD, CAPSULE, createMatch } from '../core';
+import { BATTLEFIELD, createMatch } from '../core';
 import { DomHud } from '../adapters/dom-hud/dom-hud';
 import {
   KeyboardInputSource,
@@ -15,11 +15,8 @@ import { App, type MatchSetup } from './app';
 import { installDebugHandle } from './debug';
 import './style.css';
 
-// Fixed until the menus (epic #1) build this config from the player's picks.
-const MATCH: MatchSetup = {
-  stageId: BATTLEFIELD.id,
-  players: [{ characterId: CAPSULE.id }, { characterId: CAPSULE.id }],
-};
+// Fixed until stage select (#15) picks the stage.
+const MATCH: MatchSetup = { stageId: BATTLEFIELD.id };
 
 const container = document.querySelector<HTMLElement>('#app');
 if (!container) throw new Error('Missing #app container');

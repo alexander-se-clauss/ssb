@@ -10,14 +10,29 @@ const gameState = (page: Page) =>
     return state;
   });
 
-/** (Title ->) main menu -> character select -> stage select -> match, taking the first option. */
+/** Holds a key long enough for the game to sample it on a frame. */
+const tap = async (page: Page, key: string) => {
+  await page.keyboard.down(key);
+  await page.waitForTimeout(50);
+  await page.keyboard.up(key);
+  await page.waitForTimeout(50);
+};
+
+const picks = (page: Page) => page.evaluate(() => window.__SSB__?.characterSelect()?.picks);
+
+/** (Title ->) main menu -> character select (both pick) -> stage select -> match. */
 const startMatch = async (page: Page, { fromMainMenu = false } = {}) => {
   if (!fromMainMenu) {
     await page.goto('/');
     await page.keyboard.press('Enter');
     await expect.poll(() => screen(page)).toBe('main-menu');
   }
-  for (const next of ['character-select', 'stage-select', 'match']) {
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('character-select');
+  await tap(page, 'KeyF');
+  await tap(page, 'Period');
+  await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule']);
+  for (const next of ['stage-select', 'match']) {
     await page.keyboard.press('Enter');
     await expect.poll(() => screen(page)).toBe(next);
   }
@@ -54,6 +69,30 @@ test('Options leads to the options screen', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Options' })).toBeFocused();
   await page.keyboard.press('Enter');
   await expect.poll(() => screen(page)).toBe('options');
+});
+
+test('two players pick, change their minds and confirm on character select', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('character-select');
+  await expect(page.locator('.css-cell')).toHaveCount(1);
+
+  await tap(page, 'KeyF');
+  await expect.poll(() => picks(page)).toEqual(['capsule', null]);
+  await page.keyboard.press('Enter');
+  expect(await screen(page)).toBe('character-select');
+
+  await tap(page, 'KeyG');
+  await expect.poll(() => picks(page)).toEqual([null, null]);
+  await tap(page, 'KeyF');
+  await tap(page, 'Period');
+  await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule']);
+  await expect(page.getByText('Ready! Press Enter')).toBeVisible();
+
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('stage-select');
+  await expect(page.locator('.css')).toBeHidden();
 });
 
 test('rules changed in options apply to the next match', async ({ page }) => {

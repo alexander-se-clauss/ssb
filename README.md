@@ -15,7 +15,8 @@ npm run dev      # open http://localhost:5173
 | P1     | A / D | W or Space | S                | F      |
 | P2     | ← / → | ↑          | ↓                | .      |
 
-Menus: Enter or Space to start, arrow keys or W/S to move, Enter to pick. Esc on the main menu returns to the title screen. After a match, the results screen offers a
+Menus: Enter or Space to start, arrow keys or W/S to move, Enter to pick. Esc goes back. On character select each player uses their own controls: move to pick a
+fighter, attack (F / .) to pick, special (G / /) to cancel, then Enter when both are ready. After a match, the results screen offers a
 rematch or the main menu.
 
 ## Development

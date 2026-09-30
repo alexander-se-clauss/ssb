@@ -38,7 +38,7 @@ browsers, rendering or networking.
 ## One frame
 
 1. While a match runs, `App` (`src/app/app.ts`) samples every `InputSource` and calls
-   `session.setInput(slot, input)`.
+   `session.setInput(slot, input)`. Character select samples them too, for menu moves.
 2. `session.update(now)` asks `FixedStepClock` how many 1/60 s ticks are due and runs
    `step()` that many times. Rendering speed never changes game speed.
 3. Each `GameView` renders `session.view()`: previous state, current state and `alpha`, so
@@ -50,7 +50,9 @@ browsers, rendering or networking.
 
 `src/app/screens.ts` lists the screens (title, main menu, options, character select, stage
 select, match, results) and the allowed moves between them, as plain data with a unit test.
-`App` shows menu screens as HTML over the canvas. Entering `match` creates a `GameSession` and
+`App` shows menu screens as HTML over the canvas. Character select reads each player's
+`InputSource` (press detection in `character-select.ts`), so gamepads will work there
+unchanged. Entering `match` creates a `GameSession` and
 its views; leaving it disposes them, so every match starts clean.
 
 ## Determinism rules

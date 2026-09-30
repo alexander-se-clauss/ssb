@@ -1,14 +1,28 @@
 import {
+  CHARACTERS,
   DEFAULT_RULES,
+  NEUTRAL_INPUT,
+  type PlayerInput,
   type MatchConfig,
   type MatchRules,
   type MatchState,
   type StageDef,
 } from '../core';
 import type { GameSession, GameView, InputSource, Unsubscribe } from '../ports';
+import {
+  allReady,
+  createSelect,
+  menuActions,
+  reduceSelect,
+  type SelectState,
+} from './character-select';
+import { CharacterSelectView } from './character-select-view';
 import { MenuPanel, type MenuContent } from './menu-panel';
 import { adjustRule, optionRows, type RuleField } from './options';
 import { INITIAL_SCREEN, MAIN_MENU, go, nextScreens, type Screen } from './screens';
+
+/** Characters per row on the character select grid. */
+const GRID_COLUMNS = 4;
 
 /** Working title, shown on the title screen. */
 const GAME_NAME = 'SSB';
@@ -34,8 +48,8 @@ export interface AppAdapters {
   readonly createViews: (container: HTMLElement, stage: StageDef) => readonly GameView[];
 }
 
-/** The parts of a match config the menus don't set yet (character and stage select will). */
-export type MatchSetup = Omit<MatchConfig, 'rules'>;
+/** The parts of a match config the menus don't set yet (stage select will). */
+export type MatchSetup = Omit<MatchConfig, 'rules' | 'players'>;
 
 /** Everything that exists only while a match is running. */
 interface RunningMatch {
@@ -54,7 +68,14 @@ export class App {
   private lastResult: MatchState | undefined;
   /** Chosen on the options screen; used by every following match. */
   private rules: MatchRules = DEFAULT_RULES;
+  /** Character select progress while that screen is open. */
+  private select: SelectState | undefined;
+  /** Each player's pick from the last completed character select. */
+  private picks: readonly string[] = [];
+  /** Last frame's input per player, for press detection in menus. */
+  private previousInputs: PlayerInput[] = [];
   private readonly menu: MenuPanel;
+  private readonly characterSelect: CharacterSelectView;
 
   constructor(
     private readonly container: HTMLElement,
@@ -63,11 +84,20 @@ export class App {
     private readonly matchSetup: MatchSetup,
   ) {
     this.menu = new MenuPanel(container);
+    this.characterSelect = new CharacterSelectView(container, CHARACTERS, GRID_COLUMNS, {
+      start: () => this.confirmCharacters(),
+      back: () => this.navigate('main-menu'),
+    });
     this.enter(this.screen);
   }
 
   get currentScreen(): Screen {
     return this.screen;
+  }
+
+  /** Character select progress, while that screen is open. */
+  get selectState(): SelectState | undefined {
+    return this.select;
   }
 
   /** The rules the next match will use. */
@@ -96,6 +126,7 @@ export class App {
   }
 
   frame(now: number): void {
+    if (this.screen === 'character-select') this.updateCharacterSelect();
     if (!this.match) return;
     const { session, views } = this.match;
     session.localSlots.forEach((slot, index) => {
@@ -116,6 +147,13 @@ export class App {
   private enter(screen: Screen): void {
     if (screen === 'match') {
       this.startMatch();
+      return;
+    }
+    if (screen === 'character-select') {
+      this.select = createSelect(this.adapters.inputs.length);
+      // Start press detection from the current state, so a held button doesn't pick at once.
+      this.previousInputs = this.adapters.inputs.map((source) => source.sample());
+      this.characterSelect.render(this.select, false);
       return;
     }
     this.menu.show(this.menuFor(screen));
@@ -169,7 +207,37 @@ export class App {
 
   private leave(screen: Screen): void {
     if (screen === 'match') this.stopMatch();
+    else if (screen === 'character-select') this.leaveCharacterSelect();
     else this.menu.hide();
+  }
+
+  private updateCharacterSelect(): void {
+    let state = this.select;
+    if (!state) return;
+    this.adapters.inputs.forEach((source, player) => {
+      const current = source.sample();
+      const previous = this.previousInputs[player] ?? NEUTRAL_INPUT;
+      for (const action of menuActions(player, previous, current)) {
+        if (state) state = reduceSelect(state, action, CHARACTERS, GRID_COLUMNS);
+      }
+      this.previousInputs[player] = current;
+    });
+    this.select = state;
+    this.characterSelect.render(state, allReady(state));
+  }
+
+  /** Enter on character select: only here do the picks become the next match's fighters. */
+  private confirmCharacters(): void {
+    const picks = this.select?.picks ?? [];
+    const complete = picks.filter((pick): pick is string => pick !== null);
+    if (complete.length === 0 || complete.length !== picks.length) return;
+    this.picks = complete;
+    this.navigate('stage-select');
+  }
+
+  private leaveCharacterSelect(): void {
+    this.select = undefined;
+    this.characterSelect.hide();
   }
 
   private changeRule(field: RuleField, delta: 1 | -1, row: number): void {
@@ -184,7 +252,11 @@ export class App {
   }
 
   private startMatch(): void {
-    const session = this.adapters.createSession({ ...this.matchSetup, rules: this.rules });
+    if (this.picks.length !== this.adapters.inputs.length) {
+      throw new Error('A match needs a character pick for every player');
+    }
+    const players = this.picks.map((characterId) => ({ characterId }));
+    const session = this.adapters.createSession({ ...this.matchSetup, players, rules: this.rules });
     const views = this.adapters.createViews(this.container, session.view().current.stage);
     // Drop key taps made in the menus, so the match does not start with a stray jump.
     for (const source of this.adapters.inputs) source.sample();
