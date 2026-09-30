@@ -52,7 +52,9 @@ browsers, rendering or networking.
 select, match, results) and the allowed moves between them, as plain data with a unit test.
 `App` shows menu screens as HTML over the canvas. Character select reads each player's
 `InputSource` (press detection in `character-select.ts`), so gamepads will work there
-unchanged. Entering `match` creates a `GameSession` and
+unchanged. The other menus (`MenuPanel`, stage select included) still read DOM keys. Every screen
+listens on `window`, so each handler checks and marks the event in `key-events.ts`: one key press
+changes the screen at most once. Entering `match` creates a `GameSession` and
 its views; leaving it disposes them, so every match starts clean.
 
 ## Determinism rules

@@ -1,5 +1,6 @@
 import {
   CHARACTERS,
+  STAGES,
   DEFAULT_RULES,
   NEUTRAL_INPUT,
   type PlayerInput,
@@ -18,6 +19,7 @@ import {
 } from './character-select';
 import { CharacterSelectView } from './character-select-view';
 import { MenuPanel, type MenuContent } from './menu-panel';
+import { renderPreview } from './stage-preview';
 import { adjustRule, optionRows, type RuleField } from './options';
 import { INITIAL_SCREEN, MAIN_MENU, go, nextScreens, type Screen } from './screens';
 
@@ -48,9 +50,6 @@ export interface AppAdapters {
   readonly createViews: (container: HTMLElement, stage: StageDef) => readonly GameView[];
 }
 
-/** The parts of a match config the menus don't set yet (stage select will). */
-export type MatchSetup = Omit<MatchConfig, 'rules' | 'players'>;
-
 /** Everything that exists only while a match is running. */
 interface RunningMatch {
   readonly session: GameSession;
@@ -70,6 +69,8 @@ export class App {
   private rules: MatchRules = DEFAULT_RULES;
   /** Character select progress while that screen is open. */
   private select: SelectState | undefined;
+  /** Chosen on stage select; the first stage until then. */
+  private stageId: string = STAGES[0]?.id ?? '';
   /** Each player's pick from the last completed character select. */
   private picks: readonly string[] = [];
   /** Last frame's input per player, for press detection in menus. */
@@ -80,8 +81,6 @@ export class App {
   constructor(
     private readonly container: HTMLElement,
     private readonly adapters: AppAdapters,
-    /** Fixed for now; the character and stage screens will build it. */
-    private readonly matchSetup: MatchSetup,
   ) {
     this.menu = new MenuPanel(container);
     this.characterSelect = new CharacterSelectView(container, CHARACTERS, GRID_COLUMNS, {
@@ -156,7 +155,13 @@ export class App {
       this.characterSelect.render(this.select, false);
       return;
     }
-    this.menu.show(this.menuFor(screen));
+    const focus = screen === 'stage-select' ? STAGES.findIndex((s) => s.id === this.stageId) : 0;
+    this.menu.show(this.menuFor(screen), Math.max(focus, 0));
+  }
+
+  private chooseStage(stageId: string): void {
+    this.stageId = stageId;
+    this.navigate('match');
   }
 
   private menuFor(screen: Screen): MenuContent {
@@ -191,6 +196,23 @@ export class App {
             { label: 'Back', select: () => this.navigate('main-menu') },
           ],
           back: () => this.navigate('main-menu'),
+        };
+      case 'stage-select':
+        return {
+          heading: 'Choose a stage',
+          text: 'Enter to pick · Esc to go back',
+          options: [
+            ...STAGES.map((stage) => ({
+              label: stage.name,
+              select: () => this.chooseStage(stage.id),
+            })),
+            { label: 'Back', select: () => this.navigate('character-select') },
+          ],
+          back: () => this.navigate('character-select'),
+          preview: (index) => {
+            const stage = STAGES[index];
+            return stage ? renderPreview(stage) : null;
+          },
         };
       default:
         // Placeholders until their sprint-1 issues replace them.
@@ -256,7 +278,11 @@ export class App {
       throw new Error('A match needs a character pick for every player');
     }
     const players = this.picks.map((characterId) => ({ characterId }));
-    const session = this.adapters.createSession({ ...this.matchSetup, players, rules: this.rules });
+    const session = this.adapters.createSession({
+      stageId: this.stageId,
+      players,
+      rules: this.rules,
+    });
     const views = this.adapters.createViews(this.container, session.view().current.stage);
     // Drop key taps made in the menus, so the match does not start with a stray jump.
     for (const source of this.adapters.inputs) source.sample();

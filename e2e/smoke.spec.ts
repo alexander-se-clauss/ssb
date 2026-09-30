@@ -95,6 +95,36 @@ test('two players pick, change their minds and confirm on character select', asy
   await expect(page.locator('.css')).toBeHidden();
 });
 
+/** Title -> main menu -> character select (both pick) -> stage select. */
+const toStageSelect = async (page: Page) => {
+  await page.goto('/');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('character-select');
+  await tap(page, 'KeyF');
+  await tap(page, 'Period');
+  await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule']);
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('stage-select');
+};
+
+test('stage select previews the focused stage and starts the match there', async ({ page }) => {
+  await toStageSelect(page);
+  await expect(page.getByLabel('Battlefield preview')).toBeVisible();
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByRole('button', { name: 'Plateau' })).toBeFocused();
+  await expect(page.getByLabel('Plateau preview')).toBeVisible();
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('match');
+  expect((await gameState(page)).stage.id).toBe('plateau');
+});
+
+test('stage select goes back to character select', async ({ page }) => {
+  await toStageSelect(page);
+  await page.keyboard.press('Escape');
+  await expect.poll(() => screen(page)).toBe('character-select');
+});
+
 test('rules changed in options apply to the next match', async ({ page }) => {
   await page.goto('/');
   await page.keyboard.press('Enter');

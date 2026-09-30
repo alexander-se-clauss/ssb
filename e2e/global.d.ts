@@ -13,6 +13,7 @@ interface Window {
     state():
       | {
           frame: number;
+          stage: { id: string };
           fighters: E2eFighter[];
           rules: { mode: string; stocks: number; timeLimitSeconds: number };
         }

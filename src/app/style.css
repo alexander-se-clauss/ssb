@@ -246,3 +246,26 @@ canvas {
   font-weight: 800;
   animation: pulse 1.6s ease-in-out infinite;
 }
+
+.menu-preview {
+  width: 320px;
+  aspect-ratio: 16 / 9;
+  margin-bottom: 8px;
+  border: 2px solid rgb(255 255 255 / 25%);
+  border-radius: 12px;
+  background: linear-gradient(#2a3470, #1b2140);
+  overflow: hidden;
+}
+
+.stage-preview {
+  width: 100%;
+  height: 100%;
+}
+
+.stage-preview .platform {
+  fill: #8fa3d9;
+}
+
+.stage-preview .platform.pass-through {
+  fill: #c6d3ff;
+}
