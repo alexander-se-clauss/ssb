@@ -70,6 +70,7 @@ export const resolveCombat = (
         actionFrame: 0,
         hitstunFrames: Math.round(speed * HITSTUN_PER_KNOCKBACK),
         hitTargets: [],
+        lastHitBy: attacker.slot,
       };
       const attackerNow = next[attacker.slot] ?? attacker;
       next[attacker.slot] = {

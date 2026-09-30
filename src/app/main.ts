@@ -2,7 +2,7 @@
  * Composition root: the only place that knows which concrete adapters are used.
  * Swapping keyboard for gamepad, or the local session for a network one, happens here.
  */
-import { BATTLEFIELD, CAPSULE, createMatch, type MatchConfig } from '../core';
+import { BATTLEFIELD, CAPSULE, createMatch } from '../core';
 import { DomHud } from '../adapters/dom-hud/dom-hud';
 import {
   KeyboardInputSource,
@@ -11,15 +11,14 @@ import {
 } from '../adapters/keyboard-input/keyboard-input-source';
 import { LocalGameSession } from '../adapters/local-session/local-game-session';
 import { ThreeView } from '../adapters/three-renderer/three-view';
-import { App } from './app';
+import { App, type MatchSetup } from './app';
 import { installDebugHandle } from './debug';
 import './style.css';
 
 // Fixed until the menus (epic #1) build this config from the player's picks.
-const MATCH: MatchConfig = {
+const MATCH: MatchSetup = {
   stageId: BATTLEFIELD.id,
   players: [{ characterId: CAPSULE.id }, { characterId: CAPSULE.id }],
-  stocks: 3,
 };
 
 const container = document.querySelector<HTMLElement>('#app');

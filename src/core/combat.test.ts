@@ -27,6 +27,7 @@ describe('combat', () => {
     expect(target.action).toBe('hitstun');
     expect(target.velocity.x).toBeGreaterThan(0);
     expect(target.velocity.y).toBeGreaterThan(0);
+    expect(target.lastHitBy).toBe(0);
     expect(state.events).toContainEqual({
       type: 'hit',
       attacker: 0,

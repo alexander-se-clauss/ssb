@@ -1,6 +1,13 @@
-import type { MatchConfig, MatchState, StageDef } from '../core';
+import {
+  DEFAULT_RULES,
+  type MatchConfig,
+  type MatchRules,
+  type MatchState,
+  type StageDef,
+} from '../core';
 import type { GameSession, GameView, InputSource, Unsubscribe } from '../ports';
 import { MenuPanel, type MenuContent } from './menu-panel';
+import { adjustRule, optionRows, type RuleField } from './options';
 import { INITIAL_SCREEN, MAIN_MENU, go, nextScreens, type Screen } from './screens';
 
 /** Working title, shown on the title screen. */
@@ -27,6 +34,9 @@ export interface AppAdapters {
   readonly createViews: (container: HTMLElement, stage: StageDef) => readonly GameView[];
 }
 
+/** The parts of a match config the menus don't set yet (character and stage select will). */
+export type MatchSetup = Omit<MatchConfig, 'rules'>;
+
 /** Everything that exists only while a match is running. */
 interface RunningMatch {
   readonly session: GameSession;
@@ -42,13 +52,15 @@ export class App {
   private screen: Screen = INITIAL_SCREEN;
   private match: RunningMatch | undefined;
   private lastResult: MatchState | undefined;
+  /** Chosen on the options screen; used by every following match. */
+  private rules: MatchRules = DEFAULT_RULES;
   private readonly menu: MenuPanel;
 
   constructor(
     private readonly container: HTMLElement,
     private readonly adapters: AppAdapters,
-    /** Fixed for now; the options, character and stage screens will build it. */
-    private readonly matchConfig: MatchConfig,
+    /** Fixed for now; the character and stage screens will build it. */
+    private readonly matchSetup: MatchSetup,
   ) {
     this.menu = new MenuPanel(container);
     this.enter(this.screen);
@@ -56,6 +68,11 @@ export class App {
 
   get currentScreen(): Screen {
     return this.screen;
+  }
+
+  /** The rules the next match will use. */
+  get currentRules(): MatchRules {
+    return this.rules;
   }
 
   /** State of the running match, or of the last finished one while results are shown. */
@@ -123,6 +140,20 @@ export class App {
           })),
           back: () => this.navigate('title'),
         };
+      case 'options':
+        return {
+          heading: 'Options',
+          text: '←/→ to change · Esc to go back',
+          options: [
+            ...optionRows(this.rules).map((row, index) => ({
+              label: row.label,
+              select: () => this.changeRule(row.field, 1, index),
+              adjust: (delta: 1 | -1) => this.changeRule(row.field, delta, index),
+            })),
+            { label: 'Back', select: () => this.navigate('main-menu') },
+          ],
+          back: () => this.navigate('main-menu'),
+        };
       default:
         // Placeholders until their sprint-1 issues replace them.
         return {
@@ -141,6 +172,11 @@ export class App {
     else this.menu.hide();
   }
 
+  private changeRule(field: RuleField, delta: 1 | -1, row: number): void {
+    this.rules = adjustRule(this.rules, field, delta);
+    this.menu.show(this.menuFor('options'), row);
+  }
+
   private describe(screen: Screen): string {
     if (screen !== 'results' || !this.lastResult) return 'Placeholder screen';
     const winner = this.lastResult.winner;
@@ -148,7 +184,7 @@ export class App {
   }
 
   private startMatch(): void {
-    const session = this.adapters.createSession(this.matchConfig);
+    const session = this.adapters.createSession({ ...this.matchSetup, rules: this.rules });
     const views = this.adapters.createViews(this.container, session.view().current.stage);
     // Drop key taps made in the menus, so the match does not start with a stray jump.
     for (const source of this.adapters.inputs) source.sample();

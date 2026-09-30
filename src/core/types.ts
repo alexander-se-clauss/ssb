@@ -35,7 +35,14 @@ export interface FighterState {
   readonly actionFrame: number;
   /** Damage percent. Higher damage means stronger knockback. */
   readonly damage: number;
+  /** Lives left in a stock match. Unused (0) in a time match. */
   readonly stocks: number;
+  /** Opponents this fighter knocked out. */
+  readonly kos: number;
+  /** Times this fighter was knocked out or self-destructed. */
+  readonly falls: number;
+  /** Who hit this fighter last since it respawned; gets the KO credit. */
+  readonly lastHitBy: PlayerSlot | null;
   readonly hitstunFrames: number;
   readonly invulnerableFrames: number;
   /** Slots already hit by the current attack, so one swing hits each target only once. */
@@ -66,15 +73,33 @@ export type GameEvent =
       readonly target: PlayerSlot;
       readonly damage: number;
     }
-  | { readonly type: 'ko'; readonly slot: PlayerSlot; readonly stocksLeft: number }
+  | {
+      readonly type: 'ko';
+      readonly slot: PlayerSlot;
+      /** Lives left after this KO; null in a time match, where lives don't count. */
+      readonly stocksLeft: number | null;
+    }
   | { readonly type: 'match-end'; readonly winner: PlayerSlot | null };
 
 export type MatchPhase = 'playing' | 'finished';
+
+export type RuleMode = 'stock' | 'time';
+
+/** How a match is won. Chosen on the options screen. */
+export interface MatchRules {
+  /** Stock: last one with lives left wins. Time: best score (KOs minus falls) when time is up. */
+  readonly mode: RuleMode;
+  /** Lives per player in stock mode. */
+  readonly stocks: number;
+  /** Match length in time mode. */
+  readonly timeLimitSeconds: number;
+}
 
 export interface MatchState {
   readonly frame: number;
   readonly phase: MatchPhase;
   readonly stage: StageDef;
+  readonly rules: MatchRules;
   readonly fighters: readonly FighterState[];
   /** Events produced by the most recent step only. */
   readonly events: readonly GameEvent[];
@@ -98,5 +123,5 @@ export interface MatchConfig {
   readonly stageId: string;
   /** One entry per player, in slot order. */
   readonly players: readonly PlayerConfig[];
-  readonly stocks: number;
+  readonly rules: MatchRules;
 }

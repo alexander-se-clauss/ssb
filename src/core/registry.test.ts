@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_RULES } from './config';
 import { CHARACTERS, STAGES, findCharacter, findStage } from './registry';
 import { createMatch } from './simulation';
 import { BATTLEFIELD } from './stages';
@@ -27,7 +28,7 @@ describe('match setup from registry ids', () => {
   const setup = {
     stageId: 'battlefield',
     players: [{ characterId: 'capsule' }, { characterId: 'capsule' }],
-    stocks: 3,
+    rules: DEFAULT_RULES,
   };
 
   it('resolves the stage and gives each fighter its character', () => {

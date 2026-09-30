@@ -10,10 +10,14 @@ const gameState = (page: Page) =>
     return state;
   });
 
-/** Title -> main menu -> character select -> stage select -> match, taking the first option. */
-const startMatch = async (page: Page) => {
-  await page.goto('/');
-  for (const next of ['main-menu', 'character-select', 'stage-select', 'match']) {
+/** (Title ->) main menu -> character select -> stage select -> match, taking the first option. */
+const startMatch = async (page: Page, { fromMainMenu = false } = {}) => {
+  if (!fromMainMenu) {
+    await page.goto('/');
+    await page.keyboard.press('Enter');
+    await expect.poll(() => screen(page)).toBe('main-menu');
+  }
+  for (const next of ['character-select', 'stage-select', 'match']) {
     await page.keyboard.press('Enter');
     await expect.poll(() => screen(page)).toBe(next);
   }
@@ -50,6 +54,27 @@ test('Options leads to the options screen', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Options' })).toBeFocused();
   await page.keyboard.press('Enter');
   await expect.poll(() => screen(page)).toBe('options');
+});
+
+test('rules changed in options apply to the next match', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('options');
+
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByRole('button', { name: /Rule: Time/ })).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByRole('button', { name: /Time: 3 min/ })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect.poll(() => screen(page)).toBe('main-menu');
+
+  await startMatch(page, { fromMainMenu: true });
+  const rules = (await gameState(page)).rules;
+  expect(rules).toMatchObject({ mode: 'time', timeLimitSeconds: 180 });
+  await expect(page.locator('.hud-clock')).toHaveText(/^[23]:\d\d$/);
 });
 
 test('a match starts from the menus, renders and simulates', async ({ page }) => {

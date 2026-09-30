@@ -133,3 +133,16 @@ canvas {
     opacity: 0.35;
   }
 }
+
+.hud-clock {
+  position: absolute;
+  top: 16px;
+  width: 100%;
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  text-shadow: 0 2px 8px rgb(0 0 0 / 60%);
+  pointer-events: none;
+}
