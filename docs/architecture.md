@@ -30,20 +30,28 @@ browsers, rendering or networking.
 | Core     | `src/core`     | core only                          | Types, physics, combat, stages, registry, `step`, clock |
 | Ports    | `src/ports`    | core                               | Interfaces between client and game                      |
 | Adapters | `src/adapters` | core (via index), ports, libraries | Keyboard, local session, Three.js, HUD                  |
-| App      | `src/app`      | everything                         | `main.ts` wiring, debug handle, CSS                     |
+| App      | `src/app`      | everything                         | `main.ts` wiring, screens and menus, debug handle, CSS  |
 
 **Enforced:** ESLint `no-restricted-imports` per folder (`eslint.config.js`) and a separate
 `tsconfig.core.json` without DOM types, so `document` or `window` in core fails typecheck.
 
 ## One frame
 
-1. `main.ts` samples every `InputSource` and calls `session.setInput(slot, input)`.
+1. While a match runs, `App` (`src/app/app.ts`) samples every `InputSource` and calls
+   `session.setInput(slot, input)`.
 2. `session.update(now)` asks `FixedStepClock` how many 1/60 s ticks are due and runs
    `step()` that many times. Rendering speed never changes game speed.
 3. Each `GameView` renders `session.view()`: previous state, current state and `alpha`, so
    visuals interpolate smoothly on 120/144 Hz screens.
 4. Events from `step()` (`hit`, `ko`, `match-end`) go to `session.onEvent` listeners
    (future: sound, particles, rumble).
+
+## Screens
+
+`src/app/screens.ts` lists the screens (title, main menu, options, character select, stage
+select, match, results) and the allowed moves between them, as plain data with a unit test.
+`App` shows menu screens as HTML over the canvas. Entering `match` creates a `GameSession` and
+its views; leaving it disposes them, so every match starts clean.
 
 ## Determinism rules
 
@@ -69,11 +77,11 @@ Other logic follows the same pattern: define a port first, implement locally, sw
 
 ## Testing strategy
 
-| Level | Tool       | What                                                      | Where               |
-| ----- | ---------- | --------------------------------------------------------- | ------------------- |
-| Unit  | Vitest     | Game rules as scenarios (`settled`, `run`, `withFighter`) | `src/**/*.test.ts`  |
-| Unit  | Vitest     | Adapters with fakes (e.g. keyboard with an `EventTarget`) | next to the adapter |
-| E2E   | Playwright | Game boots, renders, reacts to keys via `window.__SSB__`  | `e2e/`              |
+| Level | Tool       | What                                                                         | Where               |
+| ----- | ---------- | ---------------------------------------------------------------------------- | ------------------- |
+| Unit  | Vitest     | Game rules as scenarios (`settled`, `run`, `withFighter`)                    | `src/**/*.test.ts`  |
+| Unit  | Vitest     | Adapters with fakes (e.g. keyboard with an `EventTarget`)                    | next to the adapter |
+| E2E   | Playwright | Boots to title, menus reach a match, keys move fighters via `window.__SSB__` | `e2e/`              |
 
 ## Decisions
 

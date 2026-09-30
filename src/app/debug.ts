@@ -1,12 +1,16 @@
 import type { MatchState } from '../core';
-import type { GameSession } from '../ports';
+import type { App } from './app';
+import type { Screen } from './screens';
 
 /**
  * A small window handle for automated tests and AI agents (via the Playwright MCP)
  * to read game state without scraping pixels. Read-mostly on purpose.
  */
 export interface DebugHandle {
-  state(): MatchState;
+  /** The screen the app shows right now. */
+  screen(): Screen;
+  /** The running match, the last finished one on the results screen, otherwise undefined. */
+  state(): MatchState | undefined;
   restart(): void;
 }
 
@@ -16,12 +20,10 @@ declare global {
   }
 }
 
-export const installDebugHandle = (deps: {
-  session: () => GameSession;
-  restart: () => void;
-}): void => {
+export const installDebugHandle = (app: App): void => {
   window.__SSB__ = {
-    state: () => deps.session().view().current,
-    restart: deps.restart,
+    screen: () => app.currentScreen,
+    state: () => app.matchState(),
+    restart: () => app.restartMatch(),
   };
 };

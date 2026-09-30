@@ -57,8 +57,17 @@ export class ThreeView implements GameView {
     this.renderer.setSize(width, height);
   }
 
+  /** Frees GPU memory and the WebGL context; the app creates a new view for every match. */
   dispose(): void {
+    this.scene.traverse((object) => {
+      if (object instanceof THREE.Mesh) {
+        object.geometry.dispose();
+        const materials: THREE.Material[] = [object.material].flat();
+        for (const material of materials) material.dispose();
+      }
+    });
     this.renderer.dispose();
+    this.renderer.forceContextLoss();
     this.renderer.domElement.remove();
   }
 

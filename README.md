@@ -15,7 +15,8 @@ npm run dev      # open http://localhost:5173
 | P1     | A / D | W or Space | S                | F      |
 | P2     | ← / → | ↑          | ↓                | .      |
 
-Press R to restart when a match is over.
+Menus: arrow keys or W/S to move, Enter to pick. After a match, the results screen offers a
+rematch or the main menu.
 
 ## Development
 

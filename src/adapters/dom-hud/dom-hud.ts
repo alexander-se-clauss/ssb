@@ -23,7 +23,7 @@ export class DomHud implements GameView {
     if (current.phase === 'finished') {
       this.banner.hidden = false;
       this.banner.textContent =
-        current.winner === null ? 'Draw!' : `Player ${current.winner + 1} wins! Press R to restart`;
+        current.winner === null ? 'Draw!' : `Player ${current.winner + 1} wins!`;
     } else {
       this.banner.hidden = true;
     }

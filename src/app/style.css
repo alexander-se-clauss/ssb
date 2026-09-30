@@ -75,3 +75,43 @@ canvas {
   color: rgb(255 255 255 / 60%);
   line-height: 1.5;
 }
+
+.menu {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #fff;
+}
+
+.menu h1 {
+  margin: 0;
+  font-size: 3rem;
+  font-weight: 900;
+}
+
+.menu p {
+  margin: 0 0 16px;
+  color: rgb(255 255 255 / 60%);
+}
+
+.menu button {
+  min-width: 240px;
+  padding: 10px 24px;
+  border: 2px solid rgb(255 255 255 / 25%);
+  border-radius: 10px;
+  background: rgb(0 0 0 / 35%);
+  color: #fff;
+  font: inherit;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.menu button:focus {
+  outline: none;
+  border-color: #f2c14e;
+  background: rgb(242 193 78 / 20%);
+}

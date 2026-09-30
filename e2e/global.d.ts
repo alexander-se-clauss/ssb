@@ -9,7 +9,8 @@ interface E2eFighter {
 
 interface Window {
   __SSB__?: {
-    state(): { frame: number; fighters: E2eFighter[] };
+    screen(): string;
+    state(): { frame: number; fighters: E2eFighter[] } | undefined;
     restart(): void;
   };
 }

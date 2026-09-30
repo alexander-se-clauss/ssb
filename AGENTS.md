@@ -56,5 +56,6 @@ These rules are enforced by ESLint (`no-restricted-imports`) and by `tsconfig.co
 
 ## Debugging the running game
 
-`window.__SSB__.state()` returns the current `MatchState` in the browser. Use it from the
+`window.__SSB__.screen()` returns the current screen and `window.__SSB__.state()` the current
+`MatchState` (undefined outside a match). Use it from the
 Playwright MCP or e2e tests instead of reading pixels.
