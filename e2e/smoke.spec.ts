@@ -226,11 +226,11 @@ test('stage select previews the focused stage and starts the match there', async
   await toStageSelect(page);
   await expect(page.getByLabel('Battlefield preview')).toBeVisible();
   await page.keyboard.press('ArrowDown');
-  await expect(page.getByRole('button', { name: 'Plateau' })).toBeFocused();
-  await expect(page.getByLabel('Plateau preview')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Final Destination' })).toBeFocused();
+  await expect(page.getByLabel('Final Destination preview')).toBeVisible();
   await page.keyboard.press('Enter');
   await expect.poll(() => screen(page)).toBe('match');
-  expect((await gameState(page)).stage.id).toBe('plateau');
+  expect((await gameState(page)).stage.id).toBe('final-destination');
 });
 
 test('stage select goes back to character select', async ({ page }) => {
@@ -344,7 +344,7 @@ test('full flow: title, menus, a match ended through the debug handle, results, 
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
   await expect.poll(() => screen(page)).toBe('match');
-  expect((await gameState(page)).stage.id).toBe('plateau');
+  expect((await gameState(page)).stage.id).toBe('final-destination');
   expect((await gameState(page)).rules.stocks).toBe(1);
 
   // End the match: take over player one and walk off the stage.

@@ -31,7 +31,7 @@ const plainScenery = (scene: THREE.Scene, stage: StageDef): Scenery => {
 /** Each stage's look, by stage id. The look is built from the stage's platforms. */
 const SCENERY: Readonly<Record<string, (scene: THREE.Scene, stage: StageDef) => Scenery>> = {
   battlefield: battlefieldScenery,
-  plateau: finalDestinationScenery,
+  'final-destination': finalDestinationScenery,
 };
 
 /** Adds a stage's platforms, backdrop and lights to the scene. */

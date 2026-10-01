@@ -19,7 +19,7 @@ describe('character and stage registry', () => {
   it('looks entries up by id and returns undefined for unknown ids', () => {
     expect(findStage('battlefield')).toBe(BATTLEFIELD);
     expect(findCharacter('capsule')?.name).toBe('Capsule');
-    expect(findStage('final-destination')).toBeUndefined();
+    expect(findStage('hyrule-temple')).toBeUndefined();
     expect(findCharacter('mario')).toBeUndefined();
   });
 });
