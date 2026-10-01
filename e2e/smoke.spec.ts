@@ -699,7 +699,7 @@ const inspectMenu = async (page: Page, name: string, testInfo: TestInfo) => {
 test('the menu family keeps titles and controls visible across desktop, portrait and landscape', async ({
   page,
 }, testInfo) => {
-  // This traverses a four-player match and captures all seven menus at four sizes.
+  // This traverses a four-player match and captures all eight menus at four sizes.
   test.setTimeout(150_000);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await installPads(page, 2);
@@ -712,6 +712,9 @@ test('the menu family keeps titles and controls visible across desktop, portrait
   expect(primary.width * primary.height).toBeGreaterThan(secondary.width * secondary.height * 2);
   await page.getByRole('button', { name: 'Options', exact: true }).click();
   await inspectMenu(page, 'options', testInfo);
+  await page.getByRole('button', { name: 'Sound', exact: true }).click();
+  await inspectMenu(page, 'sound', testInfo);
+  await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Controls', exact: true }).click();
   await inspectMenu(page, 'controls', testInfo);
   await page.keyboard.press('Escape');
@@ -809,14 +812,18 @@ test('Options directions navigate panels and screen mode changes only on confirm
   const requests = () =>
     page.evaluate(() => (window as unknown as { fullscreenRequests: number }).fullscreenRequests);
   const screenMode = page.getByRole('button', { name: /^Screen: Window/ });
+  const sound = page.getByRole('button', { name: 'Sound', exact: true });
   const controls = page.getByRole('button', { name: 'Controls', exact: true });
   await expect(screenMode).toBeFocused();
   await page.keyboard.press('ArrowRight');
+  await expect(sound).toBeFocused();
+  await page.keyboard.press('ArrowRight');
   await expect(controls).toBeFocused();
+  await page.keyboard.press('ArrowLeft');
   await page.keyboard.press('ArrowLeft');
   await expect(screenMode).toBeFocused();
   await flick(page, 0, 1, 0);
-  await expect(controls).toBeFocused();
+  await expect(sound).toBeFocused();
   await flick(page, 0, -1, 0);
   await expect(screenMode).toBeFocused();
   expect(await requests()).toBe(0);
@@ -827,9 +834,40 @@ test('Options directions navigate panels and screen mode changes only on confirm
   await screenMode.click();
   expect(await requests()).toBe(3);
   await flick(page, 0, 1, 0);
+  await flick(page, 0, 1, 0);
   await press(page, 0, PAD.a);
   await expect.poll(() => screen(page)).toBe('controls');
   await press(page, 0, PAD.b);
+  await expect.poll(() => screen(page)).toBe('options');
+});
+
+test('Sound settings change the volumes and are remembered after a reload', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('Enter');
+  await page.getByRole('button', { name: 'Options', exact: true }).click();
+  await page.getByRole('button', { name: 'Sound', exact: true }).click();
+  await expect.poll(() => screen(page)).toBe('sound');
+  const music = page.getByRole('button', { name: /^Music: / });
+  await expect(music).toBeFocused();
+  const start = Number((await music.textContent())?.replace('Music: ', ''));
+  await page.keyboard.press('ArrowLeft');
+  await expect(music).toHaveText(`Music: ${start - 1}`);
+  await expect(music).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  const effects = page.getByRole('button', { name: /^Effects: / });
+  await expect(effects).toBeFocused();
+  for (let i = 0; i < 12; i++) await page.keyboard.press('ArrowRight');
+  await expect(effects).toHaveText('Effects: 10');
+  await page.getByRole('button', { name: 'Lower Effects: 10' }).click();
+  await expect(effects).toHaveText('Effects: 9');
+
+  await page.reload();
+  await page.keyboard.press('Enter');
+  await page.getByRole('button', { name: 'Options', exact: true }).click();
+  await page.getByRole('button', { name: 'Sound', exact: true }).click();
+  await expect(music).toHaveText(`Music: ${start - 1}`);
+  await expect(effects).toHaveText('Effects: 9');
+  await page.keyboard.press('Escape');
   await expect.poll(() => screen(page)).toBe('options');
 });
 

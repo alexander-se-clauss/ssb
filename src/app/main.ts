@@ -70,6 +70,11 @@ const app = new App(container, {
     { device: 'Gamepad', labels: GAMEPAD_LABELS },
   ],
   audio: new WebAudioOutput(),
+  // Looked up on each use: reading `localStorage` itself throws where storage is blocked.
+  settings: {
+    getItem: (key) => localStorage.getItem(key),
+    setItem: (key, value) => localStorage.setItem(key, value),
+  },
 });
 
 installDebugHandle(app, [...keyboards, ...gamepads], setShowBoxes);

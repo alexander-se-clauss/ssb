@@ -109,11 +109,14 @@ names its music (`screenMusic`: the stage's own track in a match, a jingle on re
 theme elsewhere). Songs are plain data in `songs.ts` (voices of notes or drum hits on a grid of
 sixteenth steps, `music.ts`); `WebAudioOutput` plays them with a step sequencer that schedules a
 fraction of a second ahead on the audio clock, and crossfades over one second when the track
-changes.
+changes. The Music and Effects volumes (0 to 10, on the Sound screen under Options) live in
+`audio-settings.ts`: `App` loads them at start, passes them to `setVolume` on a square curve,
+and saves each change to the `settings` store `main.ts` hands it (`localStorage`). Reading or
+saving may fail (blocked storage); the defaults or the current values then simply apply.
 
 ## Screens
 
-`src/app/screens.ts` lists the screens (title, main menu, options, controls, character select,
+`src/app/screens.ts` lists the screens (title, main menu, options, sound, controls, character select,
 stage select, match, results) and the allowed moves between them, as plain data with a unit test.
 `App` shows menu screens as HTML over the canvas. The title screen owns a decorative Three.js
 arena illustration with posed fighters, colored lighting and gently drifting sparks. It uses the
@@ -121,7 +124,7 @@ core skeleton and poses without running a match, respects reduced-motion prefere
 its WebGL resources on leaving the title. The HTML start button also accepts keyboard and gamepad input. As in Melee, character select is where a match is
 set up: its top bar holds Back and the rules banner, which opens the rules overlay (a second
 `MenuPanel`, editing a draft that applies on Done). Options holds game settings only: directions
-navigate between its panels, and confirming Screen toggles fullscreen. On character
+navigate between its panels (Screen, Sound, Controls), and confirming Screen toggles fullscreen. On character
 select a device joins the first of four free player slots by pressing attack, then moves that
 player's cursor; special un-picks, then leaves the slot (later players move up, so slots have no
 gaps), and from a device that has not joined goes back. Before joining, directions select only match rules and Back. Down clears header focus,

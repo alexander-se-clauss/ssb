@@ -178,7 +178,7 @@
 /* Settings are large offset equipment panels. Confirm changes the focused setting. */
 .menu-settings .menu-options {
   display: grid;
-  grid-template-columns: 1.3fr 1fr;
+  grid-template-columns: 1.3fr 1fr 1fr;
   gap: 40px;
   align-items: start;
 }
@@ -281,25 +281,25 @@
   background: rgb(6 12 23 / 94%) !important;
 }
 
-.menu-overlay .menu-composition {
+:is(.menu-overlay, .menu-list) .menu-composition {
   width: min(600px, 100%);
 }
 
-.menu-overlay .menu-heading h1 {
+:is(.menu-overlay, .menu-list) .menu-heading h1 {
   font-size: 2.4rem;
 }
 
-.menu-overlay .menu-options {
+:is(.menu-overlay, .menu-list) .menu-options {
   gap: 18px;
   padding-inline: 12px;
 }
 
-.menu-overlay .menu-row button:not(.menu-step) {
+:is(.menu-overlay, .menu-list) .menu-row button:not(.menu-step) {
   min-width: 0;
   flex: 1;
 }
 
-.menu-overlay .menu-options > button {
+:is(.menu-overlay, .menu-list) .menu-options > button {
   width: 100%;
   min-width: 0;
 }
@@ -388,17 +388,17 @@
     padding: 16px 8px;
   }
 
-  .menu-overlay .menu-options {
+  :is(.menu-overlay, .menu-list) .menu-options {
     padding-inline: 6px;
   }
-  .menu-overlay .menu-row {
+  :is(.menu-overlay, .menu-list) .menu-row {
     gap: 8px;
   }
-  .menu-overlay .menu-row button:not(.menu-step) {
+  :is(.menu-overlay, .menu-list) .menu-row button:not(.menu-step) {
     font-size: 1rem;
     padding-inline: 8px;
   }
-  .menu-overlay .menu-step {
+  :is(.menu-overlay, .menu-list) .menu-step {
     width: 36px;
   }
 }
@@ -435,7 +435,7 @@
     margin-top: 48px;
   }
   .menu-settings .menu-options {
-    grid-template-columns: 1.2fr 1fr;
+    grid-template-columns: 1.2fr 1fr 1fr;
     gap: 24px;
   }
   .menu-settings .menu-options > button {
@@ -472,10 +472,10 @@
     padding: 8px 6px;
   }
 
-  .menu-overlay .menu-heading h1 {
+  :is(.menu-overlay, .menu-list) .menu-heading h1 {
     font-size: 1.5rem;
   }
-  .menu-overlay .menu-options {
+  :is(.menu-overlay, .menu-list) .menu-options {
     gap: 12px;
   }
   .menu-overlay .menu-options button {
@@ -630,5 +630,19 @@
     min-height: 54px;
     padding: 8px 18px;
     font-size: 1rem;
+  }
+}
+
+/* Three stacked Options panels on a short phone (320x568). */
+@media (max-width: 700px) and (max-height: 640px) {
+  .menu-settings .menu-options {
+    gap: 16px;
+  }
+  .menu-settings .menu-options > button {
+    min-height: 96px;
+  }
+  .menu-settings .menu-options > button:first-child {
+    min-height: 130px;
+    padding-top: 70px;
   }
 }

@@ -10,6 +10,7 @@ import {
   type StageDef,
 } from '../core';
 import type {
+  AudioChannel,
   AudioOutput,
   GameSession,
   GameView,
@@ -37,6 +38,14 @@ import { MenuPanel, type MenuContent } from './menu-panel';
 import { renderResults, resultHeading, resultPlacements, type Elimination } from './results';
 import { ResultsScene } from '../adapters/three-renderer/results-scene';
 import { adjustRule, ruleRows, type RuleField } from './rules-menu';
+import {
+  adjustVolume,
+  loadAudioSettings,
+  saveAudioSettings,
+  volumeLevel,
+  type AudioSettings,
+  type SettingsStore,
+} from './audio-settings';
 import { stageThumbnail } from '../adapters/three-renderer/stage-thumbnail';
 import { fighterPortrait } from '../adapters/three-renderer/fighter-portrait';
 import { TitleScene } from '../adapters/three-renderer/title-scene';
@@ -59,6 +68,7 @@ const LABELS: Readonly<Record<Screen, string>> = {
   title: 'Title',
   'main-menu': 'Main menu',
   options: 'Options',
+  sound: 'Sound',
   controls: 'Controls',
   'character-select': 'Character select',
   'stage-select': 'Stage select',
@@ -88,6 +98,8 @@ export interface AppAdapters {
   readonly controls: readonly ControlColumn[];
   /** Sound effects and music. */
   readonly audio: AudioOutput;
+  /** Where settings such as the volumes are kept between visits. */
+  readonly settings: SettingsStore;
 }
 
 /** Everything that exists only while a match is running. */
@@ -131,11 +143,16 @@ export class App {
   private titleScene: TitleScene | undefined;
   private resultsScene: ResultsScene | undefined;
   private eliminations: Elimination[] = [];
+  /** The Music and Effects volumes from Options. */
+  private audioSettings: AudioSettings;
 
   constructor(
     private readonly container: HTMLElement,
     private readonly adapters: AppAdapters,
   ) {
+    this.audioSettings = loadAudioSettings(adapters.settings);
+    this.applyVolume('music');
+    this.applyVolume('effects');
     const play = (cue: SoundCue): void => adapters.audio.play(cue);
     this.menu = new MenuPanel(container, play);
     this.rulesPanel = new MenuPanel(container, play);
@@ -287,12 +304,30 @@ export class App {
               select: () => this.toggleFullscreen(),
             },
             {
+              label: 'Sound',
+              artwork: 'sound',
+              select: () => this.navigate('sound'),
+            },
+            {
               label: 'Controls',
               artwork: 'controls',
               select: () => this.navigate('controls'),
             },
           ],
           back: () => this.navigate('main-menu'),
+        };
+      case 'sound':
+        return {
+          heading: 'Sound',
+          variant: 'menu-list',
+          options: (['music', 'effects'] as const).map((channel, index) => ({
+            label: `${channel === 'music' ? 'Music' : 'Effects'}: ${this.audioSettings[channel]}`,
+            // Picking does nothing; the volume changes with Left/Right or − and +.
+            select: () => undefined,
+            adjust: (delta: 1 | -1) => this.changeVolume(channel, delta, index),
+            cue: null,
+          })),
+          back: () => this.navigate('options'),
         };
       case 'controls':
         return {
@@ -496,6 +531,20 @@ export class App {
       // cannot move a character-select cursor or activate a header action underneath.
       this.previousInputs = this.adapters.devices.map(({ source }) => source.sample());
     }
+  }
+
+  /** Changes one volume, keeps it for next time, and redraws the sound menu on its row. */
+  private changeVolume(channel: AudioChannel, delta: 1 | -1, row: number): void {
+    const changed = adjustVolume(this.audioSettings, channel, delta);
+    if (changed[channel] === this.audioSettings[channel]) return;
+    this.audioSettings = changed;
+    saveAudioSettings(this.adapters.settings, this.audioSettings);
+    this.applyVolume(channel);
+    this.menu.show(this.menuFor('sound'), row);
+  }
+
+  private applyVolume(channel: AudioChannel): void {
+    this.adapters.audio.setVolume(channel, volumeLevel(this.audioSettings[channel]));
   }
 
   private toggleFullscreen(): void {

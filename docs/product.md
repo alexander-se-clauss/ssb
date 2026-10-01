@@ -50,7 +50,8 @@ Fighter selection fills the viewport with a compact shared header, rendered neut
 and four player panels. Joined panels preview the hovered fighter in the player’s gameplay color
 until confirmation locks the pick. Each panel identifies its input device and choosing/Ready state;
 a Ready to Fight banner appears when all two to four joined players have confirmed.
-In Options, directions navigate selections; confirming Screen toggles fullscreen.
+In Options, directions navigate selections; confirming Screen toggles fullscreen. Sound sets
+the Music and Effects volumes from 0 to 10; the game remembers them for the next visit.
 Hover and keyboard/gamepad focus use outline, shadow and position cues, with brief feedback that
 does not delay navigation. Layouts adapt to narrow and short viewports and respect reduced motion.
 
