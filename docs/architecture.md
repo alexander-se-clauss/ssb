@@ -48,6 +48,13 @@ in `fighter.ts`. A fighter in the `attack` action stores only the move's id and 
 Each fighter carries its current `pose` in `FighterState`: `step` eases it a little each frame towards
 the pose of its movement state, with idle breathing and a running stride (`poses.ts`), and the
 view interpolates it between frames like the position.
+A stage's look lives in the view, not in `StageDef`: `three-renderer/scenery/` builds each stage's
+platforms, lights and animated backdrop from its platforms, picked by stage id (Battlefield, and
+Plateau dressed as Final Destination; other stages get plain blocks). Textures are painted on a
+canvas at load time and backdrops are sky-dome shaders, so there are no asset files. Backdrops
+animate on match time (`cycles.ts`, pure and tested), so they pause with the game. The rock and keel
+hanging below a stage sit behind the fighters' plane, so they never look solid where fighters can
+pass.
 
 **Enforced:** ESLint `no-restricted-imports` per folder (`eslint.config.js`) and a separate
 `tsconfig.core.json` without DOM types, so `document` or `window` in core fails typecheck.
