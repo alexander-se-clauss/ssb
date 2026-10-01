@@ -20,8 +20,11 @@ describe('stateCues', () => {
   });
 
   it('plays jump on a jump and land when the fighter is back on the ground', () => {
-    const jumping = run(ground, 1, [inputOf({ jump: true })]);
-    expect(cuesOf(ground, jumping)).toEqual(['jump']);
+    // The jump sounds when the fighter leaves the ground, after the jump squat.
+    const squatting = run(ground, FIGHTER.jumpSquatFrames, [inputOf({ jump: true })]);
+    expect(cuesOf(ground, squatting)).toEqual([]);
+    const jumping = run(squatting, 1);
+    expect(cuesOf(squatting, jumping)).toEqual(['jump']);
     const landed = run(jumping, 120);
     expect(cuesOf(jumping, landed)).toEqual(['land']);
   });

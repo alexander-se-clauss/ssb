@@ -49,7 +49,8 @@ const fighterCues = (before: FighterState, after: FighterState): FightCue[] => {
  * are not session events, so they are read from the change in state. `before` should be the
  * last state these cues were taken from, not the previous tick, so nothing is missed when a
  * frame runs several ticks. A landing and a new jump in the same batch of ticks would hide each
- * other, which cannot happen while jump is not buffered (a press counts on the first tick only).
+ * other; a press counts on its first tick only, and a ground jump leaves the ground
+ * `FIGHTER.jumpSquatFrames` ticks after it, so that needs a batch longer than the jump squat.
  */
 export const stateCues = (before: MatchState, after: MatchState): FightCue[] =>
   after.fighters.flatMap((fighter) => {

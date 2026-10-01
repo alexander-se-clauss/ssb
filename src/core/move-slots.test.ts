@@ -70,11 +70,11 @@ describe('fighters pick moves by slot', () => {
   ];
 
   it('plays the move in the slot the input asks for', () => {
-    // A soft push forward with attack is a forward tilt; the capsule fills it with the jab.
-    expect(findCharacter('capsule')?.moves.forwardTilt).toBe('jab');
+    // A soft push forward with attack is a forward tilt.
+    expect(findCharacter('capsule')?.moves.forwardTilt).toBe('forwardTilt');
     const state = run(settled(), 1, press('attack', 0.5));
     expect(fighter(state, 0).action).toBe('attack');
-    expect(fighter(state, 0).moveId).toBe('jab');
+    expect(fighter(state, 0).moveId).toBe('forwardTilt');
   });
 
   it('does nothing when the slot is empty', () => {

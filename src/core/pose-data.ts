@@ -5,7 +5,29 @@
 import type { Pose } from './skeleton';
 
 export type PoseName =
-  'idle' | 'run' | 'jump' | 'fall' | 'jab' | 'jab2' | 'jab3' | 'hurt' | 'tumble';
+  | 'idle'
+  | 'run'
+  | 'jump'
+  | 'fall'
+  | 'jab'
+  | 'jab2'
+  | 'jab3'
+  | 'kickChamber'
+  | 'forwardTilt'
+  | 'upTiltStart'
+  | 'upTilt'
+  | 'upTiltEnd'
+  | 'crouch'
+  | 'downTilt'
+  | 'forwardSmashWindup'
+  | 'forwardSmash'
+  | 'upSmashWindup'
+  | 'upSmash'
+  | 'upSmashEnd'
+  | 'downSmashWindup'
+  | 'downSmash'
+  | 'hurt'
+  | 'tumble';
 
 /**
  * Melee-style key poses. Angles are relative to the parent bone (0 = straight on, positive turns
@@ -103,6 +125,185 @@ export const POSES: Readonly<Record<PoseName, Pose>> = {
     lowerLegFront: 0,
     upperLegBack: 185,
     lowerLegBack: 5,
+  },
+  // Forward tilt wind-up: the front knee pulled up to the chest, ready to kick.
+  kickChamber: {
+    torso: 0,
+    head: -5,
+    upperArmFront: 125,
+    lowerArmFront: -95,
+    upperArmBack: 165,
+    lowerArmBack: -85,
+    upperLegFront: 70,
+    lowerLegFront: 110,
+    upperLegBack: 190,
+    lowerLegBack: 15,
+  },
+  // Forward tilt: a straight side kick at chest height, leaning back over the standing leg.
+  forwardTilt: {
+    torso: -15,
+    head: 10,
+    upperArmFront: 135,
+    lowerArmFront: -95,
+    upperArmBack: 175,
+    lowerArmBack: -80,
+    upperLegFront: 80,
+    lowerLegFront: 0,
+    upperLegBack: 195,
+    lowerLegBack: 10,
+  },
+  // Up tilt, three keys: the leg swings from a low front kick over the head and behind it.
+  upTiltStart: {
+    torso: -10,
+    head: 5,
+    upperArmFront: 125,
+    lowerArmFront: -95,
+    upperArmBack: 165,
+    lowerArmBack: -85,
+    upperLegFront: 100,
+    lowerLegFront: 10,
+    upperLegBack: 185,
+    lowerLegBack: 10,
+  },
+  upTilt: {
+    torso: -30,
+    head: 20,
+    upperArmFront: 150,
+    lowerArmFront: -60,
+    upperArmBack: 200,
+    lowerArmBack: -40,
+    upperLegFront: 20,
+    lowerLegFront: 0,
+    upperLegBack: 185,
+    lowerLegBack: 5,
+  },
+  upTiltEnd: {
+    torso: -35,
+    head: 25,
+    upperArmFront: 150,
+    lowerArmFront: -60,
+    upperArmBack: 200,
+    lowerArmBack: -40,
+    upperLegFront: -25,
+    lowerLegFront: 10,
+    upperLegBack: 185,
+    lowerLegBack: 5,
+  },
+  // Crouch: down on the back knee, chest forward, hands low.
+  crouch: {
+    torso: 45,
+    head: -35,
+    upperArmFront: 105,
+    lowerArmFront: -60,
+    upperArmBack: 120,
+    lowerArmBack: -70,
+    upperLegFront: 130,
+    lowerLegFront: 130,
+    upperLegBack: 150,
+    lowerLegBack: 110,
+  },
+  // Down tilt: from the crouch, the front leg sweeps out low along the floor.
+  downTilt: {
+    torso: 55,
+    head: -45,
+    upperArmFront: 95,
+    lowerArmFront: -60,
+    upperArmBack: 120,
+    lowerArmBack: -70,
+    upperLegFront: 95,
+    lowerLegFront: -5,
+    upperLegBack: 150,
+    lowerLegBack: 110,
+  },
+  // Forward smash wind-up: wide stance, weight back, the front fist cocked behind the shoulder.
+  forwardSmashWindup: {
+    torso: -5,
+    head: 0,
+    upperArmFront: 210,
+    lowerArmFront: 150,
+    upperArmBack: 110,
+    lowerArmBack: -80,
+    upperLegFront: 135,
+    lowerLegFront: 40,
+    upperLegBack: 210,
+    lowerLegBack: 20,
+  },
+  // Forward smash: lunging into a full-reach straight punch, the back arm thrown behind.
+  forwardSmash: {
+    torso: 40,
+    head: -30,
+    upperArmFront: 40,
+    lowerArmFront: 0,
+    upperArmBack: 160,
+    lowerArmBack: -30,
+    upperLegFront: 125,
+    lowerLegFront: 35,
+    upperLegBack: 220,
+    lowerLegBack: 10,
+  },
+  // Up smash wind-up: crouched low with the front knee loaded.
+  upSmashWindup: {
+    torso: 25,
+    head: -15,
+    upperArmFront: 110,
+    lowerArmFront: -100,
+    upperArmBack: 140,
+    lowerArmBack: -90,
+    upperLegFront: 140,
+    lowerLegFront: 70,
+    upperLegBack: 205,
+    lowerLegBack: 35,
+  },
+  // Up smash, two keys: a flip kick that swings the front leg straight up and over.
+  upSmash: {
+    torso: -40,
+    head: 30,
+    upperArmFront: 200,
+    lowerArmFront: -20,
+    upperArmBack: 230,
+    lowerArmBack: -20,
+    upperLegFront: 10,
+    lowerLegFront: 0,
+    upperLegBack: 190,
+    lowerLegBack: 5,
+  },
+  upSmashEnd: {
+    torso: -45,
+    head: 30,
+    upperArmFront: 200,
+    lowerArmFront: -20,
+    upperArmBack: 230,
+    lowerArmBack: -20,
+    upperLegFront: -35,
+    lowerLegFront: 15,
+    upperLegBack: 190,
+    lowerLegBack: 5,
+  },
+  // Down smash wind-up: tucked into a low squat.
+  downSmashWindup: {
+    torso: 10,
+    head: -5,
+    upperArmFront: 140,
+    lowerArmFront: -90,
+    upperArmBack: 160,
+    lowerArmBack: -90,
+    upperLegFront: 150,
+    lowerLegFront: 80,
+    upperLegBack: 210,
+    lowerLegBack: 80,
+  },
+  // Down smash: a split kick, both legs shooting out flat along the floor, arms out for balance.
+  downSmash: {
+    torso: 0,
+    head: 0,
+    upperArmFront: 90,
+    lowerArmFront: 0,
+    upperArmBack: -90,
+    lowerArmBack: 0,
+    upperLegFront: 95,
+    lowerLegFront: 0,
+    upperLegBack: 265,
+    lowerLegBack: 0,
   },
   // Flinch: head and chest snap back, the arms trail behind the body.
   hurt: {

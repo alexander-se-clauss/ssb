@@ -99,12 +99,17 @@ describe('input buffer', () => {
   });
 
   it('starts a buffered back attack facing back, even if the fighter turned in between', () => {
-    // Facing right in jab 1, back + attack is buffered; the stick stays back as jab 1 ends.
+    // Facing right in jab 1, back + attack (a forward tilt aimed behind) is buffered; the stick
+    // stays back as jab 1 ends.
     let state = withFighter(settled(), 0, { facing: 1 });
     state = until(press(state), 'jab', findMove('jab').totalFrames - 3);
     state = press(state, inputOf({ x: -0.5, attack: true }));
     state = run(state, 4, [inputOf({ x: -0.5 })]);
-    expect(fighter(state, 0)).toMatchObject({ action: 'attack', moveId: 'jab', facing: -1 });
+    expect(fighter(state, 0)).toMatchObject({
+      action: 'attack',
+      moveId: 'forwardTilt',
+      facing: -1,
+    });
   });
 
   it('drops a press for an empty slot, so a jump on the same frame still happens', () => {

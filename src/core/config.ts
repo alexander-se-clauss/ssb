@@ -27,9 +27,20 @@ export const FIGHTER = {
   airSpeed: 0.1,
   airAcceleration: 0.008,
   airFriction: 0.002,
+  /**
+   * How fast horizontal speed above `airSpeed` bleeds off in the air, whatever caused it: a
+   * launch, or running off a ledge. Drift input only takes over once it is down to `airSpeed`.
+   */
+  launchDecay: 0.015,
   gravity: 0.012,
   maxFallSpeed: 0.22,
   fastFallSpeed: 0.32,
+  /**
+   * Frames crouched on the ground before a jump leaves it; a ground attack can start instead.
+   * Keep it below `STICK.smashWindowFrames`, so a stick flicked up (which tap-jumps) and attack
+   * pressed on the last squat frame is still an up smash.
+   */
+  jumpSquatFrames: 3,
   jumpVelocity: 0.3,
   doubleJumpVelocity: 0.27,
   /** Grounded jump plus air jumps. */
