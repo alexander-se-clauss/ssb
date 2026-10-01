@@ -1,8 +1,9 @@
 /**
- * Character select as plain data and pure functions: each player moves a cursor over the
- * grid, picks with attack and un-picks with special. Above the grid sits the rules banner, as in
- * Melee: moving up onto it and picking opens the rules. The screen (character-select-view.ts)
- * only draws this state and feeds it actions.
+ * Character select as plain data and pure functions: a device joins the first free player slot by
+ * pressing attack, then that player moves a cursor over the grid, picks with attack and un-picks
+ * with special; special without a pick leaves the slot, and later players move up so slots have no
+ * gaps. Above the grid sits the rules banner, as in Melee: moving up onto it and picking opens the
+ * rules. The screen (character-select-view.ts) only draws this state and feeds it actions.
  */
 import type { CharacterDef, PlayerInput, PlayerSlot } from '../core';
 import { menuCommands, type MenuCommand } from './menu-commands';
@@ -11,6 +12,8 @@ import { menuCommands, type MenuCommand } from './menu-commands';
 export const RULES_CURSOR = -1;
 
 export interface SelectState {
+  /** Which input device (index in the app's device list) has joined each slot, or null. */
+  readonly devices: readonly (number | null)[];
   /** Grid index under each player's cursor, or `RULES_CURSOR`. */
   readonly cursors: readonly number[];
   /** Picked character id per player, or null while still choosing. */
@@ -23,17 +26,27 @@ export type SelectAction =
   | { readonly type: 'move'; readonly player: PlayerSlot; readonly dx: number; readonly dy: number }
   | { readonly type: 'confirm'; readonly player: PlayerSlot }
   | { readonly type: 'cancel'; readonly player: PlayerSlot }
+  /** A device not playing yet pressed attack: it takes the first free slot. */
+  | { readonly type: 'join'; readonly device: number }
   /** Opens or closes the rules overlay, e.g. by mouse or from the overlay itself. */
   | { readonly type: 'rules'; readonly open: boolean };
 
-export const createSelect = (playerCount: number): SelectState => ({
-  cursors: Array.from({ length: playerCount }, () => 0),
-  picks: Array.from({ length: playerCount }, () => null),
+/** An empty character select with `slots` player slots, nobody joined yet. */
+export const createSelect = (slots: number): SelectState => ({
+  devices: Array.from({ length: slots }, () => null),
+  cursors: Array.from({ length: slots }, () => 0),
+  picks: Array.from({ length: slots }, () => null),
   rulesOpen: false,
 });
 
+/** The slot a device plays in, or -1 if it has not joined. */
+export const slotOf = (state: SelectState, device: number): PlayerSlot =>
+  state.devices.indexOf(device);
+
+/** Someone joined, and every joined player has picked. One player alone may play. */
 export const allReady = (state: SelectState): boolean =>
-  state.picks.length > 0 && state.picks.every((pick) => pick !== null);
+  state.devices.some((device) => device !== null) &&
+  state.devices.every((device, slot) => device === null || state.picks[slot] != null);
 
 const wrap = (value: number, size: number): number => ((value % size) + size) % size;
 
@@ -53,6 +66,20 @@ const moveCursor = (index: number, dx: number, dy: number, count: number, column
 const replace = <T>(list: readonly T[], at: number, value: T): T[] =>
   list.map((item, i) => (i === at ? value : item));
 
+/** Removes a player; everyone after moves up a slot, so player numbers stay 1, 2, 3 in a row. */
+const leave = (state: SelectState, player: PlayerSlot): SelectState => {
+  const without = <T>(list: readonly T[], empty: T): T[] => [
+    ...list.filter((_, slot) => slot !== player),
+    empty,
+  ];
+  return {
+    ...state,
+    devices: without(state.devices, null),
+    cursors: without(state.cursors, 0),
+    picks: without(state.picks, null),
+  };
+};
+
 export const reduceSelect = (
   state: SelectState,
   action: SelectAction,
@@ -62,7 +89,18 @@ export const reduceSelect = (
   if (action.type === 'rules') return { ...state, rulesOpen: action.open };
   // While the rules are open, special closes them and everything else waits.
   if (state.rulesOpen) return action.type === 'cancel' ? { ...state, rulesOpen: false } : state;
+  if (action.type === 'join') {
+    const slot = state.devices.indexOf(null);
+    if (slot < 0 || state.devices.includes(action.device)) return state;
+    return {
+      ...state,
+      devices: replace(state.devices, slot, action.device),
+      cursors: replace(state.cursors, slot, 0),
+      picks: replace(state.picks, slot, null),
+    };
+  }
   const { player } = action;
+  if (state.devices[player] == null) return state;
   const picked = state.picks[player] ?? null;
   const cursor = state.cursors[player] ?? 0;
   switch (action.type) {
@@ -84,26 +122,20 @@ export const reduceSelect = (
       return { ...state, picks: replace(state.picks, player, character.id) };
     }
     case 'cancel':
-      if (picked === null) return state;
+      if (picked === null) return leave(state, player);
       return { ...state, picks: replace(state.picks, player, null) };
   }
 };
 
 /**
- * Whether an action leaves the screen, judged on the state before it: confirming once everyone
- * has picked starts (like Enter), and cancelling without a pick goes back (like Escape). This
- * lets a gamepad, which has no Enter or Escape, get through character select.
+ * Whether an action starts the match, judged on the state before it: a joined player confirming
+ * once everyone has picked, like Enter. This lets a gamepad, which has no Enter, get through.
  */
-export const selectOutcome = (
-  state: SelectState,
-  action: SelectAction,
-): 'start' | 'back' | null => {
-  if (state.rulesOpen || action.type === 'move' || action.type === 'rules') return null;
-  if (action.type === 'confirm') {
-    const onBanner = state.cursors[action.player] === RULES_CURSOR;
-    return allReady(state) && !onBanner ? 'start' : null;
-  }
-  return state.picks[action.player] === null ? 'back' : null;
+export const selectOutcome = (state: SelectState, action: SelectAction): 'start' | null => {
+  if (state.rulesOpen || action.type !== 'confirm') return null;
+  const joined = state.devices[action.player] != null;
+  const onBanner = state.cursors[action.player] === RULES_CURSOR;
+  return joined && allReady(state) && !onBanner ? 'start' : null;
 };
 
 /** Grid steps per stick direction; rows grow downwards. */

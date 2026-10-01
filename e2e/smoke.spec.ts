@@ -10,15 +10,29 @@ const gameState = (page: Page) =>
     return state;
   });
 
-/** Holds a key long enough for the game to sample it on a frame. */
+/**
+ * Waits until the game has run a frame or two. Inputs are sampled once per frame, so a press
+ * must last that long, and two presses of one button need a frame between them to count twice.
+ * Waiting for animation frames instead of a fixed time keeps this reliable under load.
+ */
+const nextFrames = (page: Page) =>
+  page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
+
+/** Holds a key long enough for the game to sample it on a frame, then lets go for a frame. */
 const tap = async (page: Page, key: string) => {
   await page.keyboard.down(key);
-  await page.waitForTimeout(50);
+  await nextFrames(page);
   await page.keyboard.up(key);
-  await page.waitForTimeout(50);
+  await nextFrames(page);
 };
 
-const picks = (page: Page) => page.evaluate(() => window.__SSB__?.characterSelect()?.picks);
+const characterSelect = (page: Page) => page.evaluate(() => window.__SSB__?.characterSelect());
+const picks = async (page: Page) => (await characterSelect(page))?.picks;
 
 /** Title -> main menu -> character select. */
 const toCharacterSelect = async (page: Page) => {
@@ -29,8 +43,28 @@ const toCharacterSelect = async (page: Page) => {
   await expect.poll(() => screen(page)).toBe('character-select');
 };
 
-/** On character select: P1 moves up to the rules banner and opens the rules overlay. */
+/**
+ * On character select: both keyboard players join (first press) and pick (second press). The
+ * keyboard halves are P1 and P2 because they join in that order.
+ */
+const bothPick = async (page: Page) => {
+  for (const [key, device] of [
+    ['KeyF', 0],
+    ['Period', 1],
+  ] as const) {
+    const joined = (await characterSelect(page))?.devices.includes(device) ?? false;
+    if (!joined) {
+      await tap(page, key);
+      await expect.poll(async () => (await characterSelect(page))?.devices).toContain(device);
+    }
+    await tap(page, key);
+  }
+  await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule', null, null]);
+};
+
+/** On character select: P1 joins, moves up to the rules banner and opens the rules overlay. */
 const openRules = async (page: Page) => {
+  await tap(page, 'KeyF');
   await tap(page, 'KeyW');
   await tap(page, 'KeyF');
   await expect(page.getByRole('heading', { name: 'Rules' })).toBeVisible();
@@ -39,9 +73,7 @@ const openRules = async (page: Page) => {
 /** (Title -> main menu ->) character select (both pick) -> stage select -> match. */
 const startMatch = async (page: Page, { onCharacterSelect = false } = {}) => {
   if (!onCharacterSelect) await toCharacterSelect(page);
-  await tap(page, 'KeyF');
-  await tap(page, 'Period');
-  await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule']);
+  await bothPick(page);
   for (const next of ['stage-select', 'match']) {
     await page.keyboard.press('Enter');
     await expect.poll(() => screen(page)).toBe(next);
@@ -94,16 +126,29 @@ test('two players pick, change their minds and confirm on character select', asy
   await toCharacterSelect(page);
   await expect(page.locator('.css-cell')).toHaveCount(1);
 
+  await expect(page.locator('.css-slot.empty')).toHaveCount(4);
   await tap(page, 'KeyF');
-  await expect.poll(() => picks(page)).toEqual(['capsule', null]);
+  await expect
+    .poll(() => characterSelect(page))
+    .toMatchObject({
+      devices: [0, null, null, null],
+      picks: [null, null, null, null],
+    });
+  await tap(page, 'KeyF');
+  await expect.poll(() => picks(page)).toEqual(['capsule', null, null, null]);
+  await tap(page, 'Period');
   await page.keyboard.press('Enter');
   expect(await screen(page)).toBe('character-select');
 
+  // Special un-picks, and again leaves the slot: the arrow-keys half moves up to P1.
   await tap(page, 'KeyG');
-  await expect.poll(() => picks(page)).toEqual([null, null]);
-  await tap(page, 'KeyF');
+  await expect.poll(() => picks(page)).toEqual([null, null, null, null]);
+  await tap(page, 'KeyG');
+  await expect
+    .poll(async () => (await characterSelect(page))?.devices)
+    .toEqual([1, null, null, null]);
   await tap(page, 'Period');
-  await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule']);
+  await expect.poll(() => picks(page)).toEqual(['capsule', null, null, null]);
   await expect(page.getByText('Ready! Press Enter')).toBeVisible();
 
   await page.keyboard.press('Enter');
@@ -119,6 +164,9 @@ test('character select goes back to the main menu with its Back button', async (
 
 test('the rules banner opens the rules by click and the next match uses them', async ({ page }) => {
   await toCharacterSelect(page);
+  // The arrow-keys half joins, so the test can check its cursor stays put below the overlay.
+  await tap(page, 'Period');
+  await expect.poll(async () => (await characterSelect(page))?.devices[0]).toBe(1);
   await expect(page.locator('.css-rules')).toContainText('Stock · 3 lives');
   await page.locator('.css-rules').click();
   await expect(page.getByRole('heading', { name: 'Rules' })).toBeVisible();
@@ -133,8 +181,8 @@ test('the rules banner opens the rules by click and the next match uses them', a
   await page.getByRole('button', { name: 'Done' }).click();
   await expect(page.getByRole('heading', { name: 'Rules' })).toBeHidden();
   await expect(page.locator('.css-rules')).toContainText('Time · 3 min');
-  // Arrow keys in the overlay must not have moved player two's cursor.
-  expect(await page.evaluate(() => window.__SSB__?.characterSelect()?.cursors)).toEqual([0, 0]);
+  // Arrow keys in the overlay must not have moved the arrow-keys player's cursor.
+  expect((await characterSelect(page))?.cursors[0]).toBe(0);
 
   await startMatch(page, { onCharacterSelect: true });
   const rules = (await gameState(page)).rules;
@@ -164,9 +212,7 @@ test('the rules overlay steps lives up and down within limits, and Escape discar
 /** Title -> main menu -> character select (both pick) -> stage select. */
 const toStageSelect = async (page: Page) => {
   await toCharacterSelect(page);
-  await tap(page, 'KeyF');
-  await tap(page, 'Period');
-  await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule']);
+  await bothPick(page);
   await page.keyboard.press('Enter');
   await expect.poll(() => screen(page)).toBe('stage-select');
 };
@@ -186,10 +232,8 @@ test('stage select goes back to character select', async ({ page }) => {
   await toStageSelect(page);
   await page.keyboard.press('Escape');
   await expect.poll(() => screen(page)).toBe('character-select');
-  await tap(page, 'KeyF');
-  await tap(page, 'Period');
-  // Picks land on the next frame; wait for them before confirming.
-  await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule']);
+  // Leaving cleared the joins, so both join and pick again.
+  await bothPick(page);
   await page.keyboard.press('Enter');
   await expect.poll(() => screen(page)).toBe('stage-select');
   await page.getByRole('button', { name: 'Back' }).click();
@@ -274,9 +318,7 @@ test('full flow: title, menus, a match ended through the debug handle, results, 
   await expect(page.locator('.css-rules')).toContainText('Stock · 1 life');
   await tap(page, 'KeyS');
 
-  await tap(page, 'KeyF');
-  await tap(page, 'Period');
-  await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule']);
+  await bothPick(page);
   await page.keyboard.press('Enter');
   await expect.poll(() => screen(page)).toBe('stage-select');
   await page.keyboard.press('ArrowDown');
@@ -332,18 +374,6 @@ const setPad = (
     { pad, change },
   );
 
-/**
- * Pads are polled once per frame, so unlike a key tap a press must last until the game has run
- * a frame. Waiting for animation frames instead of a fixed time keeps this reliable under load.
- */
-const nextFrames = (page: Page) =>
-  page.evaluate(
-    () =>
-      new Promise<void>((resolve) =>
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-      ),
-  );
-
 /** Presses a pad button for a few frames, then lets go. */
 const press = async (page: Page, pad: number, button: number) => {
   await setPad(page, pad, { button, on: true });
@@ -363,6 +393,8 @@ const flick = async (page: Page, pad: number, x: number, y: number) => {
 test('the whole menu flow works with gamepads only', async ({ page }) => {
   await installPads(page, 2);
   await page.goto('/');
+  // Let the game sample the pads at rest once, so the first A counts as a press.
+  await nextFrames(page);
   // Both pads press A in the same frame: that leaves the title once, not twice.
   await setPad(page, 0, { button: PAD.a, on: true });
   await setPad(page, 1, { button: PAD.a, on: true });
@@ -388,6 +420,12 @@ test('the whole menu flow works with gamepads only', async ({ page }) => {
   await press(page, 0, PAD.a);
   await expect.poll(() => screen(page)).toBe('character-select');
 
+  // Whoever presses A first joins as P1, here the second pad (device 4: two keyboard halves,
+  // then the browser's pad slots 0-3, of which slots 1 and 2 hold our pads).
+  await press(page, 1, PAD.a);
+  await press(page, 0, PAD.a);
+  await expect.poll(async () => (await characterSelect(page))?.devices).toEqual([4, 3, null, null]);
+
   // The rules overlay: up to the banner, open, raise the lives, Done.
   await flick(page, 1, 0, -1);
   await press(page, 1, PAD.a);
@@ -400,31 +438,38 @@ test('the whole menu flow works with gamepads only', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Rules' })).toBeHidden();
   expect((await page.evaluate(() => window.__SSB__?.rules()))?.stocks).toBe(4);
 
-  // The first connected pad is player 1. Both pick, then A again starts.
+  // Both pick, then A again starts.
   await flick(page, 1, 0, 1);
-  await press(page, 0, PAD.a);
-  await expect.poll(() => picks(page)).toEqual(['capsule', null]);
   await press(page, 1, PAD.a);
-  await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule']);
+  await expect.poll(() => picks(page)).toEqual(['capsule', null, null, null]);
+  await press(page, 0, PAD.a);
+  await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule', null, null]);
   await press(page, 0, PAD.a);
   await expect.poll(() => screen(page)).toBe('stage-select');
   await press(page, 1, PAD.a);
   await expect.poll(() => screen(page)).toBe('match');
 
+  // P1 is the second pad.
   await expect.poll(async () => (await gameState(page)).fighters[0]?.grounded).toBe(true);
   const startX = (await gameState(page)).fighters[0]?.position.x ?? 0;
-  await setPad(page, 0, { axes: [1, 0, 0, 0] });
+  await setPad(page, 1, { axes: [1, 0, 0, 0] });
   await expect
     .poll(async () => (await gameState(page)).fighters[0]?.position.x ?? 0)
     .toBeGreaterThan(startX + 1);
 });
 
-test('B on character select backs out once nobody has a pick', async ({ page }) => {
+test('B un-picks, then leaves the slot, then backs out of character select', async ({ page }) => {
   await installPads(page, 1);
   await toCharacterSelect(page);
   await press(page, 0, PAD.a);
+  await press(page, 0, PAD.a);
+  await expect.poll(() => picks(page)).toEqual(['capsule', null, null, null]);
   await press(page, 0, PAD.b);
-  await expect.poll(() => picks(page)).toEqual([null, null]);
+  await expect.poll(() => picks(page)).toEqual([null, null, null, null]);
+  await press(page, 0, PAD.b);
+  await expect
+    .poll(async () => (await characterSelect(page))?.devices)
+    .toEqual([null, null, null, null]);
   expect(await screen(page)).toBe('character-select');
   await press(page, 0, PAD.b);
   await expect.poll(() => screen(page)).toBe('main-menu');

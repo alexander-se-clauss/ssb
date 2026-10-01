@@ -3,6 +3,7 @@ import {
   STAGES,
   DEFAULT_RULES,
   NEUTRAL_INPUT,
+  pressed,
   type PlayerInput,
   type MatchConfig,
   type MatchRules,
@@ -16,16 +17,20 @@ import {
   menuActions,
   reduceSelect,
   selectOutcome,
+  slotOf,
   type SelectState,
 } from './character-select';
 import { menuCommands } from './menu-commands';
 import { CharacterSelectView } from './character-select-view';
-import { renderControls, type ControlLabels } from './controls';
+import { renderControls, type ControlColumn } from './controls';
 import { MenuPanel, type MenuContent } from './menu-panel';
 import { renderResults, resultHeading } from './results';
 import { adjustRule, ruleRows, type RuleField } from './rules-menu';
 import { renderPreview } from './stage-preview';
 import { INITIAL_SCREEN, MAIN_MENU, go, nextScreens, type Screen } from './screens';
+
+/** Player slots on character select, as in Melee. */
+const MAX_PLAYERS = 4;
 
 /** Characters per row on the character select grid. */
 const GRID_COLUMNS = 4;
@@ -47,19 +52,25 @@ const LABELS: Readonly<Record<Screen, string>> = {
   results: 'Results',
 };
 
+/** One controller: a gamepad, or one player's half of the keyboard. */
+export interface InputDevice {
+  readonly source: InputSource;
+  /**
+   * Polled for menu commands (gamepads). False for the keyboard, whose keys reach the menus as
+   * DOM events, so they never move twice.
+   */
+  readonly drivesMenus: boolean;
+}
+
 /** How the app gets its adapters. `main.ts` decides which ones; `App` only uses the ports. */
 export interface AppAdapters {
-  readonly inputs: readonly InputSource[];
-  /**
-   * Devices that drive the menus by polling (gamepads). The keyboard is not among them: menus
-   * read its keys as DOM events.
-   */
-  readonly menuInputs: readonly InputSource[];
+  /** Every controller that can join a match on character select. */
+  readonly devices: readonly InputDevice[];
   /** Starts a match: locally today, on a server later. */
   readonly createSession: (config: MatchConfig) => GameSession;
   readonly createViews: (container: HTMLElement, stage: StageDef) => readonly GameView[];
-  /** Key names per player, for the controls screen. */
-  readonly controls: readonly ControlLabels[];
+  /** Button names per kind of device, for the controls screen. */
+  readonly controls: readonly ControlColumn[];
 }
 
 /** Everything that exists only while a match is running. */
@@ -85,9 +96,11 @@ export class App {
   private stageId: string = STAGES[0]?.id ?? '';
   /** Each player's pick from the last completed character select. */
   private picks: readonly string[] = [];
-  /** Last frame's input per player, for press detection in menus. */
+  /** Each player's device (index into `devices`) from the last completed character select. */
+  private playerDevices: readonly number[] = [];
+  /** Last frame's input per device on character select, for press detection. */
   private previousInputs: PlayerInput[] = [];
-  /** Last frame's input per menu device, for press detection. */
+  /** Last frame's input per device for menu commands, for press detection. */
   private previousMenuInputs: PlayerInput[] = [];
   private readonly menu: MenuPanel;
   /** The rules overlay on top of character select. */
@@ -121,6 +134,15 @@ export class App {
   /** Character select progress, while that screen is open. */
   get selectState(): SelectState | undefined {
     return this.select;
+  }
+
+  /**
+   * The device (index into `devices`) a player uses: during character select the one that
+   * joined that slot, otherwise the one from the last character select.
+   */
+  deviceOf(player: number): number | undefined {
+    const device = this.select ? this.select.devices[player] : this.playerDevices[player];
+    return device ?? undefined;
   }
 
   /** The rules the next match will use. */
@@ -158,7 +180,7 @@ export class App {
     if (!this.match) return;
     const { session, views } = this.match;
     session.localSlots.forEach((slot, index) => {
-      const source = this.adapters.inputs[index];
+      const source = this.playerSource(index);
       if (source) session.setInput(slot, source.sample());
     });
     session.update(now);
@@ -180,9 +202,9 @@ export class App {
       return;
     }
     if (screen === 'character-select') {
-      this.select = createSelect(this.adapters.inputs.length);
-      // Start press detection from the current state, so a held button doesn't pick at once.
-      this.previousInputs = this.adapters.inputs.map((source) => source.sample());
+      this.select = createSelect(MAX_PLAYERS);
+      // Start press detection from the current state, so a held button doesn't join at once.
+      this.previousInputs = this.adapters.devices.map((device) => device.source.sample());
       this.characterSelect.render(this.select, false, this.rules);
       return;
     }
@@ -279,13 +301,14 @@ export class App {
   }
 
   /**
-   * Gamepads move the focus on menu screens and in the rules overlay. Character select itself
-   * reads each player's controls instead, which include their gamepad.
+   * Gamepads move the focus on menu screens and in the rules overlay. Character select reads
+   * every device itself (`updateCharacterSelect`), so here gamepads only drive its rules overlay.
    */
   private updateMenus(): void {
     const screen = this.screen;
     const rulesShown = this.rulesShown;
-    this.adapters.menuInputs.forEach((source, index) => {
+    this.adapters.devices.forEach(({ source, drivesMenus }, index) => {
+      if (!drivesMenus) return;
       const current = source.sample();
       // Sampled on every screen, so a button held from the last screen is not a new press.
       const previous = this.previousMenuInputs[index] ?? current;
@@ -297,7 +320,7 @@ export class App {
         if (this.screen !== screen || this.rulesShown !== rulesShown) return;
         if (this.screen === 'character-select') {
           // A player's B already closes the rules through their controls, as special.
-          const isPlayer = index < this.adapters.inputs.length;
+          const isPlayer = this.select !== undefined && slotOf(this.select, index) >= 0;
           if (this.rulesShown && !(command === 'back' && isPlayer)) {
             this.rulesPanel.command(command);
           }
@@ -309,18 +332,28 @@ export class App {
   }
 
   private updateCharacterSelect(ignorePresses = false): void {
-    this.adapters.inputs.forEach((source, player) => {
+    this.adapters.devices.forEach(({ source }, device) => {
       const current = source.sample();
-      const previous = this.previousInputs[player] ?? NEUTRAL_INPUT;
-      this.previousInputs[player] = current;
-      if (ignorePresses) return;
+      const previous = this.previousInputs[device] ?? NEUTRAL_INPUT;
+      this.previousInputs[device] = current;
+      const state = this.select;
+      if (ignorePresses || !state) return;
+      const player = slotOf(state, device);
+      if (player < 0) {
+        // A device not playing yet: attack joins, special goes back, as Escape does.
+        if (state.rulesOpen) return;
+        if (pressed(current, previous, 'attack')) {
+          this.select = reduceSelect(state, { type: 'join', device }, CHARACTERS, GRID_COLUMNS);
+        } else if (pressed(current, previous, 'special')) {
+          this.navigate('main-menu');
+        }
+        return;
+      }
       for (const action of menuActions(player, previous, current)) {
-        const state = this.select;
-        if (!state) return;
-        const outcome = selectOutcome(state, action);
-        if (outcome === 'start') return this.confirmCharacters();
-        if (outcome === 'back') return this.navigate('main-menu');
-        this.select = reduceSelect(state, action, CHARACTERS, GRID_COLUMNS);
+        const now = this.select;
+        if (!now) return;
+        if (selectOutcome(now, action) === 'start') return this.confirmCharacters();
+        this.select = reduceSelect(now, action, CHARACTERS, GRID_COLUMNS);
       }
     });
     if (!this.select) return;
@@ -379,13 +412,26 @@ export class App {
     change.catch(() => undefined);
   }
 
-  /** Enter on character select: only here do the picks become the next match's fighters. */
+  /**
+   * Enter on character select: only here do the joined players become the next match's
+   * fighters, in slot order.
+   */
   private confirmCharacters(): void {
-    const picks = this.select?.picks ?? [];
-    const complete = picks.filter((pick): pick is string => pick !== null);
-    if (complete.length === 0 || complete.length !== picks.length) return;
-    this.picks = complete;
+    const state = this.select;
+    if (!state || !allReady(state)) return;
+    const players = state.devices.flatMap((device, slot) => {
+      const pick = state.picks[slot];
+      return device === null || pick == null ? [] : [{ device, pick }];
+    });
+    this.picks = players.map((player) => player.pick);
+    this.playerDevices = players.map((player) => player.device);
     this.navigate('stage-select');
+  }
+
+  /** The input of a player in the match, or during character select of a joined slot. */
+  private playerSource(player: number): InputSource | undefined {
+    const device = this.deviceOf(player);
+    return device === undefined ? undefined : this.adapters.devices[device]?.source;
   }
 
   private leaveCharacterSelect(): void {
@@ -400,8 +446,8 @@ export class App {
   }
 
   private startMatch(): void {
-    if (this.picks.length !== this.adapters.inputs.length) {
-      throw new Error('A match needs a character pick for every player');
+    if (this.picks.length === 0 || this.picks.length !== this.playerDevices.length) {
+      throw new Error('A match needs a device and a character pick for every player');
     }
     const players = this.picks.map((characterId) => ({ characterId }));
     const session = this.adapters.createSession({
@@ -411,7 +457,7 @@ export class App {
     });
     const views = this.adapters.createViews(this.container, session.view().current.stage);
     // Drop key taps made in the menus, so the match does not start with a stray jump.
-    for (const source of this.adapters.inputs) source.sample();
+    for (const device of this.adapters.devices) device.source.sample();
     const unsubscribe = session.onEvent((event) => {
       if (event.type !== 'match-end') return;
       setTimeout(() => {
