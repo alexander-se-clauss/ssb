@@ -296,12 +296,13 @@ test('player one moves right when D is held', async ({ page }) => {
   await expect.poll(async () => (await gameState(page)).fighters[0]?.grounded).toBe(true);
   const startX = (await gameState(page)).fighters[0]?.position.x ?? 0;
 
+  // Held until the game has stepped with it: a slow first frame (shader compile on CI) can
+  // swallow a fixed-length hold before the simulation ever samples the key.
   await page.keyboard.down('KeyD');
-  await page.waitForTimeout(300);
+  await expect
+    .poll(async () => (await gameState(page)).fighters[0]?.position.x ?? 0)
+    .toBeGreaterThan(startX);
   await page.keyboard.up('KeyD');
-
-  const endX = (await gameState(page)).fighters[0]?.position.x ?? 0;
-  expect(endX).toBeGreaterThan(startX);
 });
 
 test('an idle fighter keeps moving, and running changes the pose', async ({ page }) => {
