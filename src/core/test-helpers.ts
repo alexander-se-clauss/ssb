@@ -5,11 +5,13 @@ import { CAPSULE } from './registry';
 import { DEFAULT_RULES } from './config';
 import type { FighterState, MatchRules, MatchState, PlayerInput } from './types';
 
+/** A match that is already playing: scenarios skip the READY countdown (`countdown.test.ts`). */
 export const newMatch = (playerCount = 2, rules: MatchRules = DEFAULT_RULES): MatchState =>
   createMatch({
     stageId: BATTLEFIELD.id,
     players: Array.from({ length: playerCount }, () => ({ characterId: CAPSULE.id })),
     rules,
+    countdownFrames: 0,
   });
 
 /** Runs `frames` steps with the given inputs held the whole time. */

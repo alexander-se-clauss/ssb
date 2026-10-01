@@ -9,7 +9,7 @@ export { POSES, blendPose, movePose, poseName, targetPose, type PoseName } from 
 export * from './stages';
 export * from './registry';
 export { createMatch, step } from './simulation';
-export { leader, score, timeLeftFrames } from './rules';
+export { leader, playedFrames, score, timeLeftFrames } from './rules';
 export { activeHitboxes, hurtboxes, knockback, type Hitbox, type Hurtbox } from './combat';
 export * from './moves';
 export * from './move-slots';

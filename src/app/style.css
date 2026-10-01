@@ -5,6 +5,16 @@
   --menu-gold: #f2c14e;
   --menu-panel: linear-gradient(100deg, #24357e, #172457);
   --menu-panel-focus: linear-gradient(100deg, #f7d774, #e59b2f);
+  /* The blade family of the screen wipe and the match banners. */
+  --blade-gold: #efb977;
+  --blade-gold-light: #ffdf9c;
+  --blade-gold-deep: #e9a85c;
+  --blade-spark: #fff0ce;
+  --blade-shadow: #050a13;
+  --blade-navy: #0a1120;
+  --blade-navy-mid: #1c2c42;
+  --blade-navy-light: #273d59;
+  --blade-pinstripe: rgb(104 133 166 / 9%);
   --app-background:
     radial-gradient(circle at 25% 15%, rgb(80 110 230 / 35%), transparent 45%),
     radial-gradient(circle at 80% 90%, rgb(40 60 160 / 40%), transparent 50%), #0e1330;

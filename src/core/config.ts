@@ -9,6 +9,16 @@ export const TICK_MS = 1000 / TICK_RATE;
 
 export const DEFAULT_RULES: MatchRules = { mode: 'stock', stocks: 3, timeLimitSeconds: 120 };
 
+/**
+ * The READY countdown at the start of a match, as in Melee: fighters stand still and ignore
+ * input until GO, and the match clock starts at GO.
+ */
+export const COUNTDOWN = {
+  frames: 90,
+  /** How long the GO! banner stays up after the countdown. */
+  goBannerFrames: 50,
+} as const;
+
 /** What the rules overlay on character select lets players pick. */
 export const RULE_LIMITS = {
   minStocks: 1,
