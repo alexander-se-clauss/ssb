@@ -11,6 +11,8 @@ import {
   describeKeys,
 } from '../adapters/keyboard-input/keyboard-input-source';
 import { OverridableInput } from '../adapters/debug-input/overridable-input';
+import { CombinedInput } from '../adapters/combined-input/combined-input';
+import { GamepadInputSource } from '../adapters/gamepad-input/gamepad-input-source';
 import { LocalGameSession } from '../adapters/local-session/local-game-session';
 import { ThreeView } from '../adapters/three-renderer/three-view';
 import { App } from './app';
@@ -20,9 +22,13 @@ import './style.css';
 const container = document.querySelector<HTMLElement>('#app');
 if (!container) throw new Error('Missing #app container');
 
-// Each player's keyboard, wrapped so the debug handle can take a player over in tests.
+// Each player's keyboard half plus the gamepad with the same index, wrapped so the debug handle
+// can take a player over in tests.
 const inputs = [PLAYER_ONE_KEYS, PLAYER_TWO_KEYS].map(
-  (keys) => new OverridableInput(new KeyboardInputSource(keys)),
+  (keys, index) =>
+    new OverridableInput(
+      new CombinedInput([new KeyboardInputSource(keys), new GamepadInputSource(index)]),
+    ),
 );
 
 const app = new App(container, {
