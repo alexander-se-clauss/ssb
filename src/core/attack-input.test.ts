@@ -84,9 +84,22 @@ describe('tilt and smash detection', () => {
     expect(attackInput(track([0.4, -0.7]), 1).direction).toBe('down');
   });
 
-  it('ends a flick when the stick rolls to another direction without returning to the centre', () => {
-    const rolled = track([1, 0], [1, 0], [0.7, 0.7], [0, 1]);
+  it('ends a flick when the stick rolls along the rim to another direction', () => {
+    const rolled = track([1, 0], [1, 0], [0.95, 0.25], [0.9, 0.4], [0.7, 0.7], [0.4, 0.9], [0, 1]);
     expect(attackInput(rolled, 1)).toEqual({ direction: 'up', strength: 'tilt' });
+  });
+
+  it('times a flick along its own axis, so a flick that starts slightly off to the side counts', () => {
+    // Up leaves the deadzone on the second frame and reaches the rim on the third.
+    expect(attackInput(track([0.3, 0], [0, 0.4], [0, 0.8]), 1)).toEqual({
+      direction: 'up',
+      strength: 'smash',
+    });
+    // Up has been out for longer than a flick takes, so this is a tilt.
+    expect(attackInput(track([0.3, 0.25], [0.2, 0.4], [0.3, 0.6], [0, 0.8]), 1)).toEqual({
+      direction: 'up',
+      strength: 'tilt',
+    });
   });
 
   it('reads a keyboard reversal straight to the opposite key as a fresh flick', () => {
