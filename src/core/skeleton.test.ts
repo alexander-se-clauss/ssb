@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { FIGHTER } from './config';
 import { vec2, type Vec2 } from './math';
-import { HUMANOID, REST_POSE, boneSegments, type Pose } from './skeleton';
+import { HUMANOID, REST_POSE, boneSegments, plantedBoneSegments, type Pose } from './skeleton';
 
 const expectNear = (actual: Vec2 | undefined, expected: Vec2): void => {
   expect(actual?.x).toBeCloseTo(expected.x, 6);
@@ -71,6 +71,36 @@ describe('fighter skeleton', () => {
     expect(() => boneSegments(reversed, REST_POSE, vec2(0, 0), 1)).toThrow(/parent/);
     const twice = { ...HUMANOID, bones: [...HUMANOID.bones, ...HUMANOID.bones.slice(0, 1)] };
     expect(() => boneSegments(twice, REST_POSE, vec2(0, 0), 1)).toThrow(/twice/);
+  });
+
+  it('plants a crouched body on its feet instead of leaving them in the air', () => {
+    // Bent knees lift the feet above the ground when the hip stays at standing height.
+    const crouch: Pose = {
+      ...REST_POSE,
+      upperLegFront: 140,
+      lowerLegFront: 80,
+      upperLegBack: 140,
+      lowerLegBack: 80,
+    };
+    const floating = boneSegments(HUMANOID, crouch, vec2(1, 2), 1);
+    expect(floating.lowerLegFront.end.y).toBeGreaterThan(2);
+    const planted = plantedBoneSegments(HUMANOID, crouch, vec2(1, 2), 1);
+    const feet = Math.min(planted.lowerLegFront.end.y, planted.lowerLegBack.end.y);
+    expect(feet).toBeCloseTo(2, 6);
+    // Everything moves down by the same amount, so the shape is unchanged.
+    const drop = floating.head.end.y - planted.head.end.y;
+    expect(drop).toBeGreaterThan(0);
+    expect(floating.torso.start.y - planted.torso.start.y).toBeCloseTo(drop, 6);
+    expect(planted.head.end.x).toBeCloseTo(floating.head.end.x, 6);
+  });
+
+  it('stands on its feet even when a hand reaches lower', () => {
+    // Bent forward with an arm hanging below the knees: the feet still mark the ground.
+    const reach: Pose = { ...REST_POSE, torso: 120, upperArmFront: 60, lowerArmFront: 0 };
+    const planted = plantedBoneSegments(HUMANOID, reach, vec2(0, 0), 1);
+    expect(planted.lowerArmFront.end.y).toBeLessThan(0);
+    expect(planted.lowerLegFront.end.y).toBeCloseTo(0, 6);
+    expect(planted.lowerLegBack.end.y).toBeCloseTo(0, 6);
   });
 
   it('is plain data, so it can live in definitions and match state', () => {

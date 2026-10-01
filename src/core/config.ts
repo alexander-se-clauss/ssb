@@ -89,11 +89,11 @@ export const STICK = {
 /** Body poses: how fast they blend and how the idle and run motions cycle. */
 export const POSE = {
   /** Share of the remaining difference a pose closes each frame, so switches never pop. */
-  blend: 0.3,
+  blend: 0.4,
   /** One breath of the idle sway, in frames. */
-  idleCycleFrames: 150,
+  idleCycleFrames: 90,
   /** One full stride (both legs), in frames. */
-  runCycleFrames: 30,
+  runCycleFrames: 24,
   /** Launch speed from which a hit fighter tumbles instead of flinching. */
   tumbleSpeed: 0.4,
 } as const;

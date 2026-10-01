@@ -127,3 +127,33 @@ export const boneSegments = (
   // Every bone the pose names is filled in, and a pose names every BoneId.
   return segments as Record<BoneId, BoneSegment>;
 };
+
+/** The joints a body stands on. */
+const FEET: readonly BoneId[] = ['lowerLegFront', 'lowerLegBack'];
+
+/**
+ * Like `boneSegments`, but with the lower foot resting at `position.y`: a crouch lowers the body
+ * instead of lifting the feet off the ground. Only the feet anchor it, so a low fist or a head
+ * in a tumble does not make the body bob. The view draws this; bone hurtboxes and hitboxes
+ * must use it too, so they match what players see.
+ */
+export const plantedBoneSegments = (
+  skeleton: SkeletonDef,
+  pose: Pose,
+  position: Vec2,
+  facing: 1 | -1,
+): Record<BoneId, BoneSegment> => {
+  const segments = boneSegments(skeleton, pose, position, facing);
+  const lowest = Math.min(...FEET.map((bone) => segments[bone].end.y));
+  const drop = lowest - position.y;
+  const planted: Partial<Record<BoneId, BoneSegment>> = {};
+  for (const bone of BONE_IDS) {
+    const { start, end } = segments[bone];
+    planted[bone] = {
+      start: { x: start.x, y: start.y - drop },
+      end: { x: end.x, y: end.y - drop },
+    };
+  }
+  // BONE_IDS lists every bone, so every one is filled in.
+  return planted as Record<BoneId, BoneSegment>;
+};
