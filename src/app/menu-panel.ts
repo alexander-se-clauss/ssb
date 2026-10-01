@@ -13,6 +13,8 @@ import { nearestInDirection } from './spatial-focus';
 
 export interface MenuOption {
   readonly label: string;
+  /** Optional image above the label, e.g. a rendered stage thumbnail. */
+  readonly image?: string;
   readonly select: () => void;
   /** Left (-1) or Right (+1) on a setting row. */
   readonly adjust?: (delta: 1 | -1) => void;
@@ -39,8 +41,8 @@ export interface MenuContent {
   readonly back?: () => void;
   /** False hides the Back button, e.g. when an option already says where back goes. */
   readonly backButton?: boolean;
-  /** Drawn next to the buttons for the focused option, e.g. a stage preview. */
-  readonly preview?: (optionIndex: number) => Node | null;
+  /** Arrange options in a responsive grid. */
+  readonly grid?: boolean;
 }
 
 /** Keys that move the focus or change a setting, like a gamepad's stick. */
@@ -110,7 +112,15 @@ export class MenuPanel {
     this.buttons = (content.options ?? []).map((option) => {
       const button = document.createElement('button');
       button.type = 'button';
-      button.textContent = option.label;
+      if (option.image) {
+        const image = document.createElement('img');
+        image.src = option.image;
+        image.alt = '';
+        image.className = 'menu-option-image';
+        const label = document.createElement('span');
+        label.textContent = option.label;
+        button.append(image, label);
+      } else button.textContent = option.label;
       button.addEventListener('click', () => {
         const fallback = option.adjust ? 'menu-adjust' : 'menu-confirm';
         const cue = option.cue === undefined ? fallback : option.cue;
@@ -150,21 +160,11 @@ export class MenuPanel {
     const goBack = content.back;
     if (goBack) back.addEventListener('click', () => this.goBack(goBack));
     this.backButton = back.hidden ? undefined : back;
-    const preview = content.preview;
-    const previewBox = document.createElement('div');
-    previewBox.className = 'menu-preview';
-    previewBox.hidden = !preview;
-    if (preview) {
-      this.buttons.forEach((button, index) =>
-        button.addEventListener('focus', () => {
-          // Options without a preview (like Back) keep showing the last one.
-          const node = preview(index);
-          if (node) previewBox.replaceChildren(node);
-        }),
-      );
-    }
+    const options = document.createElement('div');
+    options.className = content.grid ? 'menu-grid' : 'menu-options';
+    options.append(...rows);
     this.root.className = content.variant ? `menu ${content.variant}` : 'menu';
-    this.root.replaceChildren(back, title, body, previewBox, content.body ?? '', ...rows);
+    this.root.replaceChildren(back, title, body, content.body ?? '', options);
     this.root.hidden = false;
     this.content = content;
     (this.buttons[focus] ?? this.buttons[0])?.focus();

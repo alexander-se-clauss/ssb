@@ -123,7 +123,10 @@ not players. Press detection lives in `character-select.ts`. The other menus (`M
 select and the rules overlay included) read the keyboard as DOM keys and the gamepads as polled
 devices: `menu-commands.ts` turns presses into commands for `MenuPanel.command()`, which moves the
 focus to the nearest button in that direction (`spatial-focus.ts`), so the Back button is reachable
-too. Menus with a way back show a Back button in their top left corner, except results and the
+too. Stage select shows a centered grid of named cards: thumbnails capture the actual match
+scenery once per stage, then release their GPU resources and reuse the images. Mouse clicks,
+keyboard arrows/WASD and gamepad directions select cards through the same menu handling.
+Menus with a way back show a Back button in their top left corner, except results and the
 rules overlay, whose own buttons (Main menu, Done) do that job. Every screen listens on `window`,
 so each handler checks and marks the event in `key-events.ts`: one key press changes the screen at
 most once. Entering `match` creates a `GameSession` and its views; leaving it disposes them, so

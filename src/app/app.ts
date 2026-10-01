@@ -36,7 +36,7 @@ import { renderControls, type ControlColumn } from './controls';
 import { MenuPanel, type MenuContent } from './menu-panel';
 import { renderResults, resultHeading } from './results';
 import { adjustRule, ruleRows, type RuleField } from './rules-menu';
-import { renderPreview } from './stage-preview';
+import { stageThumbnail } from '../adapters/three-renderer/stage-thumbnail';
 import { INITIAL_SCREEN, MAIN_MENU, go, nextScreens, type Screen } from './screens';
 
 /** Player slots on character select, as in Melee. */
@@ -281,16 +281,15 @@ export class App {
       case 'stage-select':
         return {
           heading: 'Choose a stage',
+          variant: 'menu-stage-select',
+          grid: true,
           options: STAGES.map((stage) => ({
             label: stage.name,
+            image: stageThumbnail(stage),
             select: () => this.chooseStage(stage.id),
             cue: 'match-start' as const,
           })),
           back: () => this.navigate('character-select'),
-          preview: (index) => {
-            const stage = STAGES[index];
-            return stage ? renderPreview(stage) : null;
-          },
         };
       case 'results':
         return {

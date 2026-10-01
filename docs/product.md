@@ -66,7 +66,8 @@ a playable build; it is done when that build works, not on a date.
       fast-fall, drop-through platforms, a jab, damage, knockback, stocks, KO and respawn,
       HUD, fixed-timestep loop, tests and CI.
 - [x] **S1 Menus.** Title screen, main menu, options (screen, controls), Melee-style
-      character select with the match rules in its top bar, stage select, results, Back
+      character select with the match rules in its top bar, a centered stage grid with rendered
+      scenery thumbnails and keyboard/gamepad/mouse selection, results, Back
       buttons. Epic #1.
 - [x] **S2 Gamepad and body.** Gamepad adapter and menu navigation; fighters with head, torso,
       arms and legs, basic poses and per-part hurtboxes. Epics #3, #4.
