@@ -14,6 +14,7 @@ import {
 } from '../../core';
 import type { GameView, SessionView } from '../../ports';
 import { bodyParts } from './body-layout';
+import { BOX_COLORS, hurtboxColor } from './debug-colors';
 import { buildScenery, type Scenery } from './scenery';
 
 export const PLAYER_COLORS = [0xe94f4f, 0x4f8fe9, 0x4fd18b, 0xf2c14e] as const;
@@ -29,11 +30,9 @@ interface FighterVisual {
   readonly hitboxes: THREE.Mesh[];
   /** Debug overlay: one shape per hurtbox, in world space. */
   readonly hurtboxes: ReadonlyMap<BoneId, THREE.Mesh>;
+  /** Shared by the fighter's hurtboxes, recoloured while it is invulnerable. */
+  readonly hurtboxMaterial: THREE.MeshBasicMaterial;
 }
-
-/** Debug colours as in Melee's hitbox display: yellow where a fighter can be hit, red attacks. */
-const HURTBOX_COLOR = 0xffe066;
-const HITBOX_COLOR = 0xff4040;
 
 /** Debug overlay material, drawn on top of the body so it stays readable. */
 const overlay = (color: number): THREE.MeshBasicMaterial =>
@@ -147,7 +146,7 @@ export class ThreeView implements GameView {
     parts.get('head')?.add(eye);
 
     const hurtboxes = new Map<BoneId, THREE.Mesh>();
-    const hurtboxMaterial = overlay(HURTBOX_COLOR);
+    const hurtboxMaterial = overlay(BOX_COLORS.hurtbox);
     for (const bone of HUMANOID.bones) {
       const geometry =
         bone.shape === 'ball'
@@ -167,7 +166,14 @@ export class ThreeView implements GameView {
 
     this.scene.add(root);
 
-    const visual = { root, parts, materials: [near, far], hitboxes: [], hurtboxes };
+    const visual = {
+      root,
+      parts,
+      materials: [near, far],
+      hitboxes: [],
+      hurtboxes,
+      hurtboxMaterial,
+    };
     this.fighters.set(slot, visual);
     return visual;
   }
@@ -214,6 +220,7 @@ export class ThreeView implements GameView {
     }
 
     // Core's own hurtboxes for the in-between body, so the overlay sits on what is drawn.
+    visual.hurtboxMaterial.color.setHex(hurtboxColor(fighter));
     for (const box of hurtboxes({ ...fighter, position, pose })) {
       const mesh = visual.hurtboxes.get(box.bone);
       if (!mesh) continue;
@@ -224,7 +231,7 @@ export class ThreeView implements GameView {
 
     const hitboxes = this.showBoxes ? activeHitboxes(fighter) : [];
     while (visual.hitboxes.length < hitboxes.length) {
-      const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 16), overlay(HITBOX_COLOR));
+      const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 16), overlay(BOX_COLORS.hitbox));
       mesh.renderOrder = 2;
       visual.hitboxes.push(mesh);
       this.scene.add(mesh);
