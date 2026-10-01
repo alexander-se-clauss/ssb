@@ -68,7 +68,7 @@ export const HITLAG = { baseFrames: 3, damagePerFrame: 3 } as const;
 export const STICK = {
   /** Deflection below this counts as centred, so a worn stick does not drift. */
   deadzone: 0.2,
-  /** Pushing up at least this far jumps (tap-jump), like "up" on the keyboard. */
+  /** Pushing up at least this far jumps (tap-jump). Keyboard up only aims; it has a jump key. */
   tapJump: 0.7,
   /** Deflection that counts as the rim, for smash detection. */
   smash: 0.8,

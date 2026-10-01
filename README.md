@@ -10,11 +10,14 @@ npm ci
 npm run dev      # open http://localhost:5173
 ```
 
-| Device     | Move               | Jump              | Drop / fast-fall | Attack | Special | Start |
-| ---------- | ------------------ | ----------------- | ---------------- | ------ | ------- | ----- |
-| Left keys  | A / D              | W or Space        | S                | F      | G       | Enter |
-| Right keys | ← / →              | ↑ or Num 0        | ↓                | .      | /       | Enter |
-| Gamepad    | Left stick / D-pad | X / Y or stick up | Stick down       | A      | B       | Start |
+| Device     | Move               | Jump              | Aim up   | Drop / fast-fall | Attack | Special | Start |
+| ---------- | ------------------ | ----------------- | -------- | ---------------- | ------ | ------- | ----- |
+| Left keys  | A / D              | Space             | W        | S                | F      | G       | Enter |
+| Right keys | ← / →              | Num 0             | ↑        | ↓                | .      | /       | Enter |
+| Gamepad    | Left stick / D-pad | X / Y or stick up | Stick up | Stick down       | A      | B       | Start |
+
+A direction held while pressing attack gives a tilt; pressing the direction and attack together
+(or flicking the stick) gives a smash.
 
 Menus: Enter or Space to start, arrow keys or W/S to move, Enter to pick; a gamepad moves with
 the stick or d-pad, Start or A picks and B goes back. Esc or the Back button goes back. On character
