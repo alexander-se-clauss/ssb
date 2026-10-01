@@ -14,6 +14,8 @@ const LOOKAHEAD_SECONDS = 0.15;
 const SCHEDULE_EVERY_MS = 25;
 /** How long the old track fades out and the new one fades in on a change. */
 const CROSSFADE_SECONDS = 1;
+/** How long after its last step a jingle's notes may still ring. */
+const JINGLE_TAIL_SECONDS = 1;
 /** Events that count as the player's permission to play sound (autoplay policy). */
 const UNLOCK_EVENTS = ['keydown', 'pointerdown'] as const;
 
@@ -55,6 +57,7 @@ const glide = (param: AudioParam, tone: Tone, start: number, end: number): void 
  *
  * Music is a step sequencer over the songs in `songs.ts`: a timer schedules the notes of the
  * next fraction of a second on the audio clock, so timing stays exact however busy the page is.
+ * Browsers slow timers down in a hidden tab, so audio pauses while the tab is hidden.
  */
 export class WebAudioOutput implements AudioOutput {
   private graph: Graph | undefined;
@@ -63,17 +66,22 @@ export class WebAudioOutput implements AudioOutput {
   /** The current song first, then songs still fading out. */
   private songs: PlayingSong[] = [];
   private timer: ReturnType<typeof setInterval> | undefined;
+  /** Audio was paused because the tab was hidden, and resumes when it shows again. */
+  private pausedWhileHidden = false;
+  private disposed = false;
 
   constructor(private readonly unlockTarget: EventTarget = window) {
     for (const type of UNLOCK_EVENTS) {
       unlockTarget.addEventListener(type, this.unlock, { capture: true });
     }
+    document.addEventListener('visibilitychange', this.onVisibilityChange);
   }
 
   play(cue: SoundCue, strength?: number): void {
     // Audio the browser has not allowed yet would queue this cue on a stopped clock and play it
     // late, on whatever screen comes next. Drop it, unless it comes from a key press or click
     // that unlocks audio right now (a gamepad press does not).
+    if (this.disposed) return;
     if (this.graph?.context.state !== 'running' && !hasUserActivation()) return;
     const graph = this.unlock();
     const now = graph.context.currentTime;
@@ -85,6 +93,7 @@ export class WebAudioOutput implements AudioOutput {
   playMusic(track: MusicTrack | null): void {
     if (track === this.track) return;
     this.track = track;
+    if (this.disposed) return;
     // Without a graph yet, the track starts when audio is unlocked (`createGraph`).
     if (this.graph) this.switchSong(this.graph);
   }
@@ -103,6 +112,8 @@ export class WebAudioOutput implements AudioOutput {
   }
 
   dispose(): void {
+    this.disposed = true;
+    document.removeEventListener('visibilitychange', this.onVisibilityChange);
     for (const type of UNLOCK_EVENTS) {
       this.unlockTarget.removeEventListener(type, this.unlock, { capture: true });
     }
@@ -115,8 +126,23 @@ export class WebAudioOutput implements AudioOutput {
   /** Creates the audio graph if needed and resumes it if the browser suspended it. */
   private readonly unlock = (): Graph => {
     this.graph ??= this.createGraph();
-    if (this.graph.context.state === 'suspended') void this.graph.context.resume();
+    if (this.graph.context.state === 'suspended' && !document.hidden) {
+      this.pausedWhileHidden = false;
+      void this.graph.context.resume();
+    }
     return this.graph;
+  };
+
+  private readonly onVisibilityChange = (): void => {
+    const context = this.graph?.context;
+    if (!context) return;
+    if (document.hidden && context.state === 'running') {
+      this.pausedWhileHidden = true;
+      void context.suspend();
+    } else if (!document.hidden && this.pausedWhileHidden) {
+      this.pausedWhileHidden = false;
+      void context.resume();
+    }
   };
 
   private createGraph(): Graph {
@@ -148,16 +174,23 @@ export class WebAudioOutput implements AudioOutput {
     for (const playing of this.songs) {
       if (playing.until !== undefined) continue;
       playing.gain.gain.cancelScheduledValues(now);
+      // `value` is the level reached so far, even mid fade-in, so the fade-out starts from there.
       playing.gain.gain.setValueAtTime(playing.gain.gain.value, now);
       playing.gain.gain.linearRampToValueAtTime(0, now + CROSSFADE_SECONDS);
       playing.until = now + CROSSFADE_SECONDS;
     }
     if (this.track === null) return;
+    const song = songFor(this.track);
     const gain = context.createGain();
-    gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(1, now + CROSSFADE_SECONDS);
+    if (song.loop) {
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(1, now + CROSSFADE_SECONDS);
+    } else {
+      // A jingle starts at full volume, or its first notes would be lost in the fade.
+      gain.gain.setValueAtTime(1, now);
+    }
     gain.connect(graph.channels.music);
-    this.songs.unshift({ song: songFor(this.track), gain, start: now + 0.05, nextStep: 0 });
+    this.songs.unshift({ song, gain, start: now + 0.05, nextStep: 0 });
     this.scheduleMusic(graph);
   }
 
@@ -165,12 +198,14 @@ export class WebAudioOutput implements AudioOutput {
   private scheduleMusic(graph: Graph): void {
     const now = graph.context.currentTime;
     this.songs = this.songs.filter((playing) => {
-      if (playing.until !== undefined && now >= playing.until) {
+      const { song, start } = playing;
+      const step = stepSeconds(song.bpm);
+      // A faded-out track, or a jingle that has finished and rung out, is done.
+      const over = song.loop ? Infinity : start + song.length * step + JINGLE_TAIL_SECONDS;
+      if (now >= Math.min(playing.until ?? Infinity, over)) {
         playing.gain.disconnect();
         return false;
       }
-      const { song, start } = playing;
-      const step = stepSeconds(song.bpm);
       const horizon = Math.min(now + LOOKAHEAD_SECONDS, playing.until ?? Infinity);
       const upTo = Math.ceil((horizon - start) / step);
       if (upTo <= playing.nextStep) return true;
