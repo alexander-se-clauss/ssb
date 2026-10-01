@@ -82,13 +82,16 @@ describe('joining on character select', () => {
     ).toEqual(state);
   });
 
-  it('is ready once every joined player picked, even alone', () => {
+  it('is ready once at least two players joined and every joined player picked', () => {
     const alone = apply(
       createSelect(4),
       { type: 'join', device: 2 },
       { type: 'confirm', player: 0 },
     );
-    expect(allReady(alone)).toBe(true);
+    expect(allReady(alone)).toBe(false);
+    const two = apply(alone, { type: 'join', device: 5 });
+    expect(allReady(two)).toBe(false);
+    expect(allReady(apply(two, { type: 'confirm', player: 1 }))).toBe(true);
   });
 
   it('moves each cursor through the grid, wrapping around', () => {

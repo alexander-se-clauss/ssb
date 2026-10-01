@@ -43,9 +43,12 @@ export const createSelect = (slots: number): SelectState => ({
 export const slotOf = (state: SelectState, device: number): PlayerSlot =>
   state.devices.indexOf(device);
 
-/** Someone joined, and every joined player has picked. One player alone may play. */
+/** A versus match needs at least this many players. */
+export const MIN_PLAYERS = 2;
+
+/** At least `MIN_PLAYERS` joined, and every joined player has picked. */
 export const allReady = (state: SelectState): boolean =>
-  state.devices.some((device) => device !== null) &&
+  state.devices.filter((device) => device !== null).length >= MIN_PLAYERS &&
   state.devices.every((device, slot) => device === null || state.picks[slot] != null);
 
 const wrap = (value: number, size: number): number => ((value % size) + size) % size;

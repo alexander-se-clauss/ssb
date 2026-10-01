@@ -149,6 +149,11 @@ test('two players pick, change their minds and confirm on character select', asy
     .toEqual([1, null, null, null]);
   await tap(page, 'Period');
   await expect.poll(() => picks(page)).toEqual(['capsule', null, null, null]);
+  // One player alone cannot start a match: a second one joins and picks.
+  await expect(page.getByText('Ready! Press Enter')).toBeHidden();
+  await tap(page, 'KeyF');
+  await tap(page, 'KeyF');
+  await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule', null, null]);
   await expect(page.getByText('Ready! Press Enter')).toBeVisible();
 
   await page.keyboard.press('Enter');

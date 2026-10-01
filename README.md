@@ -20,7 +20,7 @@ Menus: Enter or Space to start, arrow keys or W/S to move, Enter to pick; a game
 the stick or d-pad, A picks and B goes back. Esc or the Back button goes back. On character
 select each device joins the first free slot (up to four players) by pressing attack; then its
 cursor picks a fighter with attack, special un-picks, and special again leaves the slot. Start
-with Enter (or attack again) once everyone who joined has picked; one player alone may play. Move
+with Enter (or attack again) once two to four players joined and all picked. Move
 up onto the rules banner and pick it (or click it) to change the match rules;
 Done applies them; Esc or special discards them. Options holds the
 screen setting and the controls. After a match, the results screen offers a rematch or the main
