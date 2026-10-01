@@ -25,7 +25,8 @@ const fighter = (pose: Pose, facing: 1 | -1, x: number, y: number, scale: number
     .join('')}</g>`;
 };
 
-export type MenuArtwork = 'versus' | 'settings' | 'display' | 'controls' | 'rematch' | 'home';
+export type MenuArtwork =
+  'versus' | 'settings' | 'display' | 'controls' | 'sound' | 'rematch' | 'home';
 
 /** Bold, original line art for the menu destinations; labels remain ordinary HTML. */
 export const menuArtwork = (kind: MenuArtwork): SVGSVGElement => {
@@ -38,6 +39,8 @@ export const menuArtwork = (kind: MenuArtwork): SVGSVGElement => {
       '<path d="M102 56H198Q224 56 233 82L247 123Q254 151 230 151L197 125H103L70 151Q46 151 53 123L67 82Q76 56 102 56ZM88 85V115M73 100H103"/><circle cx="201" cy="90" r="5"/><circle cx="218" cy="107" r="5"/>',
     rematch:
       '<path d="M211 56A69 69 0 1 0 219 117M211 25V60H177"/><path d="M134 64L170 90L134 116Z"/>',
+    sound:
+      '<path d="M70 70H105L150 35V145L105 110H70ZM180 65Q200 90 180 115M200 45Q235 90 200 135"/>',
     home: '<path d="M62 91L150 29L238 91M83 77V150H217V77M130 150V104H170V150"/>',
   };
   const markup =

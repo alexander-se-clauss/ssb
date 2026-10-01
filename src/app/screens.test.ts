@@ -59,6 +59,11 @@ describe('options', () => {
   it('leads to the controls screen', () => {
     expect(canGo('options', 'controls')).toBe(true);
   });
+
+  it('leads to the sound screen and back', () => {
+    expect(canGo('options', 'sound')).toBe(true);
+    expect(canGo('sound', 'options')).toBe(true);
+  });
 });
 
 describe('main menu', () => {

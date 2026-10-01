@@ -23,7 +23,7 @@ cursor picks a fighter with attack, special un-picks, and special again leaves t
 with Enter or the gamepad's Start (or attack again) once two to four players joined and all picked. Move
 up onto the rules banner and pick it (or click it) to change the match rules;
 Done applies them; Esc or special discards them. Options holds the
-screen setting and the controls. After a match, the results screen offers a rematch or the main
+screen setting, the Music and Effects volumes (Sound) and the controls. After a match, the results screen offers a rematch or the main
 menu. F2 shows or hides the debug overlay: yellow hurtboxes (where a fighter can be hit), blue
 hurtboxes while a fighter is invulnerable, and red hitboxes (attacks).
 
