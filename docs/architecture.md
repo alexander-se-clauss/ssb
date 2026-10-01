@@ -100,7 +100,10 @@ never plays sound. Menus play their cues in `MenuPanel` (move, confirm, adjust, 
 can name its own cue, like `match-start` on a stage). Character select plays one cue per frame
 from the change between its state before and after (`selectCue` in `menu-sounds.ts`: join,
 leave, pick, un-pick, rules, cursor move), so a held button stays quiet. Start, Back and a click on the rules
-banner play their cue in `App` directly.
+banner play their cue in `App` directly. During a match, `App` plays fight cues (`match-sounds.ts`): hits
+(heavier with more damage), KOs and the match end from session events, and a move starting, a
+jump and a landing from the change between the last state it took sounds from and the current
+one, so core needs no sound events. A fighter in hitstun only makes a landing sound.
 
 ## Screens
 
