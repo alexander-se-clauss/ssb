@@ -34,7 +34,8 @@ browsers, rendering or networking.
 
 Fighter bodies are core data too (`skeleton.ts`): a 2D skeleton of bones with lengths and parents,
 and poses as joint angles. `boneSegments` turns a pose into world joint positions, so hurtboxes
-and hitboxes can follow bones and the view only draws what core computed.
+and hitboxes can follow bones and the view only draws what core computed: `ThreeView` places a
+sphere or capsule on each bone (`body-layout.ts`).
 
 **Enforced:** ESLint `no-restricted-imports` per folder (`eslint.config.js`) and a separate
 `tsconfig.core.json` without DOM types, so `document` or `window` in core fails typecheck.

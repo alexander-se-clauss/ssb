@@ -1,14 +1,41 @@
 import * as THREE from 'three';
-import { FIGHTER, activeHitbox, type FighterState, type StageDef } from '../../core';
+import {
+  FIGHTER,
+  HUMANOID,
+  REST_POSE,
+  activeHitbox,
+  boneSegments,
+  vec2,
+  type BoneId,
+  type FighterState,
+  type StageDef,
+} from '../../core';
 import type { GameView, SessionView } from '../../ports';
+import { bodyParts } from './body-layout';
 
 export const PLAYER_COLORS = [0xe94f4f, 0x4f8fe9, 0x4fd18b, 0xf2c14e] as const;
 
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
 
+/** How thick each part is drawn. Visual only for now; hurtboxes per bone come with #25. */
+const PART_RADIUS: Readonly<Record<BoneId, number>> = {
+  head: 0.17,
+  torso: 0.2,
+  upperArmFront: 0.08,
+  lowerArmFront: 0.07,
+  upperArmBack: 0.08,
+  lowerArmBack: 0.07,
+  upperLegFront: 0.1,
+  lowerLegFront: 0.09,
+  upperLegBack: 0.1,
+  lowerLegBack: 0.09,
+};
+
 interface FighterVisual {
   readonly root: THREE.Group;
-  readonly body: THREE.Mesh<THREE.CapsuleGeometry, THREE.MeshStandardMaterial>;
+  readonly parts: ReadonlyMap<BoneId, THREE.Mesh>;
+  /** The player's colour, and a darker shade for the limbs on the far side. */
+  readonly materials: readonly THREE.MeshStandardMaterial[];
   readonly hitbox: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>;
 }
 
@@ -104,19 +131,32 @@ export class ThreeView implements GameView {
     if (existing) return existing;
 
     const color = PLAYER_COLORS[slot % PLAYER_COLORS.length] ?? 0xffffff;
-    const radius = FIGHTER.width / 2;
-    const body = new THREE.Mesh(
-      new THREE.CapsuleGeometry(radius, FIGHTER.height - radius * 2, 8, 16),
-      new THREE.MeshStandardMaterial({ color, roughness: 0.5, transparent: true }),
-    );
-    body.position.y = FIGHTER.height / 2;
-    body.castShadow = true;
+    const near = new THREE.MeshStandardMaterial({ color, roughness: 0.5, transparent: true });
+    const far = near.clone();
+    far.color.multiplyScalar(0.65);
 
+    const root = new THREE.Group();
+    const parts = new Map<BoneId, THREE.Mesh>();
+    for (const bone of HUMANOID.bones) {
+      const radius = PART_RADIUS[bone.id];
+      // The head is a ball on its bone; every other part is a capsule spanning its bone.
+      const geometry =
+        bone.id === 'head'
+          ? new THREE.SphereGeometry(radius, 16, 12)
+          : new THREE.CapsuleGeometry(radius, Math.max(bone.length - radius * 2, 0.01), 6, 12);
+      const mesh = new THREE.Mesh(geometry, bone.id.endsWith('Back') ? far : near);
+      mesh.castShadow = true;
+      parts.set(bone.id, mesh);
+      root.add(mesh);
+    }
+
+    // An eye on the front of the head shows which way the fighter faces.
     const eye = new THREE.Mesh(
-      new THREE.SphereGeometry(0.12, 12, 12),
+      new THREE.SphereGeometry(0.05, 10, 10),
       new THREE.MeshStandardMaterial({ color: 0xffffff }),
     );
-    eye.position.set(radius * 0.8, FIGHTER.height * 0.75, 0.15);
+    eye.position.set(0.12, 0.03, 0.08);
+    parts.get('head')?.add(eye);
 
     const hitbox = new THREE.Mesh(
       new THREE.SphereGeometry(1, 16, 16),
@@ -124,11 +164,9 @@ export class ThreeView implements GameView {
     );
     hitbox.visible = false;
 
-    const root = new THREE.Group();
-    root.add(body, eye);
     this.scene.add(root, hitbox);
 
-    const visual = { root, body, hitbox };
+    const visual = { root, parts, materials: [near, far], hitbox };
     this.fighters.set(slot, visual);
     return visual;
   }
@@ -155,11 +193,20 @@ export class ThreeView implements GameView {
       lerp(before.position.y, fighter.position.y, t),
       0,
     );
-    visual.root.rotation.y = fighter.facing === 1 ? 0 : Math.PI;
+    // Mirror rather than turn around, so the near limbs stay near the camera either way.
+    visual.root.scale.x = fighter.facing;
 
-    const material = visual.body.material;
-    material.opacity = fighter.invulnerableFrames > 0 && frame % 8 < 4 ? 0.35 : 1;
-    material.emissive.setHex(fighter.action === 'hitstun' ? 0x662222 : 0x000000);
+    // Poses per movement state come with #24; until then everyone stands in the rest pose.
+    for (const part of bodyParts(boneSegments(HUMANOID, REST_POSE, vec2(0, 0), 1))) {
+      const mesh = visual.parts.get(part.bone);
+      mesh?.position.set(part.x, part.y, part.depth);
+      mesh?.rotation.set(0, 0, part.angle);
+    }
+
+    for (const material of visual.materials) {
+      material.opacity = fighter.invulnerableFrames > 0 && frame % 8 < 4 ? 0.35 : 1;
+      material.emissive.setHex(fighter.action === 'hitstun' ? 0x662222 : 0x000000);
+    }
 
     const hitbox = activeHitbox(fighter);
     visual.hitbox.visible = hitbox !== null;
