@@ -25,12 +25,16 @@ browsers, rendering or networking.
 
 ## Layers
 
-| Layer    | Folder         | May import                         | Contains                                                       |
-| -------- | -------------- | ---------------------------------- | -------------------------------------------------------------- |
-| Core     | `src/core`     | core only                          | Types, physics, combat, rules, stages, registry, `step`, clock |
-| Ports    | `src/ports`    | core                               | Interfaces between client and game                             |
-| Adapters | `src/adapters` | core (via index), ports, libraries | Keyboard, gamepad, local session, Three.js, HUD                |
-| App      | `src/app`      | everything                         | `main.ts` wiring, screens and menus, debug handle, CSS         |
+| Layer    | Folder         | May import                         | Contains                                                                 |
+| -------- | -------------- | ---------------------------------- | ------------------------------------------------------------------------ |
+| Core     | `src/core`     | core only                          | Types, physics, combat, rules, stages, registry, skeleton, `step`, clock |
+| Ports    | `src/ports`    | core                               | Interfaces between client and game                                       |
+| Adapters | `src/adapters` | core (via index), ports, libraries | Keyboard, gamepad, local session, Three.js, HUD                          |
+| App      | `src/app`      | everything                         | `main.ts` wiring, screens and menus, debug handle, CSS                   |
+
+Fighter bodies are core data too (`skeleton.ts`): a 2D skeleton of bones with lengths and parents,
+and poses as joint angles. `boneSegments` turns a pose into world joint positions, so hurtboxes
+and hitboxes can follow bones and the view only draws what core computed.
 
 **Enforced:** ESLint `no-restricted-imports` per folder (`eslint.config.js`) and a separate
 `tsconfig.core.json` without DOM types, so `document` or `window` in core fails typecheck.

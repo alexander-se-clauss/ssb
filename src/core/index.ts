@@ -4,6 +4,7 @@ export * from './math';
 export * from './config';
 export * from './input';
 export * from './attack-input';
+export * from './skeleton';
 export * from './stages';
 export * from './registry';
 export { createMatch, step } from './simulation';
