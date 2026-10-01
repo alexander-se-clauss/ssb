@@ -117,7 +117,8 @@ export const poseName = (fighter: FighterState): PoseName => {
   switch (fighter.action) {
     case 'run':
       return 'run';
-    case 'jab':
+    case 'attack':
+      // Moves bring their own keyframes later (ADR 0006); until then every attack shows the jab.
       return 'jab';
     case 'airborne':
       return fighter.velocity.y > 0 ? 'jump' : 'fall';

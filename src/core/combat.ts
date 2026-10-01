@@ -1,29 +1,30 @@
-import { FIGHTER, HITSTUN_PER_KNOCKBACK, JAB, type AttackDef } from './config';
+import { FIGHTER, HITSTUN_PER_KNOCKBACK } from './config';
 import { circleIntersectsCapsule, type Vec2 } from './math';
+import { findMove } from './move-data';
+import type { HitboxDef } from './moves';
 import { HUMANOID, plantedBoneSegments, type BoneId } from './skeleton';
 import type { FighterState, GameEvent } from './types';
 
 export interface Hitbox {
   readonly center: Vec2;
   readonly radius: number;
-  readonly attack: AttackDef;
+  readonly attack: HitboxDef;
 }
 
-/** The fighter's active hitbox this frame, if any. Exported so renderers can visualise it. */
-export const activeHitbox = (fighter: FighterState): Hitbox | null => {
-  if (fighter.action !== 'jab') return null;
-  const { actionFrame } = fighter;
-  if (actionFrame < JAB.startupFrames || actionFrame >= JAB.startupFrames + JAB.activeFrames) {
-    return null;
-  }
-  return {
-    center: {
-      x: fighter.position.x + JAB.offsetX * fighter.facing,
-      y: fighter.position.y + JAB.offsetY,
-    },
-    radius: JAB.radius,
-    attack: JAB,
-  };
+/** The hitboxes of the fighter's move that are on this frame. Exported so views can draw them. */
+export const activeHitboxes = (fighter: FighterState): Hitbox[] => {
+  if (fighter.action !== 'attack' || fighter.moveId === null) return [];
+  const frame = fighter.actionFrame;
+  return findMove(fighter.moveId)
+    .hitboxes.filter((hitbox) => frame >= hitbox.from && frame < hitbox.to)
+    .map((hitbox) => ({
+      center: {
+        x: fighter.position.x + hitbox.anchor.feet.x * fighter.facing,
+        y: fighter.position.y + hitbox.anchor.feet.y,
+      },
+      radius: hitbox.radius,
+      attack: hitbox,
+    }));
 };
 
 /**
@@ -64,8 +65,11 @@ const hitsBody = (hitbox: Hitbox, target: FighterState): boolean =>
   );
 
 /** Launch speed in units per frame. Grows with the target's damage after the hit. */
-export const knockback = (attack: AttackDef, damageAfterHit: number, weight: number): number =>
-  (attack.baseKnockback + damageAfterHit * attack.knockbackGrowth) / weight;
+export const knockback = (
+  attack: Pick<HitboxDef, 'baseKnockback' | 'knockbackGrowth'>,
+  damageAfterHit: number,
+  weight: number,
+): number => (attack.baseKnockback + damageAfterHit * attack.knockbackGrowth) / weight;
 
 /**
  * Resolves all hits for this frame. Hits are computed from the same snapshot,
@@ -78,14 +82,15 @@ export const resolveCombat = (
   const events: GameEvent[] = [];
 
   for (const attacker of fighters) {
-    const hitbox = activeHitbox(attacker);
-    if (!hitbox) continue;
+    const hitboxes = activeHitboxes(attacker);
+    if (hitboxes.length === 0) continue;
 
     for (const target of fighters) {
       if (target.slot === attacker.slot) continue;
       if (target.action === 'eliminated' || target.invulnerableFrames > 0) continue;
       if (attacker.hitTargets.includes(target.slot)) continue;
-      if (!hitsBody(hitbox, target)) continue;
+      const hitbox = hitboxes.find((candidate) => hitsBody(candidate, target));
+      if (!hitbox) continue;
 
       const current = next[target.slot] ?? target;
       const damage = current.damage + hitbox.attack.damage;
@@ -99,6 +104,7 @@ export const resolveCombat = (
         grounded: false,
         action: 'hitstun',
         actionFrame: 0,
+        moveId: null,
         hitstunFrames: Math.round(speed * HITSTUN_PER_KNOCKBACK),
         hitTargets: [],
         lastHitBy: attacker.slot,

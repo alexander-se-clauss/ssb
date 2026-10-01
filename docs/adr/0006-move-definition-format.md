@@ -1,6 +1,6 @@
 # 0006 Moves are plain data run by one move runner
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-01
 
 ## Context
