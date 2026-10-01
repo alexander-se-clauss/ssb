@@ -44,7 +44,10 @@ Terms, as in Melee: a **hurtbox** is where a fighter can be hit (one per body pa
 is where an attack hits (`activeHitboxes`). F2 shows both in the running game (yellow and red).
 Attacks are moves (ADR 0006): plain-data `MoveDef`s in `move-data/`, played by one move runner
 in `fighter.ts`. A fighter in the `attack` action stores only the move's id and its frame
-(`actionFrame`), and `activeHitboxes` reads the definition to find which hitboxes are on.
+(`actionFrame`), and `activeHitboxes` reads the definition to find which hitboxes are on. A
+press of attack or special picks a move slot from the situation and the stick (`move-slots.ts`:
+jab, tilts and smashes on the ground, five aerials, four specials), and the character's `moves`
+table fills each slot with a move id or leaves it empty.
 Each fighter carries its current `pose` in `FighterState`: `step` eases it a little each frame towards
 the pose of its movement state, with idle breathing and a running stride (`poses.ts`), and the
 view interpolates it between frames like the position.
@@ -60,7 +63,8 @@ view interpolates it between frames like the position.
    character select it samples every device, and on every frame it polls the gamepads for menu
    commands; see Screens. Adapters deliver stick values with the deadzone already removed
    (`applyDeadzone`); telling a tilt from a smash is a game rule, so it lives in core
-   (`attack-input.ts`: a plain-data `StickTracker` per fighter, which the move engine will read).
+   (`attack-input.ts`: a plain-data `StickTracker` in each fighter's state, read when a button
+   is pressed to pick the move slot).
 2. `session.update(now)` asks `FixedStepClock` how many 1/60 s ticks are due and runs
    `step()` that many times. Rendering speed never changes game speed.
 3. Each `GameView` renders `session.view()`: previous state, current state and `alpha`, so

@@ -14,11 +14,11 @@ import {
 } from './character-select';
 
 const ROSTER: CharacterDef[] = [
-  { id: 'a', name: 'A' },
-  { id: 'b', name: 'B' },
-  { id: 'c', name: 'C' },
-  { id: 'd', name: 'D' },
-  { id: 'e', name: 'E' },
+  { id: 'a', name: 'A', moves: {} },
+  { id: 'b', name: 'B', moves: {} },
+  { id: 'c', name: 'C', moves: {} },
+  { id: 'd', name: 'D', moves: {} },
+  { id: 'e', name: 'E', moves: {} },
 ];
 const COLUMNS = 4;
 

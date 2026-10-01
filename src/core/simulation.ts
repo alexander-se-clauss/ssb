@@ -2,6 +2,7 @@ import { FIGHTER, RULE_LIMITS } from './config';
 import { resolveCombat } from './combat';
 import { createFighter, updateFighter } from './fighter';
 import { NEUTRAL_INPUT } from './input';
+import { findMove } from './move-data';
 import { findCharacter, findStage } from './registry';
 import { leader, timeLeftFrames } from './rules';
 import type {
@@ -37,9 +38,10 @@ export const createMatch = (config: MatchConfig): MatchState => {
   const stage = findStage(config.stageId);
   if (!stage) throw new Error(`Unknown stage "${config.stageId}"`);
   for (const player of config.players) {
-    if (!findCharacter(player.characterId)) {
-      throw new Error(`Unknown character "${player.characterId}"`);
-    }
+    const character = findCharacter(player.characterId);
+    if (!character) throw new Error(`Unknown character "${player.characterId}"`);
+    // Fails at match start, not mid-match, if a slot names a move that does not exist.
+    for (const moveId of Object.values(character.moves)) findMove(moveId);
   }
   validateRules(config.rules);
   const stocks = config.rules.mode === 'stock' ? config.rules.stocks : 0;

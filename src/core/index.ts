@@ -12,5 +12,6 @@ export { createMatch, step } from './simulation';
 export { leader, score, timeLeftFrames } from './rules';
 export { activeHitboxes, hurtboxes, knockback, type Hitbox, type Hurtbox } from './combat';
 export * from './moves';
+export * from './move-slots';
 export { MOVES, findMove } from './move-data';
 export { FixedStepClock } from './time';
