@@ -20,15 +20,25 @@ const tap = async (page: Page, key: string) => {
 
 const picks = (page: Page) => page.evaluate(() => window.__SSB__?.characterSelect()?.picks);
 
-/** (Title ->) main menu -> character select (both pick) -> stage select -> match. */
-const startMatch = async (page: Page, { fromMainMenu = false } = {}) => {
-  if (!fromMainMenu) {
-    await page.goto('/');
-    await page.keyboard.press('Enter');
-    await expect.poll(() => screen(page)).toBe('main-menu');
-  }
+/** Title -> main menu -> character select. */
+const toCharacterSelect = async (page: Page) => {
+  await page.goto('/');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('main-menu');
   await page.keyboard.press('Enter');
   await expect.poll(() => screen(page)).toBe('character-select');
+};
+
+/** On character select: P1 moves up to the rules banner and opens the rules overlay. */
+const openRules = async (page: Page) => {
+  await tap(page, 'KeyW');
+  await tap(page, 'KeyF');
+  await expect(page.getByRole('heading', { name: 'Rules' })).toBeVisible();
+};
+
+/** (Title -> main menu ->) character select (both pick) -> stage select -> match. */
+const startMatch = async (page: Page, { onCharacterSelect = false } = {}) => {
+  if (!onCharacterSelect) await toCharacterSelect(page);
   await tap(page, 'KeyF');
   await tap(page, 'Period');
   await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule']);
@@ -49,33 +59,40 @@ test('start opens the main menu, and Escape goes back', async ({ page }) => {
   await page.goto('/');
   await page.keyboard.press('Space');
   await expect.poll(() => screen(page)).toBe('main-menu');
-  await expect(page.getByRole('button')).toHaveText(['Versus', 'Options']);
+  await expect(page.getByRole('button')).toHaveText(['◀ Back', 'VS. Mode', 'Options']);
+  await expect(page.getByText('Battle your friends')).toBeVisible();
   await page.keyboard.press('Escape');
   await expect.poll(() => screen(page)).toBe('title');
 });
 
-test('Versus leads to character select', async ({ page }) => {
+test('VS. Mode leads to character select', async ({ page }) => {
   await page.goto('/');
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('button', { name: 'Versus' })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'VS. Mode' })).toBeFocused();
   await page.keyboard.press('Enter');
   await expect.poll(() => screen(page)).toBe('character-select');
 });
 
-test('Options leads to the options screen', async ({ page }) => {
+test('Options holds game settings and shows the controls', async ({ page }) => {
   await page.goto('/');
   await page.keyboard.press('Enter');
   await page.keyboard.press('ArrowDown');
   await expect(page.getByRole('button', { name: 'Options' })).toBeFocused();
   await page.keyboard.press('Enter');
   await expect.poll(() => screen(page)).toBe('options');
+  await expect(page.getByRole('button', { name: /Screen: Window/ })).toBeFocused();
+
+  await page.getByRole('button', { name: 'Controls' }).click();
+  await expect.poll(() => screen(page)).toBe('controls');
+  await expect(page.locator('.menu-table tbody tr').first()).toHaveText(/Move\s*A \/ D\s*← \/ →/);
+  await page.getByRole('button', { name: 'Back' }).click();
+  await expect.poll(() => screen(page)).toBe('options');
+  await page.keyboard.press('Escape');
+  await expect.poll(() => screen(page)).toBe('main-menu');
 });
 
 test('two players pick, change their minds and confirm on character select', async ({ page }) => {
-  await page.goto('/');
-  await page.keyboard.press('Enter');
-  await page.keyboard.press('Enter');
-  await expect.poll(() => screen(page)).toBe('character-select');
+  await toCharacterSelect(page);
   await expect(page.locator('.css-cell')).toHaveCount(1);
 
   await tap(page, 'KeyF');
@@ -95,12 +112,38 @@ test('two players pick, change their minds and confirm on character select', asy
   await expect(page.locator('.css')).toBeHidden();
 });
 
+test('character select goes back to the main menu with its Back button', async ({ page }) => {
+  await toCharacterSelect(page);
+  await page.getByRole('button', { name: 'Back' }).click();
+  await expect.poll(() => screen(page)).toBe('main-menu');
+});
+
+test('the rules banner opens the rules by click and the next match uses them', async ({ page }) => {
+  await toCharacterSelect(page);
+  await expect(page.locator('.css-rules')).toContainText('Stock · 3 lives');
+  await page.locator('.css-rules').click();
+  await expect(page.getByRole('heading', { name: 'Rules' })).toBeVisible();
+
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByRole('button', { name: /Rule: Time/ })).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByRole('button', { name: /Time: 3 min/ })).toBeFocused();
+  await page.getByRole('button', { name: 'Done' }).click();
+  await expect(page.getByRole('heading', { name: 'Rules' })).toBeHidden();
+  await expect(page.locator('.css-rules')).toContainText('Time · 3 min');
+  // Arrow keys in the overlay must not have moved player two's cursor.
+  expect(await page.evaluate(() => window.__SSB__?.characterSelect()?.cursors)).toEqual([0, 0]);
+
+  await startMatch(page, { onCharacterSelect: true });
+  const rules = (await gameState(page)).rules;
+  expect(rules).toMatchObject({ mode: 'time', timeLimitSeconds: 180 });
+  await expect(page.locator('.hud-clock')).toHaveText(/^[23]:\d\d$/);
+});
+
 /** Title -> main menu -> character select (both pick) -> stage select. */
 const toStageSelect = async (page: Page) => {
-  await page.goto('/');
-  await page.keyboard.press('Enter');
-  await page.keyboard.press('Enter');
-  await expect.poll(() => screen(page)).toBe('character-select');
+  await toCharacterSelect(page);
   await tap(page, 'KeyF');
   await tap(page, 'Period');
   await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule']);
@@ -123,20 +166,28 @@ test('stage select goes back to character select', async ({ page }) => {
   await toStageSelect(page);
   await page.keyboard.press('Escape');
   await expect.poll(() => screen(page)).toBe('character-select');
+  await tap(page, 'KeyF');
+  await tap(page, 'Period');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('stage-select');
+  await page.getByRole('button', { name: 'Back' }).click();
+  await expect.poll(() => screen(page)).toBe('character-select');
 });
 
 test('results show the winner and stats, and Rematch starts a new match', async ({ page }) => {
   // One stock, so walking off the stage once ends the match.
-  await page.goto('/');
-  await page.keyboard.press('Enter');
-  await page.keyboard.press('ArrowDown');
-  await page.keyboard.press('Enter');
+  await toCharacterSelect(page);
+  await openRules(page);
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('ArrowLeft');
   await page.keyboard.press('ArrowLeft');
   await expect(page.getByRole('button', { name: /Stocks: 1/ })).toBeFocused();
   await page.keyboard.press('Escape');
-  await startMatch(page, { fromMainMenu: true });
+  await expect(page.getByRole('heading', { name: 'Rules' })).toBeHidden();
+  await expect.poll(() => screen(page)).toBe('character-select');
+  // Back down from the banner onto the grid.
+  await tap(page, 'KeyS');
+  await startMatch(page, { onCharacterSelect: true });
 
   await page.keyboard.down('KeyA');
   await expect.poll(() => screen(page), { timeout: 20_000 }).toBe('results');
@@ -153,27 +204,6 @@ test('results show the winner and stats, and Rematch starts a new match', async 
   await page.keyboard.press('Enter');
   await expect.poll(() => screen(page)).toBe('match');
   expect((await gameState(page)).frame).toBeLessThan(120);
-});
-
-test('rules changed in options apply to the next match', async ({ page }) => {
-  await page.goto('/');
-  await page.keyboard.press('Enter');
-  await page.keyboard.press('ArrowDown');
-  await page.keyboard.press('Enter');
-  await expect.poll(() => screen(page)).toBe('options');
-
-  await page.keyboard.press('ArrowRight');
-  await expect(page.getByRole('button', { name: /Rule: Time/ })).toBeFocused();
-  await page.keyboard.press('ArrowDown');
-  await page.keyboard.press('ArrowRight');
-  await expect(page.getByRole('button', { name: /Time: 3 min/ })).toBeFocused();
-  await page.keyboard.press('Escape');
-  await expect.poll(() => screen(page)).toBe('main-menu');
-
-  await startMatch(page, { fromMainMenu: true });
-  const rules = (await gameState(page)).rules;
-  expect(rules).toMatchObject({ mode: 'time', timeLimitSeconds: 180 });
-  await expect(page.locator('.hud-clock')).toHaveText(/^[23]:\d\d$/);
 });
 
 test('a match starts from the menus, renders and simulates', async ({ page }) => {

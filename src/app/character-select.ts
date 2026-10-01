@@ -1,21 +1,29 @@
 /**
  * Character select as plain data and pure functions: each player moves a cursor over the
- * grid, picks with attack and un-picks with special. The screen (character-select-view.ts)
+ * grid, picks with attack and un-picks with special. Above the grid sits the rules banner, as in
+ * Melee: moving up onto it and picking opens the rules. The screen (character-select-view.ts)
  * only draws this state and feeds it actions.
  */
 import { pressed, type CharacterDef, type PlayerInput, type PlayerSlot } from '../core';
 
+/** Cursor position of a player who is on the rules banner instead of the grid. */
+export const RULES_CURSOR = -1;
+
 export interface SelectState {
-  /** Grid index under each player's cursor. */
+  /** Grid index under each player's cursor, or `RULES_CURSOR`. */
   readonly cursors: readonly number[];
   /** Picked character id per player, or null while still choosing. */
   readonly picks: readonly (string | null)[];
+  /** The rules overlay is open; players' grid controls pause meanwhile. */
+  readonly rulesOpen: boolean;
 }
 
 export type SelectAction =
   | { readonly type: 'move'; readonly player: PlayerSlot; readonly dx: number; readonly dy: number }
   | { readonly type: 'confirm'; readonly player: PlayerSlot }
-  | { readonly type: 'cancel'; readonly player: PlayerSlot };
+  | { readonly type: 'cancel'; readonly player: PlayerSlot }
+  /** Opens or closes the rules overlay, e.g. by mouse or from the overlay itself. */
+  | { readonly type: 'rules'; readonly open: boolean };
 
 /** How far the stick must be pushed to count as a menu move. */
 const STICK_THRESHOLD = 0.5;
@@ -23,6 +31,7 @@ const STICK_THRESHOLD = 0.5;
 export const createSelect = (playerCount: number): SelectState => ({
   cursors: Array.from({ length: playerCount }, () => 0),
   picks: Array.from({ length: playerCount }, () => null),
+  rulesOpen: false,
 });
 
 export const allReady = (state: SelectState): boolean =>
@@ -30,8 +39,13 @@ export const allReady = (state: SelectState): boolean =>
 
 const wrap = (value: number, size: number): number => ((value % size) + size) % size;
 
-/** Left/right walks the roster in order; up/down jumps a row, staying in the column. */
+/**
+ * Left/right walks the roster in order; up/down jumps a row, staying in the column. Up from the
+ * top row reaches the rules banner, and down from the banner returns to the first fighter.
+ */
 const moveCursor = (index: number, dx: number, dy: number, count: number, columns: number) => {
+  if (index === RULES_CURSOR) return dy > 0 ? 0 : RULES_CURSOR;
+  if (dy < 0 && index < columns) return RULES_CURSOR;
   if (dx !== 0) return wrap(index + dx, count);
   const rows = Math.ceil(count / columns);
   const row = wrap(Math.floor(index / columns) + dy, rows);
@@ -47,12 +61,16 @@ export const reduceSelect = (
   roster: readonly CharacterDef[],
   columns: number,
 ): SelectState => {
+  if (action.type === 'rules') return { ...state, rulesOpen: action.open };
+  // While the rules are open, special closes them and everything else waits.
+  if (state.rulesOpen) return action.type === 'cancel' ? { ...state, rulesOpen: false } : state;
   const { player } = action;
   const picked = state.picks[player] ?? null;
   const cursor = state.cursors[player] ?? 0;
   switch (action.type) {
+    // As in Melee, a player can move on after picking; the pick stays until cancelled.
     case 'move':
-      if (picked !== null || roster.length === 0) return state;
+      if (roster.length === 0) return state;
       return {
         ...state,
         cursors: replace(
@@ -62,6 +80,7 @@ export const reduceSelect = (
         ),
       };
     case 'confirm': {
+      if (cursor === RULES_CURSOR) return { ...state, rulesOpen: true };
       const character = roster[cursor];
       if (picked !== null || !character) return state;
       return { ...state, picks: replace(state.picks, player, character.id) };

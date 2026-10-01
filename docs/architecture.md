@@ -48,11 +48,15 @@ browsers, rendering or networking.
 
 ## Screens
 
-`src/app/screens.ts` lists the screens (title, main menu, options, character select, stage
-select, match, results) and the allowed moves between them, as plain data with a unit test.
-`App` shows menu screens as HTML over the canvas. Character select reads each player's
+`src/app/screens.ts` lists the screens (title, main menu, options, controls, character select,
+stage select, match, results) and the allowed moves between them, as plain data with a unit test.
+`App` shows menu screens as HTML over the canvas. As in Melee, character select is where a match
+is set up: its top bar holds Back and the rules banner, which opens the rules overlay (a second
+`MenuPanel`). Options holds game settings only. Character select reads each player's
 `InputSource` (press detection in `character-select.ts`), so gamepads will work there
-unchanged. The other menus (`MenuPanel`, stage select included) still read DOM keys. Every screen
+unchanged. The other menus (`MenuPanel`, stage select and the rules overlay included) still read
+DOM keys. Menus with a way back show a Back button in their top left corner, except results and
+the rules overlay, whose own buttons (Main menu, Done) do that job. Every screen
 listens on `window`, so each handler checks and marks the event in `key-events.ts`: one key press
 changes the screen at most once. Entering `match` creates a `GameSession` and
 its views; leaving it disposes them, so every match starts clean.

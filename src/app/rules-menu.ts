@@ -1,9 +1,9 @@
 import { RULE_LIMITS, type MatchRules } from '../core';
 
-/** A row on the options screen. */
+/** A row in the rules overlay on character select. */
 export type RuleField = 'mode' | 'stocks' | 'time';
 
-export interface OptionRow {
+export interface RuleRow {
   readonly field: RuleField;
   readonly label: string;
 }
@@ -40,9 +40,15 @@ export const adjustRule = (rules: MatchRules, field: RuleField, delta: 1 | -1): 
 };
 
 /** The rows to show: the rule, then only the setting that rule uses. */
-export const optionRows = (rules: MatchRules): OptionRow[] => [
+export const ruleRows = (rules: MatchRules): RuleRow[] => [
   { field: 'mode', label: `Rule: ${rules.mode === 'stock' ? 'Stock' : 'Time'}` },
   rules.mode === 'stock'
     ? { field: 'stocks', label: `Stocks: ${rules.stocks}` }
     : { field: 'time', label: `Time: ${rules.timeLimitSeconds / 60} min` },
 ];
+
+/** One line for the top bar of character select, e.g. "Stock · 3 lives". */
+export const ruleSummary = (rules: MatchRules): string =>
+  rules.mode === 'stock'
+    ? `Stock · ${rules.stocks} ${rules.stocks === 1 ? 'life' : 'lives'}`
+    : `Time · ${rules.timeLimitSeconds / 60} min`;

@@ -28,6 +28,8 @@ knock each other off a floating stage. No install, instant play, readable and fu
 
 ## Match rules
 
+Set on character select, as in Melee: the banner at the top shows the rules and opens them.
+
 - **Stock:** each player has 1 to 9 lives; the last one with lives left wins.
 - **Time:** 1 to 10 minutes with unlimited respawns. Score is KOs minus falls, as in Smash; a
   KO counts for whoever hit the fallen fighter last since it respawned, and a self-destruct is
@@ -63,8 +65,9 @@ a playable build; it is done when that build works, not on a date.
 - [x] **M0 Walking skeleton.** Two capsule fighters, one stage, run, jump, double jump,
       fast-fall, drop-through platforms, a jab, damage, knockback, stocks, KO and respawn,
       HUD, fixed-timestep loop, tests and CI.
-- [ ] **S1 Menus.** Title screen, main menu, options (stock or time rules), Melee-style
-      character select grid, stage select, results. Epic #1.
+- [ ] **S1 Menus.** Title screen, main menu, options (screen, controls), Melee-style
+      character select with the match rules in its top bar, stage select, results, Back
+      buttons. Epic #1.
 - [ ] **S2 Gamepad and body.** Gamepad adapter and menu navigation; fighters with head, torso,
       arms and legs, basic poses and per-part hurtboxes. Epics #3, #4.
 - [ ] **S3 Move engine.** Move definition format (ADR), jab rebuilt as data, bone-attached

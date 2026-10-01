@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_RULES, RULE_LIMITS } from '../core';
-import { adjustRule, optionRows } from './options';
+import { adjustRule, ruleRows, ruleSummary } from './rules-menu';
 
-describe('options screen rules', () => {
+describe('rules overlay on character select', () => {
   it('switches between stock and time', () => {
     const time = adjustRule(DEFAULT_RULES, 'mode', 1);
     expect(time.mode).toBe('time');
@@ -28,13 +28,19 @@ describe('options screen rules', () => {
   });
 
   it('shows only the setting that matters for the rule', () => {
-    expect(optionRows(DEFAULT_RULES)).toEqual([
+    expect(ruleRows(DEFAULT_RULES)).toEqual([
       { field: 'mode', label: 'Rule: Stock' },
       { field: 'stocks', label: 'Stocks: 3' },
     ]);
-    expect(optionRows({ ...DEFAULT_RULES, mode: 'time' })).toEqual([
+    expect(ruleRows({ ...DEFAULT_RULES, mode: 'time' })).toEqual([
       { field: 'mode', label: 'Rule: Time' },
       { field: 'time', label: 'Time: 2 min' },
     ]);
+  });
+
+  it('sums the rules up in one line for the character select top bar', () => {
+    expect(ruleSummary(DEFAULT_RULES)).toBe('Stock · 3 lives');
+    expect(ruleSummary({ ...DEFAULT_RULES, stocks: 1 })).toBe('Stock · 1 life');
+    expect(ruleSummary({ ...DEFAULT_RULES, mode: 'time' })).toBe('Time · 2 min');
   });
 });

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { KeyboardInputSource, PLAYER_ONE_KEYS } from './keyboard-input-source';
+import {
+  KeyboardInputSource,
+  PLAYER_ONE_KEYS,
+  PLAYER_TWO_KEYS,
+  describeKeys,
+} from './keyboard-input-source';
 
 const key = (type: 'keydown' | 'keyup', code: string): Event =>
   Object.assign(new Event(type), { code });
@@ -28,5 +33,24 @@ describe('KeyboardInputSource', () => {
     source.dispose();
     target.dispatchEvent(key('keydown', 'KeyD'));
     expect(source.sample().x).toBe(0);
+  });
+});
+
+describe('describeKeys', () => {
+  it('names the keys of a key map the way they read on a keyboard', () => {
+    expect(describeKeys(PLAYER_ONE_KEYS)).toEqual({
+      move: 'A / D',
+      jump: 'W or Space',
+      down: 'S',
+      attack: 'F',
+      special: 'G',
+    });
+    expect(describeKeys(PLAYER_TWO_KEYS)).toEqual({
+      move: '← / →',
+      jump: '↑ or Num 0',
+      down: '↓',
+      attack: '.',
+      special: '/',
+    });
   });
 });

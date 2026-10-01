@@ -6,6 +6,7 @@ export const SCREENS = [
   'title',
   'main-menu',
   'options',
+  'controls',
   'character-select',
   'stage-select',
   'match',
@@ -20,7 +21,8 @@ export const INITIAL_SCREEN: Screen = 'title';
 const TRANSITIONS: Readonly<Record<Screen, readonly Screen[]>> = {
   title: ['main-menu'],
   'main-menu': ['character-select', 'options', 'title'],
-  options: ['main-menu'],
+  options: ['controls', 'main-menu'],
+  controls: ['options'],
   'character-select': ['stage-select', 'main-menu'],
   'stage-select': ['match', 'character-select'],
   // Leaving a match early (pause menu) comes later; for now a match always ends in results.
@@ -41,10 +43,16 @@ export const go = (from: Screen, to: Screen): Screen => {
 export interface MenuEntry {
   readonly label: string;
   readonly to: Screen;
+  /** Shown at the bottom while the entry is focused, as in Melee. */
+  readonly description: string;
 }
 
 /** The main menu, top to bottom. Escape goes back to the title screen. */
 export const MAIN_MENU: readonly MenuEntry[] = [
-  { label: 'Versus', to: 'character-select' },
-  { label: 'Options', to: 'options' },
+  {
+    label: 'VS. Mode',
+    to: 'character-select',
+    description: 'Battle your friends. Choose the rules on the character select screen.',
+  },
+  { label: 'Options', to: 'options', description: 'Adjust the screen and view the controls.' },
 ];

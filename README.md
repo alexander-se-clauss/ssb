@@ -10,14 +10,17 @@ npm ci
 npm run dev      # open http://localhost:5173
 ```
 
-| Player | Move  | Jump       | Drop / fast-fall | Attack |
-| ------ | ----- | ---------- | ---------------- | ------ |
-| P1     | A / D | W or Space | S                | F      |
-| P2     | ← / → | ↑          | ↓                | .      |
+| Player | Move  | Jump       | Drop / fast-fall | Attack | Special |
+| ------ | ----- | ---------- | ---------------- | ------ | ------- |
+| P1     | A / D | W or Space | S                | F      | G       |
+| P2     | ← / → | ↑ or Num 0 | ↓                | .      | /       |
 
-Menus: Enter or Space to start, arrow keys or W/S to move, Enter to pick. Esc goes back. On character select each player uses their own controls: move to pick a
-fighter, attack (F / .) to pick, special (G / /) to cancel, then Enter when both are ready. After a match, the results screen offers a
-rematch or the main menu.
+Menus: Enter or Space to start, arrow keys or W/S to move, Enter to pick. Esc or the Back
+button goes back. On character select each player uses their own controls: move to pick a
+fighter, attack (F / .) to pick, special (G / /) to cancel, then Enter when both are ready. Move
+up onto the rules banner and pick it (or click it) to change the match rules. Options holds the
+screen setting and the controls. After a match, the results screen offers a rematch or the main
+menu.
 
 ## Development
 
