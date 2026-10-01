@@ -175,6 +175,12 @@ a closed, `aria-hidden` shadow root on top and cuts it away behind a band of sla
 input, the debug handle and tests never wait on the animation, and the copies are invisible to
 locators. Reduced motion skips it.
 
+A match starts in the `countdown` phase (`COUNTDOWN` in `config.ts`): `step` lets the fighters
+settle with neutral input until `goFrame`, then plays; `timeLeftFrames` counts from GO
+(`playedFrames`). `DomHud` reads that phase to show the READY and GO! banner, in the blade style
+of the wipe (`match-banner.css`). Scenario tests skip the countdown (`countdownFrames: 0` in
+`newMatch`).
+
 Menus with a way back show a Back button in their top left corner, except results and the
 rules overlay, whose own buttons (Main menu, Done) do that job. Every screen listens on `window`,
 so each handler checks and marks the event in `key-events.ts`: one key press changes the screen at

@@ -1,7 +1,33 @@
-import { TICK_RATE, score, timeLeftFrames, type FighterState, type MatchState } from '../../core';
+import {
+  COUNTDOWN,
+  TICK_RATE,
+  playedFrames,
+  score,
+  timeLeftFrames,
+  type FighterState,
+  type MatchState,
+} from '../../core';
 import type { GameView, SessionView } from '../../ports';
 
 const MAX_STOCK_DOTS = 5;
+
+/** The big blade banner across the middle of the screen. */
+type BannerKind = 'ready' | 'go';
+
+const BANNER_TEXT: Readonly<Record<BannerKind, string>> = { ready: 'Ready', go: 'Go!' };
+
+/** READY during the countdown, then GO! for a moment. */
+const bannerKind = (match: MatchState): BannerKind | null => {
+  if (match.phase === 'countdown') return 'ready';
+  if (
+    match.phase === 'playing' &&
+    match.goFrame > 0 &&
+    playedFrames(match) < COUNTDOWN.goBannerFrames
+  ) {
+    return 'go';
+  }
+  return null;
+};
 
 const PLAYER_CSS_COLORS = ['#e94f4f', '#4f8fe9', '#4fd18b', '#f2c14e'];
 
@@ -19,6 +45,8 @@ export class DomHud implements GameView {
   private readonly root: HTMLElement;
   private readonly banner: HTMLElement;
   private readonly clock: HTMLElement;
+  private readonly matchBanner: HTMLElement;
+  private readonly matchBannerText: HTMLElement;
   private readonly cards = new Map<number, { damage: HTMLElement; stocks: HTMLElement }>();
 
   constructor(container: HTMLElement) {
@@ -30,7 +58,16 @@ export class DomHud implements GameView {
     this.clock = document.createElement('div');
     this.clock.className = 'hud-clock';
     this.clock.hidden = true;
-    container.append(this.root, this.banner, this.clock);
+    this.matchBanner = document.createElement('div');
+    this.matchBanner.className = 'match-banner';
+    this.matchBanner.setAttribute('role', 'status');
+    this.matchBanner.hidden = true;
+    const band = document.createElement('div');
+    band.className = 'match-banner-band';
+    this.matchBannerText = document.createElement('span');
+    this.matchBannerText.className = 'match-banner-text';
+    this.matchBanner.append(band, this.matchBannerText);
+    container.append(this.root, this.banner, this.clock, this.matchBanner);
   }
 
   render({ current }: SessionView): void {
@@ -38,6 +75,7 @@ export class DomHud implements GameView {
     const framesLeft = timeLeftFrames(current);
     this.clock.hidden = framesLeft === null;
     if (framesLeft !== null) this.clock.textContent = formatClock(framesLeft);
+    this.showBanner(bannerKind(current));
     if (current.phase === 'finished') {
       this.banner.hidden = false;
       this.banner.textContent =
@@ -53,6 +91,17 @@ export class DomHud implements GameView {
     this.root.remove();
     this.banner.remove();
     this.clock.remove();
+    this.matchBanner.remove();
+  }
+
+  /** Each kind has its own entrance animation in CSS, which restarts when the kind changes. */
+  private showBanner(kind: BannerKind | null): void {
+    const shown = this.matchBanner.hidden ? null : (this.matchBanner.dataset['kind'] ?? null);
+    if (shown === kind) return;
+    this.matchBanner.hidden = kind === null;
+    if (kind === null) return;
+    this.matchBanner.dataset['kind'] = kind;
+    this.matchBannerText.textContent = BANNER_TEXT[kind];
   }
 
   private updateCard(fighter: FighterState, match: MatchState): void {

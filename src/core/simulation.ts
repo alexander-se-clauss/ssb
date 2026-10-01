@@ -1,4 +1,5 @@
-import { FIGHTER, RULE_LIMITS } from './config';
+import { COUNTDOWN, FIGHTER, RULE_LIMITS } from './config';
+import { trackStick } from './attack-input';
 import { resolveCombat } from './combat';
 import { createFighter, updateFighter } from './fighter';
 import { NEUTRAL_INPUT } from './input';
@@ -44,10 +45,15 @@ export const createMatch = (config: MatchConfig): MatchState => {
     for (const moveId of Object.values(character.moves)) findMove(moveId);
   }
   validateRules(config.rules);
+  const goFrame = config.countdownFrames ?? COUNTDOWN.frames;
+  if (!Number.isInteger(goFrame) || goFrame < 0) {
+    throw new Error(`Countdown must be a whole number of frames: ${goFrame}`);
+  }
   const stocks = config.rules.mode === 'stock' ? config.rules.stocks : 0;
   return {
     frame: 0,
-    phase: 'playing',
+    phase: goFrame > 0 ? 'countdown' : 'playing',
+    goFrame,
     stage,
     rules: config.rules,
     fighters: config.players.map((player, slot) =>
@@ -117,6 +123,26 @@ const matchResult = (
 };
 
 /**
+ * A frame of the READY countdown: fighters settle and breathe, but get no input, so nobody moves
+ * or attacks before GO. Nothing can hit or fall yet, so combat and KOs are skipped. The players'
+ * buttons and sticks are still remembered, so one held through READY is not a press at GO.
+ */
+const countdownStep = (state: MatchState, inputs: readonly PlayerInput[]): MatchState => {
+  const frame = state.frame + 1;
+  return {
+    ...state,
+    frame,
+    phase: frame >= state.goFrame ? 'playing' : 'countdown',
+    fighters: state.fighters.map((fighter) => {
+      const input = inputs[fighter.slot] ?? NEUTRAL_INPUT;
+      const idle = updateFighter(fighter, NEUTRAL_INPUT, state.stage, state.frame);
+      return { ...idle, previousInput: input, stick: trackStick(fighter.stick, input) };
+    }),
+    events: [],
+  };
+};
+
+/**
  * The heart of the game: a pure function from (state, inputs) to the next state.
  *
  * Pure and deterministic on purpose: the same inputs always give the same result. That is what
@@ -125,6 +151,7 @@ const matchResult = (
  */
 export const step = (state: MatchState, inputs: readonly PlayerInput[]): MatchState => {
   if (state.phase === 'finished') return { ...state, events: [] };
+  if (state.phase === 'countdown') return countdownStep(state, inputs);
 
   const moved = state.fighters.map((fighter) =>
     updateFighter(fighter, inputs[fighter.slot] ?? NEUTRAL_INPUT, state.stage, state.frame),

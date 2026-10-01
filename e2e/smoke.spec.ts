@@ -413,6 +413,24 @@ test('player one moves right when D is held', async ({ page }) => {
   await page.keyboard.up('KeyD');
 });
 
+test('a match starts with READY, fighters wait for GO!, then move', async ({ page }) => {
+  await startMatch(page);
+  const banner = page.getByRole('status');
+  await expect(banner).toHaveText('Ready');
+  expect((await gameState(page)).phase).toBe('countdown');
+  // Held through the countdown: nobody moves before GO.
+  await page.keyboard.down('KeyD');
+  await nextFrames(page);
+  const startX = (await gameState(page)).fighters[0]?.position.x ?? 0;
+  await expect.poll(async () => (await gameState(page)).phase, FRAMES_TIMEOUT).toBe('playing');
+  await expect(banner).toHaveText('Go!');
+  await expect
+    .poll(async () => (await gameState(page)).fighters[0]?.position.x ?? 0, FRAMES_TIMEOUT)
+    .toBeGreaterThan(startX);
+  await page.keyboard.up('KeyD');
+  await expect(banner).toBeHidden(FRAMES_TIMEOUT);
+});
+
 test('an idle fighter keeps moving, and running changes the pose', async ({ page }) => {
   await startMatch(page);
   await expect.poll(async () => (await gameState(page)).fighters[0]?.grounded).toBe(true);

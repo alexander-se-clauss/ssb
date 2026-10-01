@@ -40,28 +40,28 @@
 
 .screen-wipe-trail {
   flex: 0 0 3%;
-  background: #efb977;
+  background: var(--blade-gold);
 }
 
 .screen-wipe-gap {
   flex: 0 0 7%;
-  background: #050a13;
+  background: var(--blade-shadow);
 }
 
 .screen-wipe-body {
   flex: 1;
   background:
-    repeating-linear-gradient(90deg, transparent 0 22px, rgb(104 133 166 / 9%) 22px 24px),
-    linear-gradient(90deg, #0a1120, #1c2c42 70%, #273d59);
+    repeating-linear-gradient(90deg, transparent 0 22px, var(--blade-pinstripe) 22px 24px),
+    linear-gradient(90deg, var(--blade-navy), var(--blade-navy-mid) 70%, var(--blade-navy-light));
 }
 
 .screen-wipe-edge {
   flex: 0 0 9%;
-  background: linear-gradient(90deg, #e9a85c, #ffdf9c);
+  background: linear-gradient(90deg, var(--blade-gold-deep), var(--blade-gold-light));
 }
 
 .screen-wipe-spark {
   flex: 0 0 4px;
-  background: #fff0ce;
+  background: var(--blade-spark);
   box-shadow: 0 0 18px 4px rgb(255 223 156 / 70%);
 }

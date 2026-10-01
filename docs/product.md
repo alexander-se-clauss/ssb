@@ -25,6 +25,8 @@ knock each other off a floating stage. No install, instant play, readable and fu
 - Hits add damage and launch the target. Launch speed grows with damage.
 - Leaving the blast zone is a KO; respawn with brief invulnerability.
 - Who wins depends on the match rules below (stock or time).
+- A match opens with READY: fighters stand still and ignore input until GO!, as in Melee. The
+  match clock starts at GO.
 
 ## Match rules
 

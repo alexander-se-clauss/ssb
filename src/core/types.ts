@@ -118,7 +118,8 @@ export type GameEvent =
     }
   | { readonly type: 'match-end'; readonly winner: PlayerSlot | null };
 
-export type MatchPhase = 'playing' | 'finished';
+/** `countdown`: READY is shown and fighters wait for GO (`goFrame`). */
+export type MatchPhase = 'countdown' | 'playing' | 'finished';
 
 export type RuleMode = 'stock' | 'time';
 
@@ -135,6 +136,8 @@ export interface MatchRules {
 export interface MatchState {
   readonly frame: number;
   readonly phase: MatchPhase;
+  /** The frame play starts on (GO). Before it the match is in its countdown. */
+  readonly goFrame: number;
   readonly stage: StageDef;
   readonly rules: MatchRules;
   readonly fighters: readonly FighterState[];
@@ -163,4 +166,6 @@ export interface MatchConfig {
   /** One entry per player, in slot order. */
   readonly players: readonly PlayerConfig[];
   readonly rules: MatchRules;
+  /** Frames of READY before GO; `COUNTDOWN.frames` by default, 0 to start playing at once. */
+  readonly countdownFrames?: number;
 }
