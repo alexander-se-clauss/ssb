@@ -35,6 +35,25 @@ Set on character select, as in Melee: the banner at the top shows the rules and 
   KO counts for whoever hit the fallen fighter last since it respawned, and a self-destruct is
   only a fall. The best score wins when time runs out; a tie is a draw (sudden death later).
 
+## Menu presentation
+
+Menus share an original arena identity: fighter silhouettes, etched orbits, angled panels and
+bold titles connected to the screen framing. VS. Mode is the dominant main-menu destination;
+settings, controls, stage selection and results each use a composition suited to their content.
+Results show a 3D medal podium for two to four players, with player-colored fighter models,
+numbered steps and a gold laurel wreath for first place. Stock standings follow elimination order;
+timed standings follow score, with ties sharing a place. Rematch and Main menu remain available.
+Character select and rules retain their match-setup layouts within the same visual family.
+Keyboard and controller users can reach rules and Back before or after joining a player slot.
+Before joining, only these header actions can be selected; fighter cursors appear after joining.
+Fighter selection fills the viewport with a compact shared header, rendered neutral roster portraits
+and four player panels. Joined panels preview the hovered fighter in the player’s gameplay color
+until confirmation locks the pick. Each panel identifies its input device and choosing/Ready state;
+a Ready to Fight banner appears when all two to four joined players have confirmed.
+In Options, directions navigate selections; confirming Screen toggles fullscreen.
+Hover and keyboard/gamepad focus use outline, shadow and position cues, with brief feedback that
+does not delay navigation. Layouts adapt to narrow and short viewports and respect reduced motion.
+
 ## Combat concept (planned)
 
 Smash meets Monster Hunter: defense is about commitment and timing, not a panic button.
@@ -65,8 +84,10 @@ a playable build; it is done when that build works, not on a date.
 - [x] **M0 Walking skeleton.** Two capsule fighters, one stage, run, jump, double jump,
       fast-fall, drop-through platforms, a jab, damage, knockback, stocks, KO and respawn,
       HUD, fixed-timestep loop, tests and CI.
-- [x] **S1 Menus.** Title screen, main menu, options (screen, controls), Melee-style
-      character select with the match rules in its top bar, stage select, results, Back
+- [x] **S1 Menus.** A 3D arena title screen with posed fighters and keyboard/gamepad/mouse
+      start, main menu, options (screen, controls), Melee-style
+      character select with the match rules in its top bar, a centered stage grid with rendered
+      scenery thumbnails and keyboard/gamepad/mouse selection, results, Back
       buttons. Epic #1.
 - [x] **S2 Gamepad and body.** Gamepad adapter and menu navigation; fighters with head, torso,
       arms and legs, basic poses and per-part hurtboxes. Epics #3, #4.

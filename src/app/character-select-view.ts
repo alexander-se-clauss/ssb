@@ -1,12 +1,15 @@
 import { markHandled, wasHandled } from './key-events';
 import type { CharacterDef, MatchRules } from '../core';
-import { RULES_CURSOR, type SelectState } from './character-select';
+import { BACK_CURSOR, RULES_CURSOR, previewCharacter, type SelectState } from './character-select';
 import { ruleSummary } from './rules-menu';
+import { menuAtmosphere } from './menu-art';
 
 /** Same order as the HUD's player colours. */
 const PLAYER_COLORS = ['#e94f4f', '#4f8fe9', '#4fd18b', '#f2c14e'];
 
 export interface CharacterSelectCallbacks {
+  readonly portrait: (character: CharacterDef, player?: number) => string;
+  readonly deviceName: (device: number) => string;
   /** Enter once everyone has picked. */
   readonly start: () => void;
   /** Escape or the Back button. */
@@ -28,19 +31,32 @@ export class CharacterSelectView {
   private readonly footer: HTMLElement;
   private readonly rulesBanner: HTMLButtonElement;
   private readonly rulesText: HTMLElement;
-  private readonly rulesCursors: HTMLElement;
+  private readonly backButton: HTMLButtonElement;
   private state: SelectState | undefined;
   private ready = false;
   private rules: MatchRules | undefined;
+  private readonly browsing = new Map<number, string>();
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
     if (!this.state || this.state.rulesOpen || event.repeat || wasHandled(event)) return;
     if (event.code === 'Escape') {
       markHandled(event);
       this.callbacks.back();
-    } else if (event.code === 'Enter' && this.ready) {
-      markHandled(event);
-      this.callbacks.start();
+    } else if (event.code === 'Enter') {
+      const focus = document.activeElement;
+      const header =
+        focus === this.backButton
+          ? this.backButton
+          : focus === this.rulesBanner
+            ? this.rulesBanner
+            : undefined;
+      if (header) {
+        markHandled(event);
+        header.click();
+      } else if (this.ready) {
+        markHandled(event);
+        this.callbacks.start();
+      }
     }
   };
 
@@ -59,29 +75,35 @@ export class CharacterSelectView {
     back.type = 'button';
     back.className = 'menu-back';
     back.textContent = '◀ Back';
+    back.setAttribute('aria-label', 'Back');
     back.addEventListener('click', () => callbacks.back());
+    this.backButton = back;
     this.rulesBanner = document.createElement('button');
     this.rulesBanner.type = 'button';
     this.rulesBanner.className = 'css-rules';
+    this.rulesBanner.setAttribute('aria-label', 'Match rules');
     this.rulesBanner.addEventListener('click', () => callbacks.openRules());
     const mode = document.createElement('span');
     mode.className = 'css-mode';
     mode.textContent = 'VS. Mode';
     this.rulesText = document.createElement('strong');
-    this.rulesCursors = document.createElement('div');
-    this.rulesCursors.className = 'css-cursors';
-    this.rulesBanner.append(mode, this.rulesText, this.rulesCursors);
-    topBar.append(back, this.rulesBanner);
+    this.rulesBanner.append(mode, this.rulesText);
     const heading = document.createElement('h1');
-    heading.textContent = 'Choose your fighter';
+    heading.textContent = 'Choose Your Fighter';
+    topBar.append(back, heading, this.rulesBanner);
     this.grid = document.createElement('div');
     this.grid.className = 'css-grid';
     this.grid.style.setProperty('--columns', String(Math.max(1, Math.min(columns, roster.length))));
+    this.grid.dataset['size'] = String(roster.length);
+    this.grid.setAttribute('aria-label', 'Fighter roster');
     this.slots = document.createElement('div');
     this.slots.className = 'css-slots';
     this.footer = document.createElement('p');
     this.footer.className = 'css-footer';
-    this.root.append(topBar, heading, this.grid, this.slots, this.footer);
+    const rosterFrame = document.createElement('section');
+    rosterFrame.className = 'css-roster';
+    rosterFrame.append(this.grid);
+    this.root.append(menuAtmosphere(), topBar, rosterFrame, this.slots, this.footer);
     container.append(this.root);
     window.addEventListener('keydown', this.onKeyDown);
   }
@@ -94,11 +116,6 @@ export class CharacterSelectView {
     this.root.hidden = false;
     this.rulesText.textContent = ruleSummary(rules);
     this.rulesBanner.title = 'Rules: move up here and pick, or click';
-    this.rulesCursors.replaceChildren(
-      ...state.cursors.flatMap((cursor, player) =>
-        cursor === RULES_CURSOR && state.devices[player] != null ? [this.badge(player)] : [],
-      ),
-    );
     this.grid.replaceChildren(
       ...this.roster.map((character, index) => {
         const cell = document.createElement('div');
@@ -108,10 +125,13 @@ export class CharacterSelectView {
         name.textContent = character.name;
         const cursors = document.createElement('div');
         cursors.className = 'css-cursors';
-        state.cursors.forEach((cursor, player) => {
-          if (cursor === index && state.devices[player] != null) cursors.append(this.badge(player));
-        });
-        cell.append(name, cursors);
+        cursors.append(...this.cursorsAt(state, index));
+        const portrait = document.createElement('img');
+        portrait.className = 'css-portrait';
+        portrait.src = this.callbacks.portrait(character);
+        portrait.alt = `${character.name} fighter portrait`;
+        name.className = 'css-fighter-name';
+        cell.append(portrait, name, cursors);
         return cell;
       }),
     );
@@ -124,24 +144,85 @@ export class CharacterSelectView {
         slot.style.setProperty('--player-color', PLAYER_COLORS[player % 4] ?? '#fff');
         const who = document.createElement('strong');
         who.textContent = `P${player + 1}`;
-        const what = document.createElement('span');
-        what.textContent = !joined
-          ? 'Press attack'
-          : pick
-            ? (this.roster.find((c) => c.id === pick)?.name ?? pick)
-            : '…';
-        slot.append(who, what);
+        who.className = 'css-player-number';
+        const device = state.devices[player];
+        const cursor = state.cursors[player] ?? 0;
+        const hovered = this.roster[cursor];
+        if (device != null && hovered) this.browsing.set(device, hovered.id);
+        const character = previewCharacter(
+          state,
+          player,
+          this.roster,
+          device != null ? this.browsing.get(device) : undefined,
+        );
+        const status = document.createElement('strong');
+        status.className = 'css-player-status';
+        status.textContent = !joined ? 'Join the fight' : pick ? '✓ Ready' : 'Choosing';
+        const identity = document.createElement('div');
+        identity.className = 'css-player-header';
+        identity.append(who, status);
+        const preview = document.createElement('div');
+        preview.className = 'css-player-preview';
+        if (joined && character) {
+          const image = document.createElement('img');
+          image.src = this.callbacks.portrait(character, player);
+          image.alt = `P${player + 1} ${character.name} fighter preview`;
+          image.dataset['character'] = character.id;
+          image.dataset['color'] = PLAYER_COLORS[player % 4] ?? '#fff';
+          preview.append(image);
+        } else {
+          const invitation = document.createElement('strong');
+          invitation.textContent = 'Press Attack';
+          const instruction = document.createElement('span');
+          instruction.textContent = 'to join';
+          preview.append(invitation, instruction);
+        }
+        const name = document.createElement('strong');
+        name.className = 'css-player-name';
+        name.textContent = joined ? (character?.name ?? 'Choose a fighter') : 'Open slot';
+        const input = document.createElement('small');
+        input.className = 'css-player-device';
+        input.textContent =
+          device != null ? this.callbacks.deviceName(device) : 'Keyboard / Gamepad';
+        slot.setAttribute('aria-label', `Player ${player + 1}: ${status.textContent}`);
+        slot.append(identity, preview, name, input);
         return slot;
       }),
     );
-    this.footer.textContent = ready ? 'Ready! Press Enter, Start or attack' : '';
+    this.footer.replaceChildren();
+    if (ready) {
+      const title = document.createElement('strong');
+      title.textContent = 'Ready to Fight';
+      const instruction = document.createElement('span');
+      instruction.textContent = 'Press Enter, Start or Attack';
+      this.footer.append(title, instruction);
+    }
     this.footer.classList.toggle('ready', ready);
+    if (!state.rulesOpen) {
+      const player = state.activeDevice === null ? -1 : state.devices.indexOf(state.activeDevice);
+      const cursor =
+        player >= 0 ? state.cursors[player] : state.guestCursors[state.activeDevice ?? -1];
+      const header =
+        cursor === BACK_CURSOR
+          ? this.backButton
+          : cursor === RULES_CURSOR
+            ? this.rulesBanner
+            : undefined;
+      if (header) header.focus({ preventScroll: true });
+      else if (
+        document.activeElement === this.backButton ||
+        document.activeElement === this.rulesBanner
+      ) {
+        (document.activeElement as HTMLButtonElement).blur();
+      }
+    }
   }
 
   hide(): void {
     this.root.hidden = true;
     this.state = undefined;
     this.rules = undefined;
+    this.browsing.clear();
   }
 
   dispose(): void {
@@ -149,11 +230,22 @@ export class CharacterSelectView {
     this.root.remove();
   }
 
-  private badge(player: number): HTMLElement {
+  private marker(player: number, picked: boolean): HTMLElement {
     const badge = document.createElement('span');
-    badge.className = 'css-badge';
+    badge.className = picked ? 'css-badge locked' : 'css-badge';
+    badge.title = picked ? `P${player + 1} ready` : `P${player + 1} choosing`;
     badge.textContent = `P${player + 1}`;
     badge.style.setProperty('--player-color', PLAYER_COLORS[player % 4] ?? '#fff');
     return badge;
+  }
+
+  private cursorsAt(state: SelectState, target: number): HTMLElement[] {
+    const players = state.cursors.flatMap((cursor, player) =>
+      state.devices[player] != null &&
+      (cursor === target || state.picks[player] === this.roster[target]?.id)
+        ? [this.marker(player, state.picks[player] === this.roster[target]?.id)]
+        : [],
+    );
+    return players;
   }
 }

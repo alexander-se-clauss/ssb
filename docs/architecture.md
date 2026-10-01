@@ -101,26 +101,60 @@ never plays sound. Menus play their cues in `MenuPanel` (move, confirm, adjust, 
 can name its own cue, like `match-start` on a stage). Character select plays one cue per frame
 from the change between its state before and after (`selectCue` in `menu-sounds.ts`: join,
 leave, pick, un-pick, rules, cursor move), so a held button stays quiet. Start, Back and a click on the rules
-banner play their cue in `App` directly.
+banner play their cue in `App` directly. During a match, `App` plays fight cues (`match-sounds.ts`): hits
+(heavier with more damage), KOs and the match end from session events, and a move starting, a
+jump and a landing from the change between the last state it took sounds from and the current
+one, so core needs no sound events. A fighter in hitstun only makes a landing sound.
 
 ## Screens
 
 `src/app/screens.ts` lists the screens (title, main menu, options, controls, character select,
 stage select, match, results) and the allowed moves between them, as plain data with a unit test.
-`App` shows menu screens as HTML over the canvas. As in Melee, character select is where a match is
+`App` shows menu screens as HTML over the canvas. The title screen owns a decorative Three.js
+arena illustration with posed fighters, colored lighting and gently drifting sparks. It uses the
+core skeleton and poses without running a match, respects reduced-motion preferences, and releases
+its WebGL resources on leaving the title. The HTML start button also accepts keyboard and gamepad input. As in Melee, character select is where a match is
 set up: its top bar holds Back and the rules banner, which opens the rules overlay (a second
-`MenuPanel`, editing a draft that applies on Done). Options holds game settings only. On character
+`MenuPanel`, editing a draft that applies on Done). Options holds game settings only: directions
+navigate between its panels, and confirming Screen toggles fullscreen. On character
 select a device joins the first of four free player slots by pressing attack, then moves that
 player's cursor; special un-picks, then leaves the slot (later players move up, so slots have no
-gaps), and from a device that has not joined goes back. Start, or attack once everyone joined
+gaps), and from a device that has not joined goes back. Before joining, directions select only match rules and Back. Down clears header focus,
+allowing attack to join at the first fighter. Unjoined devices cannot browse the roster;
+confirming a header action opens rules or goes back. Joined players use the same header navigation and keep
+their picks. The last device to act synchronizes native header focus, so keyboard Enter activates
+Back or rules when focused. Start, or attack on the roster once everyone joined
 has picked, starts (two to four players); `PlayerInput.start` is the pad's Start button, and the
 simulation ignores it. The match gets the joined players in slot order, each with their own
-device. The controls screen and the in-match hint name devices (left keys, right keys, gamepad),
-not players. Press detection lives in `character-select.ts`. The other menus (`MenuPanel`, stage
+device. The controls screen names devices (left keys, right keys, gamepad), not players.
+Matches do not display control instructions. Press detection lives in `character-select.ts`. The other menus (`MenuPanel`, stage
 select and the rules overlay included) read the keyboard as DOM keys and the gamepads as polled
 devices: `menu-commands.ts` turns presses into commands for `MenuPanel.command()`, which moves the
 focus to the nearest button in that direction (`spatial-focus.ts`), so the Back button is reachable
-too. Menus with a way back show a Back button in their top left corner, except results and the
+too. Stage select shows a centered grid of named cards: thumbnails capture the actual match
+scenery once per stage, then release their GPU resources and reuse the images. Mouse clicks,
+keyboard arrows/WASD and gamepad directions select cards through the same menu handling.
+The menu family uses `menu-art.ts` for original SVG arena orbits, textures and fighter silhouettes
+computed from the core skeleton and poses. `MenuPanel` composes a framed heading, optional data
+panel, and selection panels; each screen supplies its own variant in `app.ts`. Main menu gives
+VS. Mode the largest panel, settings uses offset equipment panels, results frames a Three.js medal podium with the selected fighter models, and stage select attaches its heading to the centered thumbnail grid.
+`menu-theme.css` also frames character select and the rules overlay while preserving their setup
+layouts. `fighter-lobby.css` gives character selection a viewport-sized header/roster/player-panel
+composition, with four panels in a row on desktop and a two-by-two grid on portrait screens.
+`fighter-portrait.ts` captures neutral and four player-color images per registry character in one
+temporary WebGL context, caches the PNGs, and releases all GPU resources. `fighter-model.ts` shares
+body geometry, materials and player colors with gameplay and results. Player previews follow the
+roster cursor before confirmation and retain confirmed picks; header navigation retains the last
+browsed fighter. Input labels come from the app’s device metadata. Hover and focus share outline, shadow and position cues. A short confirmation overlay
+runs independently of navigation; reduced motion disables it and menu transitions.
+Browser tests check visibility and overlap across desktop, portrait, compact and short landscape
+viewports, including four-player results. `ResultsScene` renders gold, silver, bronze and fourth-place
+steps with the match skeleton and player colors; first place carries a laurel wreath. The app records
+stock eliminations (including their simulation frame) from existing session events to order the
+podium; timed matches use KOs minus falls, and ties share a place. The static scene renders on resize
+and disposes its observer, geometry, textures and WebGL context when leaving results.
+
+Menus with a way back show a Back button in their top left corner, except results and the
 rules overlay, whose own buttons (Main menu, Done) do that job. Every screen listens on `window`,
 so each handler checks and marks the event in `key-events.ts`: one key press changes the screen at
 most once. Entering `match` creates a `GameSession` and its views; leaving it disposes them, so

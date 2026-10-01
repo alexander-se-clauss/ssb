@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page, type TestInfo } from '@playwright/test';
 
 /** Reads the debug handle installed in src/app/debug.ts. */
 const screen = (page: Page) => page.evaluate(() => window.__SSB__?.screen());
@@ -87,6 +87,33 @@ test('the game boots into the title screen', async ({ page }) => {
   expect(await screen(page)).toBe('title');
 });
 
+test('title illustration supports resizing, reduced motion and mouse start, and is disposed on exit', async ({
+  page,
+}, testInfo) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  const canvas = page.locator('canvas.title-scene');
+  await expect(canvas).toBeVisible();
+  await nextFrames(page);
+  expect(await page.evaluate(() => window.__SSB__?.state())).toBeUndefined();
+  await page.screenshot({ path: testInfo.outputPath('title-desktop.png') });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await nextFrames(page);
+  await expect(page.getByRole('heading', { name: 'SSB', exact: true })).toBeVisible();
+  const start = page.getByRole('button', { name: 'Press start', exact: true });
+  await expect(start).toBeInViewport();
+  await page.screenshot({ path: testInfo.outputPath('title-narrow.png') });
+  await start.click();
+  await expect.poll(() => screen(page)).toBe('main-menu');
+  await expect(canvas).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect.poll(() => screen(page)).toBe('title');
+  await expect(canvas).toHaveCount(1);
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('main-menu');
+  await expect(canvas).toHaveCount(0);
+});
+
 test('start opens the main menu, and Escape goes back', async ({ page }) => {
   await page.goto('/');
   await page.keyboard.press('Space');
@@ -150,11 +177,11 @@ test('two players pick, change their minds and confirm on character select', asy
   await tap(page, 'Period');
   await expect.poll(() => picks(page)).toEqual(['capsule', null, null, null]);
   // One player alone cannot start a match: a second one joins and picks.
-  await expect(page.getByText('Ready! Press Enter')).toBeHidden();
+  await expect(page.getByText('Ready to Fight', { exact: true })).toBeHidden();
   await tap(page, 'KeyF');
   await tap(page, 'KeyF');
   await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule', null, null]);
-  await expect(page.getByText('Ready! Press Enter')).toBeVisible();
+  await expect(page.getByText('Ready to Fight', { exact: true })).toBeVisible();
 
   await page.keyboard.press('Enter');
   await expect.poll(() => screen(page)).toBe('stage-select');
@@ -222,13 +249,46 @@ const toStageSelect = async (page: Page) => {
   await expect.poll(() => screen(page)).toBe('stage-select');
 };
 
-test('stage select previews the focused stage and starts the match there', async ({ page }) => {
+test('stage grid centers rendered thumbnails and keyboard selection starts the chosen stage', async ({
+  page,
+}, testInfo) => {
   await toStageSelect(page);
-  await expect(page.getByLabel('Battlefield preview')).toBeVisible();
-  await page.keyboard.press('ArrowDown');
+  const grid = page.locator('.menu-grid');
+  await expect(grid.locator('img')).toHaveCount(2);
+  for (const image of await grid.locator('img').all()) {
+    await expect
+      .poll(() => image.evaluate((node: HTMLImageElement) => node.naturalWidth))
+      .toBe(640);
+    await expect(image).toHaveAttribute('src', /^data:image\/png;base64,/);
+  }
+  const box = await grid.boundingBox();
+  const viewport = page.viewportSize();
+  if (!box || !viewport) throw new Error('Missing grid or viewport');
+  expect(box.x + box.width / 2).toBeCloseTo(viewport.width / 2, 0);
+  expect(box.y + box.height / 2).toBeCloseTo(viewport.height / 2, 0);
+  await page.screenshot({ path: testInfo.outputPath('stage-grid-desktop.png') });
+  await page.setViewportSize({ width: 390, height: 844 });
+  const narrow = await grid.boundingBox();
+  if (!narrow) throw new Error('Missing narrow grid');
+  expect(narrow.x + narrow.width / 2).toBeCloseTo(195, 0);
+  expect(narrow.y + narrow.height / 2).toBeCloseTo(422, 0);
+  expect(narrow.x).toBeGreaterThanOrEqual(0);
+  expect(narrow.x + narrow.width).toBeLessThanOrEqual(390);
+  await page.screenshot({ path: testInfo.outputPath('stage-grid-narrow.png') });
+  await page.setViewportSize(viewport);
+  await page.keyboard.press('ArrowRight');
   await expect(page.getByRole('button', { name: 'Final Destination' })).toBeFocused();
-  await expect(page.getByLabel('Final Destination preview')).toBeVisible();
+  await page.keyboard.press('ArrowLeft');
+  await expect(page.getByRole('button', { name: 'Battlefield', exact: true })).toBeFocused();
+  await page.keyboard.press('KeyD');
   await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('match');
+  expect((await gameState(page)).stage.id).toBe('final-destination');
+});
+
+test('a stage thumbnail can be selected with the mouse', async ({ page }) => {
+  await toStageSelect(page);
+  await page.getByRole('button', { name: 'Final Destination' }).locator('img').click();
   await expect.poll(() => screen(page)).toBe('match');
   expect((await gameState(page)).stage.id).toBe('final-destination');
 });
@@ -245,7 +305,7 @@ test('stage select goes back to character select', async ({ page }) => {
   await expect.poll(() => screen(page)).toBe('character-select');
 });
 
-test('results show the winner and stats, and Rematch starts a new match', async ({ page }) => {
+test('results show the winner podium, and Rematch starts a new match', async ({ page }) => {
   // One stock, so walking off the stage once ends the match.
   await toCharacterSelect(page);
   await openRules(page);
@@ -267,16 +327,19 @@ test('results show the winner and stats, and Rematch starts a new match', async 
   await page.keyboard.up('KeyA');
 
   await expect(page.getByRole('heading', { name: 'Player 2 wins!' })).toBeVisible();
-  const rows = page.locator('.results-table tbody tr');
-  await expect(rows).toHaveCount(2);
-  await expect(rows.nth(0)).toContainText('P1');
-  await expect(rows.nth(1)).toHaveClass(/winner/);
-  await expect(rows.nth(0).locator('td').nth(3)).toHaveText('1');
+  await expect(page.locator('.results-scene canvas')).toBeVisible();
+  const standings = page.locator('.results-placements li');
+  await expect(standings).toHaveCount(2);
+  await expect(standings.nth(0)).toHaveAttribute('data-player', '2');
+  await expect(standings.nth(0)).toHaveAttribute('data-place', '1');
+  await expect(standings.nth(1)).toHaveAttribute('data-place', '2');
+  await expect(page.locator('.results-table')).toHaveCount(0);
 
   await expect(page.getByRole('button', { name: 'Rematch' })).toBeFocused();
   await page.keyboard.press('Enter');
   await expect.poll(() => screen(page)).toBe('match');
   expect((await gameState(page)).frame).toBeLessThan(120);
+  await expect(page.locator('.results-scene canvas')).toHaveCount(0);
 });
 
 test('a match starts from the menus, renders and simulates', async ({ page }) => {
@@ -342,7 +405,7 @@ test('full flow: title, menus, a match ended through the debug handle, results, 
   await bothPick(page);
   await page.keyboard.press('Enter');
   await expect.poll(() => screen(page)).toBe('stage-select');
-  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowRight');
   await page.keyboard.press('Enter');
   await expect.poll(() => screen(page)).toBe('match');
   expect((await gameState(page)).stage.id).toBe('final-destination');
@@ -476,6 +539,8 @@ test('the whole menu flow works with gamepads only', async ({ page }) => {
   await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule', null, null]);
   await press(page, 0, PAD.a);
   await expect.poll(() => screen(page)).toBe('stage-select');
+  await flick(page, 1, 1, 0);
+  await expect(page.getByRole('button', { name: 'Final Destination' })).toBeFocused();
   await press(page, 1, PAD.a);
   await expect.poll(() => screen(page)).toBe('match');
 
@@ -570,4 +635,423 @@ test('Start leaves the title and starts the match once both players picked', asy
   await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule', null, null]);
   await press(page, 1, PAD.start);
   await expect.poll(() => screen(page)).toBe('stage-select');
+});
+
+/** Check foreground controls and titles at both desk and compact viewport sizes. */
+const inspectMenu = async (page: Page, name: string, testInfo: TestInfo) => {
+  for (const viewport of [
+    { width: 1280, height: 720 },
+    { width: 390, height: 844 },
+    { width: 844, height: 390 },
+    { width: 320, height: 568 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await nextFrames(page);
+    const menus = page.locator('.menu:visible');
+    const root = (await menus.count()) ? menus.last() : page.locator('.css:visible');
+    await expect(root.locator('.menu-atmosphere')).toBeVisible();
+    const boxes = await root.evaluate((element) =>
+      Array.from(element.querySelectorAll('h1, button, table, .css-slot, .css-cell'))
+        .filter((node) => node.getClientRects().length > 0)
+        .map((node) => {
+          const box = node.getBoundingClientRect();
+          return {
+            label: node.textContent,
+            x: box.x,
+            y: box.y,
+            right: box.right,
+            bottom: box.bottom,
+          };
+        }),
+    );
+    for (const box of boxes) {
+      const message = `${name} ${viewport.width}x${viewport.height}: ${box.label}`;
+      expect(box.x, message).toBeGreaterThanOrEqual(0);
+      expect(box.y, message).toBeGreaterThanOrEqual(0);
+      expect(box.right, message).toBeLessThanOrEqual(viewport.width);
+      expect(box.bottom, message).toBeLessThanOrEqual(viewport.height);
+    }
+    for (let i = 0; i < boxes.length; i++) {
+      for (const other of boxes.slice(i + 1)) {
+        const box = boxes[i];
+        if (!box) continue;
+        const overlap =
+          Math.min(box.right, other.right) - Math.max(box.x, other.x) > 1 &&
+          Math.min(box.bottom, other.bottom) - Math.max(box.y, other.y) > 1;
+        expect(
+          overlap,
+          `${name} ${viewport.width}x${viewport.height}: ${box.label} overlaps ${other.label}`,
+        ).toBe(false);
+      }
+    }
+    await page.screenshot({ path: testInfo.outputPath(`${name}-${viewport.width}.png`) });
+  }
+  await page.setViewportSize({ width: 1280, height: 720 });
+};
+
+test('the menu family keeps titles and controls visible across desktop, portrait and landscape', async ({
+  page,
+}, testInfo) => {
+  // This traverses a four-player match and captures all seven menus at four sizes.
+  test.setTimeout(60_000);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await installPads(page, 2);
+  await page.goto('/');
+  await page.keyboard.press('Enter');
+  await inspectMenu(page, 'main', testInfo);
+  const primary = await page.getByRole('button', { name: 'VS. Mode' }).boundingBox();
+  const secondary = await page.getByRole('button', { name: 'Options', exact: true }).boundingBox();
+  if (!primary || !secondary) throw new Error('Missing main-menu panels');
+  expect(primary.width * primary.height).toBeGreaterThan(secondary.width * secondary.height * 2);
+  await page.getByRole('button', { name: 'Options', exact: true }).click();
+  await inspectMenu(page, 'options', testInfo);
+  await page.getByRole('button', { name: 'Controls', exact: true }).click();
+  await inspectMenu(page, 'controls', testInfo);
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'VS. Mode' }).click();
+  await page.locator('.css-rules').click();
+  await page.getByRole('button', { name: /^Lower Stocks/ }).click();
+  await page.getByRole('button', { name: /^Lower Stocks/ }).click();
+  await inspectMenu(page, 'rules', testInfo);
+  await page.getByRole('button', { name: 'Done', exact: true }).click();
+  await bothPick(page);
+  for (const pad of [0, 1]) {
+    await press(page, pad, PAD.a);
+    await press(page, pad, PAD.a);
+  }
+  await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule', 'capsule', 'capsule']);
+  await inspectMenu(page, 'fighters', testInfo);
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('stage-select');
+  await inspectMenu(page, 'stages', testInfo);
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('match');
+  await page.evaluate(() => {
+    for (const player of [0, 1, 2]) window.__SSB__?.hold(player, { x: -1 });
+  });
+  await expect.poll(() => screen(page), { timeout: 20_000 }).toBe('results');
+  await inspectMenu(page, 'results', testInfo);
+  await page.getByRole('button', { name: 'Main menu', exact: true }).click();
+  await expect.poll(() => screen(page)).toBe('main-menu');
+});
+
+test('hover and focus share outline and lift cues, and confirmation never delays navigation', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.keyboard.press('Enter');
+  const primary = page.getByRole('button', { name: 'VS. Mode' });
+  const option = page.getByRole('button', { name: 'Options', exact: true });
+  const appearance = () =>
+    option.evaluate((button) => {
+      const style = getComputedStyle(button);
+      return { outline: style.outlineWidth, shadow: style.boxShadow, translate: style.translate };
+    });
+  await page.keyboard.press('ArrowDown');
+  await expect(option).toBeFocused();
+  await expect.poll(async () => (await appearance()).translate).toBe('4px -3px');
+  const focused = await appearance();
+  expect(focused.outline).toBe('2px');
+  expect(focused.shadow).not.toBe('none');
+  await primary.focus();
+  await option.hover();
+  await expect.poll(appearance).toEqual(focused);
+  const confirmed = await option.evaluate((button: HTMLButtonElement) => {
+    button.click();
+    return {
+      screen: window.__SSB__?.screen(),
+      animating: Array.from(document.querySelectorAll('.menu-confirmation')).some(
+        (node) => node.getAnimations().length > 0,
+      ),
+    };
+  });
+  expect(confirmed).toEqual({ screen: 'options', animating: true });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.keyboard.press('Escape');
+  await expect(primary).toBeFocused();
+  expect(await primary.evaluate((button) => getComputedStyle(button).transitionDuration)).toBe(
+    '0s',
+  );
+  const reduced = await option.evaluate((button: HTMLButtonElement) => {
+    button.click();
+    return {
+      screen: window.__SSB__?.screen(),
+      animations: Array.from(document.querySelectorAll('.menu-confirmation')).flatMap((node) =>
+        node.getAnimations(),
+      ).length,
+    };
+  });
+  expect(reduced).toEqual({ screen: 'options', animations: 0 });
+});
+
+test('Options directions navigate panels and screen mode changes only on confirmation', async ({
+  page,
+}) => {
+  await installPads(page, 1);
+  await page.goto('/');
+  await page.keyboard.press('Enter');
+  await page.getByRole('button', { name: 'Options', exact: true }).click();
+  await page.evaluate(() => {
+    let requests = 0;
+    document.documentElement.requestFullscreen = async () => {
+      requests++;
+    };
+    Object.defineProperty(window, 'fullscreenRequests', { get: () => requests });
+  });
+  const requests = () =>
+    page.evaluate(() => (window as unknown as { fullscreenRequests: number }).fullscreenRequests);
+  const screenMode = page.getByRole('button', { name: /^Screen: Window/ });
+  const controls = page.getByRole('button', { name: 'Controls', exact: true });
+  await expect(screenMode).toBeFocused();
+  await page.keyboard.press('ArrowRight');
+  await expect(controls).toBeFocused();
+  await page.keyboard.press('ArrowLeft');
+  await expect(screenMode).toBeFocused();
+  await flick(page, 0, 1, 0);
+  await expect(controls).toBeFocused();
+  await flick(page, 0, -1, 0);
+  await expect(screenMode).toBeFocused();
+  expect(await requests()).toBe(0);
+  await page.keyboard.press('Enter');
+  expect(await requests()).toBe(1);
+  await press(page, 0, PAD.a);
+  expect(await requests()).toBe(2);
+  await screenMode.click();
+  expect(await requests()).toBe(3);
+  await flick(page, 0, 1, 0);
+  await press(page, 0, PAD.a);
+  await expect.poll(() => screen(page)).toBe('controls');
+  await press(page, 0, PAD.b);
+  await expect.poll(() => screen(page)).toBe('options');
+});
+
+test('keyboard navigation reaches character-select rules and Back before joining and after picking', async ({
+  page,
+}, testInfo) => {
+  await toCharacterSelect(page);
+  const rules = page.getByRole('button', { name: 'Match rules', exact: true });
+  const back = page.getByRole('button', { name: 'Back', exact: true });
+  const initialBack = await back.boundingBox();
+  const initialRules = await rules.boundingBox();
+  await tap(page, 'ArrowRight');
+  await expect(rules).toBeFocused();
+  await expect(page.locator('.css-grid .css-badge')).toHaveCount(0);
+  expect(await rules.boundingBox()).toEqual(initialRules);
+  await tap(page, 'ArrowDown');
+  await expect(rules).not.toBeFocused();
+  await expect(page.locator('.css-grid .css-badge')).toHaveCount(0);
+  await tap(page, 'ArrowUp');
+  await expect(rules).toBeFocused();
+  expect((await characterSelect(page))?.devices).toEqual([null, null, null, null]);
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { name: 'Rules', exact: true })).toBeVisible();
+  expect((await characterSelect(page))?.devices).toEqual([null, null, null, null]);
+  await page.keyboard.press('Escape');
+  await tap(page, 'ArrowLeft');
+  await expect(back).toBeFocused();
+  expect(await back.boundingBox()).toEqual(initialBack);
+  await page.screenshot({ path: testInfo.outputPath('guest-back-focus.png') });
+  await page.setViewportSize({ width: 844, height: 390 });
+  await nextFrames(page);
+  await expect(back).toBeInViewport();
+  await expect(page.locator('.css-topbar .css-badge')).toHaveCount(0);
+  const button = await back.boundingBox();
+  const banner = await rules.boundingBox();
+  if (!button || !banner) throw new Error('Missing header navigation');
+  expect(Math.abs(button.y + button.height / 2 - banner.y - banner.height / 2)).toBeLessThan(6);
+  await page.screenshot({ path: testInfo.outputPath('guest-back-landscape.png') });
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('main-menu');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('character-select');
+  await bothPick(page);
+  await tap(page, 'ArrowUp');
+  await expect(rules).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { name: 'Rules', exact: true })).toBeVisible();
+  expect(await screen(page)).toBe('character-select');
+  await page.keyboard.press('Escape');
+  await tap(page, 'ArrowLeft');
+  await expect(back).toBeFocused();
+  expect(await picks(page)).toEqual(['capsule', 'capsule', null, null]);
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('main-menu');
+});
+
+test('controllers reach character-select header actions before joining, and Back wins over a simultaneous start', async ({
+  page,
+}) => {
+  await installPads(page, 2);
+  await toCharacterSelect(page);
+  const rules = page.getByRole('button', { name: 'Match rules', exact: true });
+  const back = page.getByRole('button', { name: 'Back', exact: true });
+  await flick(page, 0, 0, -1);
+  await expect(rules).toBeFocused();
+  await press(page, 0, PAD.a);
+  await expect(page.getByRole('heading', { name: 'Rules', exact: true })).toBeVisible();
+  expect((await characterSelect(page))?.devices).toEqual([null, null, null, null]);
+  await press(page, 0, PAD.b);
+  await expect(page.getByRole('heading', { name: 'Rules', exact: true })).toBeHidden();
+  expect(await screen(page)).toBe('character-select');
+  await flick(page, 0, -1, 0);
+  await expect(back).toBeFocused();
+  await press(page, 0, PAD.a);
+  await expect.poll(() => screen(page)).toBe('main-menu');
+  await press(page, 0, PAD.a);
+  await expect.poll(() => screen(page)).toBe('character-select');
+  for (const pad of [0, 1]) {
+    await press(page, pad, PAD.a);
+    await press(page, pad, PAD.a);
+  }
+  await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule', null, null]);
+  await flick(page, 0, 0, -1);
+  await expect(rules).toBeFocused();
+  await press(page, 0, PAD.a);
+  await expect(page.getByRole('heading', { name: 'Rules', exact: true })).toBeVisible();
+  await press(page, 0, PAD.b);
+  await flick(page, 0, -1, 0);
+  await expect(back).toBeFocused();
+  await setPads(page, [
+    [0, { button: PAD.a, on: true }],
+    [1, { button: PAD.start, on: true }],
+  ]);
+  await nextFrames(page);
+  await setPads(page, [
+    [0, { button: PAD.a, on: false }],
+    [1, { button: PAD.start, on: false }],
+  ]);
+  await expect.poll(() => screen(page)).toBe('main-menu');
+});
+
+test('matches omit the control instructions overlay', async ({ page }) => {
+  await startMatch(page);
+  await expect(page.locator('#app > .controls')).toHaveCount(0);
+  await expect(page.getByText('Left keys:', { exact: false })).toHaveCount(0);
+});
+
+for (const count of [2, 3, 4]) {
+  test(`results podium renders ${count} participants and releases the scene on Back`, async ({
+    page,
+  }, testInfo) => {
+    test.setTimeout(60_000);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await installPads(page, 2);
+    await toCharacterSelect(page);
+    await page.locator('.css-rules').click();
+    await page.getByRole('button', { name: /^Lower Stocks/ }).click();
+    await page.getByRole('button', { name: /^Lower Stocks/ }).click();
+    await page.getByRole('button', { name: 'Done', exact: true }).click();
+    await bothPick(page);
+    for (let pad = 0; pad < count - 2; pad++) {
+      await press(page, pad, PAD.a);
+      await press(page, pad, PAD.a);
+    }
+    await page.keyboard.press('Enter');
+    await expect.poll(() => screen(page)).toBe('stage-select');
+    await page.keyboard.press('Enter');
+    await expect.poll(() => screen(page)).toBe('match');
+    // Eliminate one participant at a time to verify real stock placement, not slot order.
+    for (let player = 0; player < count - 1; player++) {
+      await page.evaluate((slot) => window.__SSB__?.hold(slot, { x: -1 }), player);
+      if (player < count - 2) {
+        await expect.poll(async () => (await gameState(page)).fighters[player]?.stocks).toBe(0);
+      }
+    }
+    await expect.poll(() => screen(page), { timeout: 20_000 }).toBe('results');
+    const entries = page.locator('.results-placements li');
+    await expect(entries).toHaveCount(count);
+    for (let index = 0; index < count; index++) {
+      await expect(entries.nth(index)).toHaveAttribute('data-place', String(index + 1));
+      await expect(entries.nth(index)).toHaveAttribute('data-player', String(count - index));
+      await expect(entries.nth(index)).toHaveAttribute('data-character', 'capsule');
+    }
+    await expect(page.locator('.results-scene canvas')).toBeVisible();
+    await expect(page.getByText('Damage dealt', { exact: true })).toHaveCount(0);
+    await page.screenshot({ path: testInfo.outputPath(`podium-${count}.png`) });
+    await page.keyboard.press('Escape');
+    await expect.poll(() => screen(page)).toBe('main-menu');
+    await expect(page.locator('.results-scene canvas')).toHaveCount(0);
+  });
+}
+
+test('fighter lobby shows neutral portraits, live colored previews, ownership and readiness', async ({
+  page,
+}, testInfo) => {
+  test.setTimeout(60_000);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await installPads(page, 2);
+  await toCharacterSelect(page);
+  const portrait = page.locator('.css-cell .css-portrait');
+  await expect(portrait).toHaveCount(1);
+  await expect
+    .poll(() => portrait.evaluate((image: HTMLImageElement) => image.naturalWidth))
+    .toBeGreaterThan(0);
+  const root = page.locator('.css');
+  const viewport = page.viewportSize();
+  const roster = await page.locator('.css-roster').boundingBox();
+  if (!viewport || !roster) throw new Error('Missing lobby layout');
+  expect(roster.width / viewport.width).toBeGreaterThanOrEqual(0.9);
+  expect(roster.width / viewport.width).toBeLessThanOrEqual(0.95);
+  await expect(page.locator('.css-slot.empty')).toHaveCount(4);
+  await inspectMenu(page, 'lobby-empty', testInfo);
+
+  await tap(page, 'KeyF');
+  await tap(page, 'Period');
+  await expect(page.locator('.css-slot:not(.empty) img')).toHaveCount(2);
+  await expect(page.locator('.css-slot.picked')).toHaveCount(0);
+  await expect(page.locator('.css-slot').nth(0)).toContainText('Choosing');
+  await expect(page.locator('.css-slot').nth(0)).toContainText('Left keys');
+  await expect(page.locator('.css-slot').nth(1)).toContainText('Right keys');
+  await expect(page.locator('.css-badge')).toHaveText(['P1', 'P2']);
+  await inspectMenu(page, 'lobby-browsing', testInfo);
+
+  await tap(page, 'KeyF');
+  await tap(page, 'Period');
+  await expect(page.locator('.css-slot.picked')).toHaveCount(2);
+  await expect(page.getByText('Ready to Fight', { exact: true })).toBeVisible();
+  await inspectMenu(page, 'lobby-ready', testInfo);
+  await tap(page, 'KeyG');
+  await expect(page.locator('.css-slot.picked')).toHaveCount(1);
+  await expect(page.getByText('Ready to Fight', { exact: true })).toBeHidden();
+  await expect(page.locator('.css-slot').nth(0)).toContainText('Choosing');
+  await expect(page.locator('.css-slot').nth(0).locator('img')).toBeVisible();
+
+  for (const pad of [0, 1]) await press(page, pad, PAD.a);
+  await expect(page.locator('.css-slot:not(.empty) img')).toHaveCount(4);
+  await expect(page.locator('.css-badge')).toHaveText(['P1', 'P2', 'P3', 'P4']);
+  const pixels = await page.locator('.css-slot img').evaluateAll(async (images) => {
+    return Promise.all(
+      images.map(async (node) => {
+        const image = node as HTMLImageElement;
+        await image.decode();
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = 480;
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Missing image context');
+        context.drawImage(image, 0, 0);
+        const data = context.getImageData(0, 0, 480, 480).data;
+        const rgb = [0, 0, 0];
+        let count = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          if ((data[i + 3] ?? 0) < 200) continue;
+          rgb[0] = (rgb[0] ?? 0) + (data[i] ?? 0);
+          rgb[1] = (rgb[1] ?? 0) + (data[i + 1] ?? 0);
+          rgb[2] = (rgb[2] ?? 0) + (data[i + 2] ?? 0);
+          count++;
+        }
+        return rgb.map((value) => value / count);
+      }),
+    );
+  });
+  const [red, blue, green, yellow] = pixels;
+  if (!red || !blue || !green || !yellow) throw new Error('Missing player portraits');
+  expect(red[0]).toBeGreaterThan((red[2] ?? 0) * 1.25);
+  expect(blue[2]).toBeGreaterThan((blue[0] ?? 0) * 1.25);
+  expect(green[1]).toBeGreaterThan((green[0] ?? 0) * 1.25);
+  expect(yellow[0]).toBeGreaterThan((yellow[2] ?? 0) * 1.25);
+  expect(yellow[1]).toBeGreaterThan((yellow[2] ?? 0) * 1.25);
+  await inspectMenu(page, 'lobby-four', testInfo);
+  await expect.poll(() => root.evaluate((node) => node.scrollHeight - node.clientHeight)).toBe(0);
 });

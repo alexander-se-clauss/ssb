@@ -3,7 +3,6 @@ import {
   STAGES,
   DEFAULT_RULES,
   NEUTRAL_INPUT,
-  pressed,
   type PlayerInput,
   type MatchConfig,
   type MatchRules,
@@ -25,17 +24,23 @@ import {
   menuActions,
   reduceSelect,
   requestsStart,
+  requestsBack,
   slotOf,
   type SelectState,
 } from './character-select';
 import { menuCommands } from './menu-commands';
 import { selectCue } from './menu-sounds';
+import { eventCue, stateCues, type FightCue } from './match-sounds';
 import { CharacterSelectView } from './character-select-view';
 import { renderControls, type ControlColumn } from './controls';
 import { MenuPanel, type MenuContent } from './menu-panel';
-import { renderResults, resultHeading } from './results';
+import { renderResults, resultHeading, resultPlacements, type Elimination } from './results';
+import { ResultsScene } from '../adapters/three-renderer/results-scene';
 import { adjustRule, ruleRows, type RuleField } from './rules-menu';
-import { renderPreview } from './stage-preview';
+import { stageThumbnail } from '../adapters/three-renderer/stage-thumbnail';
+import { fighterPortrait } from '../adapters/three-renderer/fighter-portrait';
+import { TitleScene } from '../adapters/three-renderer/title-scene';
+import { titleScreenBody } from './title-screen';
 import { INITIAL_SCREEN, MAIN_MENU, go, nextScreens, type Screen } from './screens';
 
 /** Player slots on character select, as in Melee. */
@@ -63,6 +68,7 @@ const LABELS: Readonly<Record<Screen, string>> = {
 
 /** One controller: a gamepad, or one player's half of the keyboard. */
 export interface InputDevice {
+  readonly label?: string;
   readonly source: InputSource;
   /**
    * Polled for menu commands (gamepads). False for the keyboard, whose keys reach the menus as
@@ -89,6 +95,8 @@ interface RunningMatch {
   readonly session: GameSession;
   readonly views: readonly GameView[];
   readonly unsubscribe: Unsubscribe;
+  /** The state fight sounds were last taken from (`stateCues`). */
+  heard: MatchState;
 }
 
 /**
@@ -120,6 +128,9 @@ export class App {
   /** The rules being edited in the overlay; they apply only on Done. */
   private rulesDraft: MatchRules = DEFAULT_RULES;
   private readonly characterSelect: CharacterSelectView;
+  private titleScene: TitleScene | undefined;
+  private resultsScene: ResultsScene | undefined;
+  private eliminations: Elimination[] = [];
 
   constructor(
     private readonly container: HTMLElement,
@@ -129,6 +140,8 @@ export class App {
     this.menu = new MenuPanel(container, play);
     this.rulesPanel = new MenuPanel(container, play);
     this.characterSelect = new CharacterSelectView(container, CHARACTERS, GRID_COLUMNS, {
+      portrait: fighterPortrait,
+      deviceName: (device) => this.adapters.devices[device]?.label ?? `Input ${device + 1}`,
       start: () => this.confirmCharacters(),
       back: () => this.leaveToMainMenu(),
       openRules: () => {
@@ -188,6 +201,7 @@ export class App {
   frame(now: number): void {
     const rulesWereOpen = this.rulesShown;
     this.updateMenus();
+    this.titleScene?.render(now);
     // A gamepad press that just closed the rules overlay (Done) must not also reach the grid
     // below, where it would open the rules again from the banner.
     const rulesJustClosed = rulesWereOpen && !this.rulesShown;
@@ -201,17 +215,22 @@ export class App {
     session.update(now);
     const view = session.view();
     for (const v of views) v.render(view);
+    for (const cue of stateCues(this.match.heard, view.current)) this.playFight(cue);
+    this.match.heard = view.current;
   }
 
   resize(): void {
+    this.resultsScene?.resize();
+    this.titleScene?.resize(this.container.clientWidth, this.container.clientHeight);
     for (const view of this.match?.views ?? []) {
       view.resize(this.container.clientWidth, this.container.clientHeight);
     }
   }
 
   private enter(screen: Screen): void {
-    // Lets the CSS show things on one screen only, like the key hints during a match.
+    // Lets the CSS apply screen-specific presentation.
     this.container.dataset['screen'] = screen;
+    if (screen === 'title') this.titleScene = new TitleScene(this.container);
     if (screen === 'match') {
       this.startMatch();
       return;
@@ -237,15 +256,21 @@ export class App {
       case 'title':
         return {
           heading: GAME_NAME,
-          text: 'Press start (Enter or Space)',
+          text: 'Fight for the edge.',
           variant: 'menu-title',
+          body: titleScreenBody(() => {
+            this.adapters.audio.play('menu-confirm');
+            this.navigate('main-menu');
+          }),
           start: () => this.navigate('main-menu'),
         };
       case 'main-menu':
         return {
           heading: 'Main menu',
+          variant: 'menu-main',
           options: MAIN_MENU.map((entry) => ({
             label: entry.label,
+            artwork: entry.to === 'character-select' ? ('versus' as const) : ('settings' as const),
             select: () => this.navigate(entry.to),
           })),
           back: () => this.navigate('title'),
@@ -253,15 +278,16 @@ export class App {
       case 'options':
         return {
           heading: 'Options',
+          variant: 'menu-settings',
           options: [
             {
               label: `Screen: ${document.fullscreenElement ? 'Fullscreen' : 'Window'}`,
+              artwork: 'display',
               select: () => this.toggleFullscreen(),
-              adjust: () => this.toggleFullscreen(),
-              stepLabels: ['‹', '›'],
             },
             {
               label: 'Controls',
+              artwork: 'controls',
               select: () => this.navigate('controls'),
             },
           ],
@@ -270,34 +296,47 @@ export class App {
       case 'controls':
         return {
           heading: 'Controls',
+          variant: 'menu-controls',
           body: renderControls(this.adapters.controls),
           back: () => this.navigate('options'),
         };
       case 'stage-select':
         return {
           heading: 'Choose a stage',
+          variant: 'menu-stage-select',
+          grid: true,
           options: STAGES.map((stage) => ({
             label: stage.name,
+            image: stageThumbnail(stage),
             select: () => this.chooseStage(stage.id),
             cue: 'match-start' as const,
           })),
           back: () => this.navigate('character-select'),
-          preview: (index) => {
-            const stage = STAGES[index];
-            return stage ? renderPreview(stage) : null;
-          },
         };
-      case 'results':
+      case 'results': {
+        const placements = this.lastResult
+          ? resultPlacements(this.lastResult, this.eliminations)
+          : [];
+        const body = renderResults(placements);
+        const host = body.querySelector<HTMLElement>('.results-scene');
+        if (host) this.resultsScene = new ResultsScene(host, placements);
         return {
           heading: this.lastResult ? resultHeading(this.lastResult) : 'Results',
-          ...(this.lastResult ? { body: renderResults(this.lastResult) } : {}),
+          variant: 'menu-results',
+          body,
           options: [
-            { label: 'Rematch', select: () => this.navigate('match'), cue: 'match-start' },
-            { label: 'Main menu', select: () => this.navigate('main-menu') },
+            {
+              label: 'Rematch',
+              artwork: 'rematch',
+              select: () => this.navigate('match'),
+              cue: 'match-start',
+            },
+            { label: 'Main menu', artwork: 'home', select: () => this.navigate('main-menu') },
           ],
           back: () => this.navigate('main-menu'),
           backButton: false,
         };
+      }
       default:
         // The match has no menu; this only keeps the switch exhaustive.
         return {
@@ -311,6 +350,14 @@ export class App {
   }
 
   private leave(screen: Screen): void {
+    if (screen === 'results') {
+      this.resultsScene?.dispose();
+      this.resultsScene = undefined;
+    }
+    if (screen === 'title') {
+      this.titleScene?.dispose();
+      this.titleScene = undefined;
+    }
     if (screen === 'match') this.stopMatch();
     else if (screen === 'character-select') this.leaveCharacterSelect();
     else this.menu.hide();
@@ -349,8 +396,7 @@ export class App {
 
   private updateCharacterSelect(ignorePresses = false): void {
     // Leaving the screen waits until every device's presses this frame are in, so whether it
-    // starts or goes back does not depend on device order. A back from a device that has not
-    // joined still counts when a start on the same frame is not possible.
+    // starts or goes back does not depend on device order. Back prevents a simultaneous start.
     const before = this.select;
     const rulesWereOpen = before?.rulesOpen ?? false;
     let startRequested = false;
@@ -363,24 +409,37 @@ export class App {
       if (ignorePresses || !state) return;
       const player = slotOf(state, device);
       if (player < 0) {
-        // A device not playing yet: attack joins, special goes back, as Escape does.
+        // Unjoined devices navigate header actions; attack with no header focus joins.
         if (rulesWereOpen) return;
-        if (pressed(current, previous, 'attack')) {
-          this.select = reduceSelect(state, { type: 'join', device }, CHARACTERS, GRID_COLUMNS);
-        } else if (pressed(current, previous, 'special')) {
-          backRequested = true;
+        for (const action of menuActions(player, previous, current)) {
+          const now = this.select;
+          if (!now) return;
+          if (action.type === 'move') {
+            this.select = reduceSelect(
+              now,
+              { ...action, type: 'guest-move', device },
+              CHARACTERS,
+              GRID_COLUMNS,
+            );
+          } else if (action.type === 'confirm') {
+            const confirm = { type: 'guest-confirm' as const, device };
+            if (requestsBack(now, confirm)) backRequested = true;
+            this.select = reduceSelect(now, confirm, CHARACTERS, GRID_COLUMNS);
+          } else if (action.type === 'cancel') backRequested = true;
         }
         return;
       }
       for (const action of menuActions(player, previous, current)) {
         const now = this.select;
         if (!now) return;
+        if (requestsBack(now, action)) backRequested = true;
         if (requestsStart(now, action)) startRequested = true;
         this.select = reduceSelect(now, action, CHARACTERS, GRID_COLUMNS);
       }
     });
-    // A start is judged after this frame's joins, picks, leaves and rules banner presses.
-    if (startRequested && this.select && canStart(this.select)) return this.confirmCharacters();
+    // Back and rules confirmations take precedence over another device starting this frame.
+    if (!backRequested && startRequested && this.select && canStart(this.select))
+      return this.confirmCharacters();
     if (backRequested && !this.select?.rulesOpen) return this.leaveToMainMenu();
     if (!this.select) return;
     const cue = before ? selectCue(before, this.select) : null;
@@ -430,7 +489,12 @@ export class App {
     this.rulesShown = open;
     this.rulesDraft = this.rules;
     if (open) this.rulesPanel.show(this.rulesMenu());
-    else this.rulesPanel.hide();
+    else {
+      this.rulesPanel.hide();
+      // DOM keys can close the overlay between frames. Consume its pending taps so they
+      // cannot move a character-select cursor or activate a header action underneath.
+      this.previousInputs = this.adapters.devices.map(({ source }) => source.sample());
+    }
   }
 
   private toggleFullscreen(): void {
@@ -493,15 +557,24 @@ export class App {
     const views = this.adapters.createViews(this.container, session.view().current.stage);
     // Drop key taps made in the menus, so the match does not start with a stray jump.
     for (const device of this.adapters.devices) device.source.sample();
+    this.eliminations = [];
     const unsubscribe = session.onEvent((event) => {
+      if (event.type === 'ko' && event.stocksLeft === 0) {
+        this.eliminations.push({ slot: event.slot, frame: session.view().current.frame });
+      }
+      this.playFight(eventCue(event));
       if (event.type !== 'match-end') return;
       setTimeout(() => {
         if (this.match?.session === session) this.navigate('results');
       }, RESULTS_DELAY_MS);
     });
-    this.match = { session, views, unsubscribe };
+    this.match = { session, views, unsubscribe, heard: session.view().current };
     this.lastResult = undefined;
     this.resize();
+  }
+
+  private playFight({ cue, strength }: FightCue): void {
+    this.adapters.audio.play(cue, strength);
   }
 
   private stopMatch(): void {

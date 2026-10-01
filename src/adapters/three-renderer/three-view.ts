@@ -13,11 +13,12 @@ import {
   type StageDef,
 } from '../../core';
 import type { GameView, SessionView } from '../../ports';
+import { disposeScene } from './dispose-scene';
 import { bodyParts } from './body-layout';
 import { BOX_COLORS, hurtboxColor } from './debug-colors';
 import { buildScenery, type Scenery } from './scenery';
 
-export const PLAYER_COLORS = [0xe94f4f, 0x4f8fe9, 0x4fd18b, 0xf2c14e] as const;
+import { fighterModel, PLAYER_COLORS } from './fighter-model';
 
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
 
@@ -91,23 +92,7 @@ export class ThreeView implements GameView {
 
   /** Frees GPU memory and the WebGL context; the app creates a new view for every match. */
   dispose(): void {
-    this.scene.traverse((object) => {
-      if (
-        object instanceof THREE.Mesh ||
-        object instanceof THREE.LineSegments ||
-        object instanceof THREE.Points
-      ) {
-        object.geometry.dispose();
-        const materials: THREE.Material[] = [object.material].flat();
-        for (const material of materials) {
-          // Generated stage textures hang off the materials.
-          for (const value of Object.values(material)) {
-            if (value instanceof THREE.Texture) value.dispose();
-          }
-          material.dispose();
-        }
-      }
-    });
+    disposeScene(this.scene);
     this.renderer.dispose();
     this.renderer.forceContextLoss();
     this.renderer.domElement.remove();
@@ -118,32 +103,7 @@ export class ThreeView implements GameView {
     if (existing) return existing;
 
     const color = PLAYER_COLORS[slot % PLAYER_COLORS.length] ?? 0xffffff;
-    const near = new THREE.MeshStandardMaterial({ color, roughness: 0.5, transparent: true });
-    const far = near.clone();
-    far.color.multiplyScalar(0.65);
-
-    const root = new THREE.Group();
-    const parts = new Map<BoneId, THREE.Mesh>();
-    for (const bone of HUMANOID.bones) {
-      // Drawn exactly as thick as the hurtbox, so what you see is what can be hit.
-      const { radius } = bone;
-      const geometry =
-        bone.shape === 'ball'
-          ? new THREE.SphereGeometry(radius, 16, 12)
-          : new THREE.CapsuleGeometry(radius, Math.max(bone.length - radius * 2, 0.01), 6, 12);
-      const mesh = new THREE.Mesh(geometry, bone.id.endsWith('Back') ? far : near);
-      mesh.castShadow = true;
-      parts.set(bone.id, mesh);
-      root.add(mesh);
-    }
-
-    // An eye on the front of the head shows which way the fighter faces.
-    const eye = new THREE.Mesh(
-      new THREE.SphereGeometry(0.05, 10, 10),
-      new THREE.MeshStandardMaterial({ color: 0xffffff }),
-    );
-    eye.position.set(0.12, 0.03, 0.08);
-    parts.get('head')?.add(eye);
+    const { root, parts, materials } = fighterModel(color);
 
     const hurtboxes = new Map<BoneId, THREE.Mesh>();
     const hurtboxMaterial = overlay(BOX_COLORS.hurtbox);
@@ -169,7 +129,7 @@ export class ThreeView implements GameView {
     const visual = {
       root,
       parts,
-      materials: [near, far],
+      materials,
       hitboxes: [],
       hurtboxes,
       hurtboxMaterial,

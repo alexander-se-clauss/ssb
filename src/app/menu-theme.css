@@ -1,0 +1,634 @@
+/* SSB's menu family: etched arenas, cut panels, warm highlights and oversized type. */
+.menu:not(.menu-title),
+.css {
+  isolation: isolate;
+  box-sizing: border-box;
+  padding: 88px 48px 32px;
+  overflow-y: auto;
+  background:
+    radial-gradient(ellipse at 90% 55%, rgb(53 100 150 / 24%), transparent 55%),
+    radial-gradient(ellipse at 10% 90%, rgb(179 69 43 / 15%), transparent 55%), #0a1120;
+}
+
+.menu-atmosphere {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: #6885a6;
+  opacity: 0.28;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.menu-composition {
+  position: relative;
+  flex-shrink: 0;
+  width: min(1060px, 100%);
+  display: grid;
+  gap: 24px;
+  margin-block: auto;
+  animation: menu-arrive 140ms ease-out;
+}
+
+.menu-composition::after {
+  content: '';
+  position: absolute;
+  bottom: -16px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, #e2ad69 0 12%, #405570 12% 80%, transparent 80%);
+}
+
+.menu-heading {
+  position: relative;
+  border-left: 8px solid #efb977;
+  border-bottom: 1px solid #4c607a;
+  padding: 12px 24px 16px;
+  background: linear-gradient(100deg, rgb(28 44 66 / 90%), rgb(28 44 66 / 15%));
+}
+
+.menu-heading::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  width: 64px;
+  height: 12px;
+  background: #efb977;
+  clip-path: polygon(20% 0, 100% 0, 80% 100%, 0 100%);
+}
+
+.menu-heading h1,
+.css h1 {
+  position: static;
+  font-style: italic;
+  font-weight: 950;
+  font-size: clamp(2rem, 5.4vw, 4.7rem);
+  line-height: 1;
+  letter-spacing: -0.045em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.menu-heading p {
+  margin: 12px 0 0;
+}
+
+.menu:not(.menu-title) button,
+.css button {
+  position: relative;
+  border: 2px solid #56708c;
+  border-radius: 2px;
+  background: linear-gradient(115deg, #273d59, #142237);
+  box-shadow: 0 6px 0 #050a13;
+  transform: skewX(-5deg);
+  transition:
+    translate 120ms ease-out,
+    box-shadow 120ms ease-out,
+    border-color 120ms ease-out,
+    background-color 120ms ease-out;
+}
+
+.menu:not(.menu-title) button:is(:hover, :focus),
+.css button:is(:hover, :focus) {
+  outline: 2px solid #fff0ce;
+  outline-offset: 3px;
+  border-color: #ffd79b;
+  background: linear-gradient(110deg, #ffdf9c, #e9a85c);
+  color: #1c1720;
+  box-shadow:
+    0 9px 0 #513921,
+    0 0 32px rgb(239 185 119 / 18%);
+  translate: 4px -3px;
+}
+
+.menu:not(.menu-title) button:active,
+.css button:active {
+  translate: 2px 1px;
+  box-shadow: 0 2px 0 #513921;
+}
+
+.menu-option-label {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+
+.menu-artwork {
+  position: absolute;
+  right: 16px;
+  top: 6%;
+  width: 48%;
+  height: 88%;
+  opacity: 0.28;
+  pointer-events: none;
+}
+
+.menu:not(.menu-title) .menu-back,
+.css .menu-back {
+  position: absolute;
+  top: 24px;
+  left: 28px;
+  z-index: 2;
+  min-width: 0;
+  padding: 9px 20px;
+  font-size: 0.85rem;
+}
+
+/* Starting a match owns the composition; the secondary destination trails its diagonal. */
+.menu-main .menu-heading {
+  width: 74%;
+  margin-left: 16px;
+  margin-bottom: -12px;
+}
+
+.menu-main .menu-options {
+  gap: 24px;
+  padding-inline: 16px;
+}
+
+.menu-main .menu-options > button {
+  text-align: left;
+  padding: 32px;
+}
+
+.menu-main .menu-options > button:first-child {
+  width: 86%;
+  min-height: 230px;
+  border-left: 10px solid #ffac73;
+  background: linear-gradient(110deg, #a0372f, #442636);
+  font-size: clamp(2.6rem, 6.8vw, 5.6rem);
+  letter-spacing: -0.045em;
+}
+
+.menu-main .menu-options > button:last-child {
+  width: 54%;
+  align-self: flex-end;
+  min-height: 132px;
+  font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+  border-left: 8px solid #89b7dc;
+}
+
+.menu-main .menu-options > button:is(:hover, :focus) {
+  background: linear-gradient(110deg, #ffdf9c, #e9a85c);
+}
+
+/* Settings are large offset equipment panels. Confirm changes the focused setting. */
+.menu-settings .menu-options {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 40px;
+  align-items: start;
+}
+
+.menu:not(.menu-title) .menu-row button {
+  transform: none;
+}
+
+.menu-settings .menu-options > button:first-child {
+  margin-top: 0;
+  min-height: 210px;
+  padding: 100px 18px 24px;
+  font-size: clamp(1.2rem, 2.6vw, 2rem);
+}
+
+.menu-settings .menu-artwork {
+  width: 100%;
+  right: 0;
+  top: 6px;
+  height: 120px;
+}
+
+.menu-settings .menu-options > button {
+  margin-top: 100px;
+  min-height: 180px;
+  min-width: 0;
+  padding: 100px 16px 24px;
+  font-size: 2rem;
+}
+
+.menu-details {
+  padding: 16px;
+  background: rgb(12 23 39 / 92%);
+  border: 1px solid #405570;
+  border-left: 6px solid #6d9bbf;
+}
+
+.menu-table {
+  width: 100%;
+  margin: 0;
+}
+
+.menu-table th {
+  color: #aac4dd;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.menu-table :is(th, td) {
+  padding: 14px 16px;
+}
+
+.menu-table tbody tr:nth-child(odd) {
+  background: rgb(88 124 159 / 8%);
+}
+
+/* A centered arena grid, with its heading attached to the same frame. */
+.menu-stage-select .menu-composition {
+  width: min(740px, 100%);
+}
+
+.menu.menu-stage-select {
+  padding-block: 0;
+}
+
+.menu-stage-select .menu-heading {
+  position: absolute;
+  bottom: calc(100% + 22px);
+  left: 0;
+  right: 0;
+}
+
+.menu-stage-select .menu-heading h1 {
+  font-size: clamp(1.6rem, 3.8vw, 3rem);
+}
+
+.menu-stage-select .menu-grid {
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.menu-stage-select .menu-grid button {
+  transform: none;
+  font-size: clamp(0.8rem, 2vw, 1.25rem);
+}
+
+.menu-confirmation {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(120deg, transparent 35%, #ffd79b 50%, transparent 65%);
+}
+
+.menu-overlay {
+  background: rgb(6 12 23 / 94%) !important;
+}
+
+.menu-overlay .menu-composition {
+  width: min(600px, 100%);
+}
+
+.menu-overlay .menu-heading h1 {
+  font-size: 2.4rem;
+}
+
+.menu-overlay .menu-options {
+  gap: 18px;
+  padding-inline: 12px;
+}
+
+.menu-overlay .menu-row button:not(.menu-step) {
+  min-width: 0;
+  flex: 1;
+}
+
+.menu-overlay .menu-options > button {
+  width: 100%;
+  min-width: 0;
+}
+
+@keyframes menu-arrive {
+  from {
+    opacity: 0.8;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 700px) {
+  .menu:not(.menu-title),
+  .css {
+    padding-inline: 24px;
+  }
+  .menu-heading {
+    padding: 14px 16px;
+  }
+  .menu-main .menu-heading {
+    width: auto;
+    margin-left: 0;
+  }
+  .menu-main .menu-options {
+    padding-inline: 6px;
+  }
+  .menu-main .menu-options > button {
+    min-width: 0;
+    padding: 24px;
+  }
+  .menu-main .menu-options > button:first-child {
+    width: 95%;
+    min-height: 210px;
+  }
+  .menu-main .menu-options > button:last-child {
+    width: 85%;
+    min-height: 120px;
+  }
+  .menu-artwork {
+    width: 70%;
+    opacity: 0.18;
+  }
+  .menu-settings .menu-options {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding-inline: 6px;
+  }
+  .menu-settings .menu-options > button {
+    margin-top: 0;
+    min-height: 120px;
+    padding: 24px;
+    text-align: left;
+  }
+  .menu-settings .menu-options > button .menu-artwork {
+    width: 50%;
+    right: 8px;
+    top: 0;
+  }
+  .menu-settings .menu-options > button:first-child {
+    min-height: 170px;
+    padding-top: 90px;
+  }
+  .menu-details {
+    padding: 8px;
+  }
+  .menu-table :is(th, td) {
+    padding: 10px 4px;
+    font-size: 0.72rem;
+    overflow-wrap: anywhere;
+  }
+  .menu-table th {
+    font-size: 0.6rem;
+    letter-spacing: 0;
+  }
+  .menu-stage-select .menu-grid {
+    gap: 16px;
+  }
+  .menu-results .menu-heading h1 {
+    font-size: 2.5rem;
+  }
+  .menu-results .menu-options button {
+    min-height: 96px;
+    font-size: 1.05rem;
+    padding: 16px 8px;
+  }
+
+  .menu-overlay .menu-options {
+    padding-inline: 6px;
+  }
+  .menu-overlay .menu-row {
+    gap: 8px;
+  }
+  .menu-overlay .menu-row button:not(.menu-step) {
+    font-size: 1rem;
+    padding-inline: 8px;
+  }
+  .menu-overlay .menu-step {
+    width: 36px;
+  }
+}
+
+@media (max-height: 520px) {
+  .menu:not(.menu-title),
+  .css {
+    padding-top: 72px;
+    padding-bottom: 24px;
+  }
+  .menu-composition {
+    gap: 14px;
+  }
+  .menu-heading {
+    padding: 8px 16px;
+  }
+  .menu-heading h1,
+  .menu-main .menu-heading {
+    margin-bottom: 0;
+  }
+  .menu-main .menu-options {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 24px;
+  }
+  .menu-main .menu-options > button:first-child,
+  .menu-main .menu-options > button:last-child {
+    width: 100%;
+    min-height: 120px;
+    padding: 16px;
+    font-size: 2rem;
+  }
+  .menu-main .menu-options > button:last-child {
+    margin-top: 48px;
+  }
+  .menu-settings .menu-options {
+    grid-template-columns: 1.2fr 1fr;
+    gap: 24px;
+  }
+  .menu-settings .menu-options > button {
+    min-height: 116px;
+    padding: 68px 12px 12px;
+    font-size: 1.1rem;
+  }
+  .menu-settings .menu-options > button {
+    margin-top: 30px;
+  }
+  .menu-settings .menu-options > button:first-child {
+    margin-top: 0;
+    min-height: 116px;
+    padding: 68px 12px 12px;
+    font-size: 1.1rem;
+  }
+  .menu-settings .menu-artwork {
+    height: 70px;
+  }
+  .menu-table :is(th, td) {
+    font-size: 0.7rem;
+    padding: 5px 8px;
+  }
+  .menu-stage-select .menu-composition {
+    width: min(520px, 100%);
+  }
+  .menu-stage-select .menu-heading {
+    bottom: calc(100% + 14px);
+  }
+  .menu-stage-select .menu-heading h1 {
+    font-size: 1.4rem;
+  }
+  .menu-stage-select .menu-grid button span {
+    padding: 8px 6px;
+  }
+
+  .menu-overlay .menu-heading h1 {
+    font-size: 1.5rem;
+  }
+  .menu-overlay .menu-options {
+    gap: 12px;
+  }
+  .menu-overlay .menu-options button {
+    padding-block: 6px;
+    font-size: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu,
+  .menu *,
+  .css,
+  .css * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Header focus changes framing and brightness without shifting the layout. */
+
+/* The ceremony fills the results composition; actions stay beneath the podium. */
+.menu-results .menu-details {
+  min-width: 0;
+}
+.menu.menu-results {
+  padding: 24px 40px;
+}
+.menu-results .menu-composition {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  width: min(1100px, 100%);
+}
+.menu-results .menu-heading {
+  padding: 10px 22px;
+}
+.menu-results .menu-heading h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+}
+.results-podium {
+  min-width: 0;
+}
+.results-scene {
+  width: 100%;
+  height: clamp(200px, 48vh, 470px);
+}
+.results-scene canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.results-placements {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.results-placements li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-bottom: 2px solid #6c839e;
+  background: #17263b;
+  font-size: 0.95rem;
+}
+.results-placements strong {
+  font-size: 1.3rem;
+}
+.results-placements [data-place='1'] {
+  border-color: #e9b94f;
+}
+.results-placements [data-place='1'] strong {
+  color: #e9b94f;
+}
+.results-placements [data-place='2'] strong {
+  color: #b9c8db;
+}
+.results-placements [data-place='3'] strong {
+  color: #ce9362;
+}
+.menu-results .menu-options {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 20px;
+  padding: 0 6px;
+}
+.menu-results .menu-options button {
+  min-width: 0;
+  text-align: left;
+  min-height: 74px;
+  padding: 12px 24px;
+  font-size: clamp(1rem, 2.2vw, 1.5rem);
+}
+@media (max-width: 600px) {
+  .menu.menu-results {
+    padding: 18px 14px;
+  }
+  .menu-results .menu-heading {
+    padding: 10px 14px;
+  }
+  .results-scene {
+    height: clamp(190px, 42vh, 340px);
+  }
+  .results-placements {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+  .results-placements li {
+    padding: 6px 8px;
+    gap: 6px;
+    font-size: 0.8rem;
+  }
+  .results-placements strong {
+    font-size: 1rem;
+  }
+  .menu-results .menu-options {
+    gap: 12px;
+  }
+  .menu-results .menu-options button {
+    min-height: 66px;
+    padding: 10px 14px;
+  }
+}
+@media (max-height: 460px) and (min-width: 601px) {
+  .menu.menu-results {
+    padding: 12px 32px;
+  }
+  .menu-results .menu-composition {
+    gap: 6px;
+  }
+  .menu-results .menu-heading {
+    padding: 6px 16px;
+  }
+  .menu-results .menu-heading h1 {
+    font-size: 1.8rem;
+  }
+  .results-scene {
+    height: 190px;
+  }
+  .results-placements li {
+    padding: 4px 10px;
+    font-size: 0.8rem;
+  }
+  .results-placements strong {
+    font-size: 1rem;
+  }
+  .menu-results .menu-options button {
+    min-height: 54px;
+    padding: 8px 18px;
+    font-size: 1rem;
+  }
+}
