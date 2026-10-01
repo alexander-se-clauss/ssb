@@ -96,7 +96,7 @@ export class CharacterSelectView {
     this.rulesBanner.title = 'Rules: move up here and pick, or click';
     this.rulesCursors.replaceChildren(
       ...state.cursors.flatMap((cursor, player) =>
-        cursor === RULES_CURSOR ? [this.badge(player)] : [],
+        cursor === RULES_CURSOR && state.devices[player] != null ? [this.badge(player)] : [],
       ),
     );
     this.grid.replaceChildren(
@@ -109,7 +109,7 @@ export class CharacterSelectView {
         const cursors = document.createElement('div');
         cursors.className = 'css-cursors';
         state.cursors.forEach((cursor, player) => {
-          if (cursor === index) cursors.append(this.badge(player));
+          if (cursor === index && state.devices[player] != null) cursors.append(this.badge(player));
         });
         cell.append(name, cursors);
         return cell;
@@ -118,13 +118,18 @@ export class CharacterSelectView {
     this.slots.replaceChildren(
       ...state.picks.map((pick, player) => {
         const slot = document.createElement('div');
-        slot.className = pick ? 'css-slot picked' : 'css-slot';
+        const joined = state.devices[player] != null;
+        slot.className = !joined ? 'css-slot empty' : pick ? 'css-slot picked' : 'css-slot';
         slot.dataset['player'] = String(player + 1);
         slot.style.setProperty('--player-color', PLAYER_COLORS[player % 4] ?? '#fff');
         const who = document.createElement('strong');
         who.textContent = `P${player + 1}`;
         const what = document.createElement('span');
-        what.textContent = pick ? (this.roster.find((c) => c.id === pick)?.name ?? pick) : '…';
+        what.textContent = !joined
+          ? 'Press attack'
+          : pick
+            ? (this.roster.find((c) => c.id === pick)?.name ?? pick)
+            : '…';
         slot.append(who, what);
         return slot;
       }),

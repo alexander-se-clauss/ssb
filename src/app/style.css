@@ -307,11 +307,13 @@ canvas {
 
 .css-slots {
   display: flex;
-  gap: 24px;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
 }
 
 .css-slot {
-  min-width: 160px;
+  min-width: 140px;
   padding: 12px 16px;
   border-radius: 12px;
   border: 2px dashed var(--player-color);
@@ -325,6 +327,10 @@ canvas {
 
 .css-slot strong {
   color: var(--player-color);
+}
+
+.css-slot.empty {
+  opacity: 0.45;
 }
 
 .css-slot.picked {

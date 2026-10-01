@@ -73,15 +73,10 @@ describe('GamepadInputSource', () => {
     expect(source.sample()).toMatchObject({ x: -1, y: -1 });
   });
 
-  it('reads only its own gamepad, counting connected pads in order', () => {
+  it('reads only the pad in its own browser slot, which stays put when another disconnects', () => {
     const source = new GamepadInputSource(1, () => [pad([0]), null]);
     expect(source.sample().attack).toBe(false);
-  });
-
-  it('plays the first connected pad as player 1 even when the browser gives it index 1', () => {
-    const first = new GamepadInputSource(0, () => [null, pad([0]), null, null]);
-    expect(first.sample().attack).toBe(true);
-    const second = new GamepadInputSource(1, () => [null, pad([0]), null, pad([1])]);
-    expect(second.sample()).toMatchObject({ attack: false, special: true });
+    const second = new GamepadInputSource(1, () => [null, pad([1])]);
+    expect(second.sample().special).toBe(true);
   });
 });

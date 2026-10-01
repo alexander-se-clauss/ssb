@@ -18,7 +18,8 @@ interface Window {
           rules: { mode: string; stocks: number; timeLimitSeconds: number };
         }
       | undefined;
-    characterSelect(): { cursors: number[]; picks: (string | null)[] } | undefined;
+    characterSelect():
+      { devices: (number | null)[]; cursors: number[]; picks: (string | null)[] } | undefined;
     rules(): { mode: string; stocks: number; timeLimitSeconds: number };
     restart(): void;
     hold(player: number, input: { x?: number; y?: number; jump?: boolean; attack?: boolean }): void;

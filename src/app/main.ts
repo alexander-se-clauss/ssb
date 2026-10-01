@@ -11,8 +11,7 @@ import {
   describeKeys,
 } from '../adapters/keyboard-input/keyboard-input-source';
 import { OverridableInput } from '../adapters/debug-input/overridable-input';
-import { CombinedInput } from '../adapters/combined-input/combined-input';
-import { GamepadInputSource } from '../adapters/gamepad-input/gamepad-input-source';
+import { GAMEPAD_LABELS, GamepadInputSource } from '../adapters/gamepad-input/gamepad-input-source';
 import { LocalGameSession } from '../adapters/local-session/local-game-session';
 import { ThreeView } from '../adapters/three-renderer/three-view';
 import { App } from './app';
@@ -22,25 +21,28 @@ import './style.css';
 const container = document.querySelector<HTMLElement>('#app');
 if (!container) throw new Error('Missing #app container');
 
-// Each player's keyboard half plus the Nth connected gamepad, wrapped so the debug handle
-// can take a player over in tests.
-const inputs = [PLAYER_ONE_KEYS, PLAYER_TWO_KEYS].map(
-  (keys, index) =>
-    new OverridableInput(
-      new CombinedInput([new KeyboardInputSource(keys), new GamepadInputSource(index)]),
-    ),
+// Every controller that can join on character select: the two keyboard halves and four gamepads.
+// Each is wrapped so the debug handle can take a player over in tests.
+const keyboards = [PLAYER_ONE_KEYS, PLAYER_TWO_KEYS].map(
+  (keys) => new OverridableInput(new KeyboardInputSource(keys)),
 );
+const gamepads = [0, 1, 2, 3].map((index) => new OverridableInput(new GamepadInputSource(index)));
 
 const app = new App(container, {
-  inputs,
-  // Any of the first four gamepads can drive the menus.
-  menuInputs: [0, 1, 2, 3].map((index) => new GamepadInputSource(index)),
+  devices: [
+    ...keyboards.map((source) => ({ source, drivesMenus: false })),
+    ...gamepads.map((source) => ({ source, drivesMenus: true })),
+  ],
   createSession: (config) => new LocalGameSession(createMatch(config)),
   createViews: (root, stage) => [new ThreeView(root, stage), new DomHud(root)],
-  controls: [describeKeys(PLAYER_ONE_KEYS), describeKeys(PLAYER_TWO_KEYS)],
+  controls: [
+    { device: 'Left keys', labels: describeKeys(PLAYER_ONE_KEYS) },
+    { device: 'Right keys', labels: describeKeys(PLAYER_TWO_KEYS) },
+    { device: 'Gamepad', labels: GAMEPAD_LABELS },
+  ],
 });
 
-installDebugHandle(app, inputs);
+installDebugHandle(app, [...keyboards, ...gamepads]);
 
 window.addEventListener('resize', () => app.resize());
 

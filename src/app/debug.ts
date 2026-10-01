@@ -18,7 +18,10 @@ export interface DebugHandle {
   /** The rules the next match will use, as set in the rules overlay on character select. */
   rules(): MatchRules;
   restart(): void;
-  /** Takes over a player (0 = P1): reports `input` instead of their keys until `release`. */
+  /**
+   * Takes over a player (0 = P1): their device reports `input` instead of its own until
+   * `release`. Only for players who joined on character select.
+   */
   hold(player: number, input: Partial<PlayerInput>): void;
   release(player: number): void;
 }
@@ -34,14 +37,19 @@ export interface ControllableInput {
   override(input: PlayerInput | null): void;
 }
 
-export const installDebugHandle = (app: App, inputs: readonly ControllableInput[]): void => {
+/** `devices` are the app's input devices, in the same order. */
+export const installDebugHandle = (app: App, devices: readonly ControllableInput[]): void => {
+  const deviceOf = (player: number): ControllableInput | undefined => {
+    const device = app.deviceOf(player);
+    return device === undefined ? undefined : devices[device];
+  };
   window.__SSB__ = {
     screen: () => app.currentScreen,
     state: () => app.matchState(),
     characterSelect: () => app.selectState,
     rules: () => app.currentRules,
     restart: () => app.restartMatch(),
-    hold: (player, input) => inputs[player]?.override(inputOf(input)),
-    release: (player) => inputs[player]?.override(null),
+    hold: (player, input) => deviceOf(player)?.override(inputOf(input)),
+    release: (player) => deviceOf(player)?.override(null),
   };
 };
