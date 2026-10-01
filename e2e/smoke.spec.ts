@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page, type TestInfo } from '@playwright/test';
 
 /** Reads the debug handle installed in src/app/debug.ts. */
 const screen = (page: Page) => page.evaluate(() => window.__SSB__?.screen());
@@ -631,4 +631,152 @@ test('Start leaves the title and starts the match once both players picked', asy
   await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule', null, null]);
   await press(page, 1, PAD.start);
   await expect.poll(() => screen(page)).toBe('stage-select');
+});
+
+/** Check foreground controls and titles at both desk and compact viewport sizes. */
+const inspectMenu = async (page: Page, name: string, testInfo: TestInfo) => {
+  for (const viewport of [
+    { width: 1280, height: 720 },
+    { width: 390, height: 844 },
+    { width: 844, height: 390 },
+    { width: 320, height: 568 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await nextFrames(page);
+    const menus = page.locator('.menu:visible');
+    const root = (await menus.count()) ? menus.last() : page.locator('.css:visible');
+    await expect(root.locator('.menu-atmosphere')).toBeVisible();
+    const boxes = await root.evaluate((element) =>
+      Array.from(element.querySelectorAll('h1, button, table, .css-slot, .css-cell'))
+        .filter((node) => node.getClientRects().length > 0)
+        .map((node) => {
+          const box = node.getBoundingClientRect();
+          return {
+            label: node.textContent,
+            x: box.x,
+            y: box.y,
+            right: box.right,
+            bottom: box.bottom,
+          };
+        }),
+    );
+    for (const box of boxes) {
+      const message = `${name} ${viewport.width}x${viewport.height}: ${box.label}`;
+      expect(box.x, message).toBeGreaterThanOrEqual(0);
+      expect(box.y, message).toBeGreaterThanOrEqual(0);
+      expect(box.right, message).toBeLessThanOrEqual(viewport.width);
+      expect(box.bottom, message).toBeLessThanOrEqual(viewport.height);
+    }
+    for (let i = 0; i < boxes.length; i++) {
+      for (const other of boxes.slice(i + 1)) {
+        const box = boxes[i];
+        if (!box) continue;
+        const overlap =
+          Math.min(box.right, other.right) - Math.max(box.x, other.x) > 1 &&
+          Math.min(box.bottom, other.bottom) - Math.max(box.y, other.y) > 1;
+        expect(
+          overlap,
+          `${name} ${viewport.width}x${viewport.height}: ${box.label} overlaps ${other.label}`,
+        ).toBe(false);
+      }
+    }
+    await page.screenshot({ path: testInfo.outputPath(`${name}-${viewport.width}.png`) });
+  }
+  await page.setViewportSize({ width: 1280, height: 720 });
+};
+
+test('the menu family keeps titles and controls visible across desktop, portrait and landscape', async ({
+  page,
+}, testInfo) => {
+  // This traverses a four-player match and captures all seven menus at four sizes.
+  test.setTimeout(60_000);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await installPads(page, 2);
+  await page.goto('/');
+  await page.keyboard.press('Enter');
+  await inspectMenu(page, 'main', testInfo);
+  const primary = await page.getByRole('button', { name: 'VS. Mode' }).boundingBox();
+  const secondary = await page.getByRole('button', { name: 'Options', exact: true }).boundingBox();
+  if (!primary || !secondary) throw new Error('Missing main-menu panels');
+  expect(primary.width * primary.height).toBeGreaterThan(secondary.width * secondary.height * 2);
+  await page.getByRole('button', { name: 'Options', exact: true }).click();
+  await inspectMenu(page, 'options', testInfo);
+  await page.getByRole('button', { name: 'Controls', exact: true }).click();
+  await inspectMenu(page, 'controls', testInfo);
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'VS. Mode' }).click();
+  await page.locator('.css-rules').click();
+  await page.getByRole('button', { name: /^Lower Stocks/ }).click();
+  await page.getByRole('button', { name: /^Lower Stocks/ }).click();
+  await inspectMenu(page, 'rules', testInfo);
+  await page.getByRole('button', { name: 'Done', exact: true }).click();
+  await bothPick(page);
+  for (const pad of [0, 1]) {
+    await press(page, pad, PAD.a);
+    await press(page, pad, PAD.a);
+  }
+  await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule', 'capsule', 'capsule']);
+  await inspectMenu(page, 'fighters', testInfo);
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('stage-select');
+  await inspectMenu(page, 'stages', testInfo);
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('match');
+  await page.evaluate(() => {
+    for (const player of [0, 1, 2]) window.__SSB__?.hold(player, { x: -1 });
+  });
+  await expect.poll(() => screen(page), { timeout: 20_000 }).toBe('results');
+  await inspectMenu(page, 'results', testInfo);
+  await page.getByRole('button', { name: 'Main menu', exact: true }).click();
+  await expect.poll(() => screen(page)).toBe('main-menu');
+});
+
+test('hover and focus share outline and lift cues, and confirmation never delays navigation', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.keyboard.press('Enter');
+  const primary = page.getByRole('button', { name: 'VS. Mode' });
+  const option = page.getByRole('button', { name: 'Options', exact: true });
+  const appearance = () =>
+    option.evaluate((button) => {
+      const style = getComputedStyle(button);
+      return { outline: style.outlineWidth, shadow: style.boxShadow, translate: style.translate };
+    });
+  await page.keyboard.press('ArrowDown');
+  await expect(option).toBeFocused();
+  await expect.poll(async () => (await appearance()).translate).toBe('4px -3px');
+  const focused = await appearance();
+  expect(focused.outline).toBe('2px');
+  expect(focused.shadow).not.toBe('none');
+  await primary.focus();
+  await option.hover();
+  await expect.poll(appearance).toEqual(focused);
+  const confirmed = await option.evaluate((button: HTMLButtonElement) => {
+    button.click();
+    return {
+      screen: window.__SSB__?.screen(),
+      animating: Array.from(document.querySelectorAll('.menu-confirmation')).some(
+        (node) => node.getAnimations().length > 0,
+      ),
+    };
+  });
+  expect(confirmed).toEqual({ screen: 'options', animating: true });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.keyboard.press('Escape');
+  await expect(primary).toBeFocused();
+  expect(await primary.evaluate((button) => getComputedStyle(button).transitionDuration)).toBe(
+    '0s',
+  );
+  const reduced = await option.evaluate((button: HTMLButtonElement) => {
+    button.click();
+    return {
+      screen: window.__SSB__?.screen(),
+      animations: Array.from(document.querySelectorAll('.menu-confirmation')).flatMap((node) =>
+        node.getAnimations(),
+      ).length,
+    };
+  });
+  expect(reduced).toEqual({ screen: 'options', animations: 0 });
 });

@@ -2,6 +2,7 @@ import { markHandled, wasHandled } from './key-events';
 import type { CharacterDef, MatchRules } from '../core';
 import { RULES_CURSOR, type SelectState } from './character-select';
 import { ruleSummary } from './rules-menu';
+import { menuAtmosphere } from './menu-art';
 
 /** Same order as the HUD's player colours. */
 const PLAYER_COLORS = ['#e94f4f', '#4f8fe9', '#4fd18b', '#f2c14e'];
@@ -81,7 +82,10 @@ export class CharacterSelectView {
     this.slots.className = 'css-slots';
     this.footer = document.createElement('p');
     this.footer.className = 'css-footer';
-    this.root.append(topBar, heading, this.grid, this.slots, this.footer);
+    const rosterFrame = document.createElement('section');
+    rosterFrame.className = 'css-roster';
+    rosterFrame.append(heading, this.grid);
+    this.root.append(menuAtmosphere(), topBar, rosterFrame, this.slots, this.footer);
     container.append(this.root);
     window.addEventListener('keydown', this.onKeyDown);
   }

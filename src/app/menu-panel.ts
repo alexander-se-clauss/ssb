@@ -1,5 +1,5 @@
 /**
- * A plain HTML menu drawn over the canvas: a heading, a line of text and a column of buttons.
+ * HTML menu compositions over the canvas: framed titles, illustrated panels, grids and tables.
  * Up/Down (or W/S) move the focus, Enter picks, Left/Right (or A/D) change a setting, Escape or
  * the Back button in the corner goes back. Gamepads drive it through `command()`. A setting row
  * also has − and + buttons for the mouse. A menu without buttons (the title screen) waits for
@@ -10,11 +10,14 @@ import type { SoundCue } from '../ports';
 import { markHandled, wasHandled } from './key-events';
 import type { MenuCommand } from './menu-commands';
 import { nearestInDirection } from './spatial-focus';
+import { menuArtwork, menuAtmosphere, type MenuArtwork } from './menu-art';
 
 export interface MenuOption {
   readonly label: string;
   /** Optional image above the label, e.g. a rendered stage thumbnail. */
   readonly image?: string;
+  /** Original decorative line art, kept separate from the accessible label. */
+  readonly artwork?: MenuArtwork;
   readonly select: () => void;
   /** Left (-1) or Right (+1) on a setting row. */
   readonly adjust?: (delta: 1 | -1) => void;
@@ -30,7 +33,7 @@ export interface MenuOption {
 export interface MenuContent {
   readonly heading: string;
   readonly text?: string;
-  /** Extra content under the text, e.g. the results table. */
+  /** Screen-specific content, e.g. the results table. */
   readonly body?: Node;
   /** Extra CSS class for the panel, for screens with their own look. */
   readonly variant?: string;
@@ -63,6 +66,7 @@ export class MenuPanel {
   private buttons: HTMLButtonElement[] = [];
   private backButton: HTMLButtonElement | undefined;
   private content: MenuContent | undefined;
+  private readonly confirmation: HTMLElement;
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
     const content = this.content;
@@ -98,6 +102,10 @@ export class MenuPanel {
     this.root.className = 'menu';
     this.root.hidden = true;
     container.append(this.root);
+    this.confirmation = document.createElement('div');
+    this.confirmation.className = 'menu-confirmation';
+    this.confirmation.setAttribute('aria-hidden', 'true');
+    container.append(this.confirmation);
     window.addEventListener('keydown', this.onKeyDown);
   }
 
@@ -120,8 +128,15 @@ export class MenuPanel {
         const label = document.createElement('span');
         label.textContent = option.label;
         button.append(image, label);
-      } else button.textContent = option.label;
+      } else {
+        if (option.artwork) button.append(menuArtwork(option.artwork));
+        const label = document.createElement('span');
+        label.className = 'menu-option-label';
+        label.textContent = option.label;
+        button.append(label);
+      }
       button.addEventListener('click', () => {
+        this.confirmFeedback();
         const fallback = option.adjust ? 'menu-adjust' : 'menu-confirm';
         const cue = option.cue === undefined ? fallback : option.cue;
         if (cue) this.play(cue);
@@ -163,8 +178,23 @@ export class MenuPanel {
     const options = document.createElement('div');
     options.className = content.grid ? 'menu-grid' : 'menu-options';
     options.append(...rows);
+    options.hidden = rows.length === 0;
     this.root.className = content.variant ? `menu ${content.variant}` : 'menu';
-    this.root.replaceChildren(back, title, body, content.body ?? '', options);
+    if (content.variant === 'menu-title') {
+      this.root.replaceChildren(back, title, body, content.body ?? '', options);
+    } else {
+      const heading = document.createElement('header');
+      heading.className = 'menu-heading';
+      heading.append(title, body);
+      const composition = document.createElement('div');
+      composition.className = 'menu-composition';
+      const details = document.createElement('div');
+      details.className = 'menu-details';
+      details.hidden = !content.body;
+      if (content.body) details.append(content.body);
+      composition.append(heading, details, options);
+      this.root.replaceChildren(menuAtmosphere(), back, composition);
+    }
     this.root.hidden = false;
     this.content = content;
     (this.buttons[focus] ?? this.buttons[0])?.focus();
@@ -219,6 +249,7 @@ export class MenuPanel {
   }
 
   private goBack(back: () => void): void {
+    this.confirmFeedback();
     this.play('menu-back');
     back();
   }
@@ -226,6 +257,15 @@ export class MenuPanel {
   private adjust(adjust: (delta: 1 | -1) => void, delta: 1 | -1): void {
     this.play('menu-adjust');
     adjust(delta);
+  }
+
+  private confirmFeedback(): void {
+    for (const animation of this.confirmation.getAnimations()) animation.cancel();
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    this.confirmation.animate([{ opacity: 0.22 }, { opacity: 0 }], {
+      duration: 160,
+      easing: 'ease-out',
+    });
   }
 
   hide(): void {
@@ -239,5 +279,6 @@ export class MenuPanel {
   dispose(): void {
     window.removeEventListener('keydown', this.onKeyDown);
     this.root.remove();
+    this.confirmation.remove();
   }
 }
