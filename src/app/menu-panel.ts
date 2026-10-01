@@ -1,9 +1,8 @@
 /**
  * A plain HTML menu drawn over the canvas: a heading, a line of text and a column of
  * buttons. Up/Down (or W/S) move the focus, Enter picks, Left/Right (or A/D) change a setting,
- * Escape or the Back button in the corner goes back. A menu without buttons (the title screen)
- * waits for Enter or Space instead. As in Melee, the focused option's description shows at the
- * bottom.
+ * Escape or the Back button in the corner goes back. A setting row also has − and + buttons
+ * for the mouse. A menu without buttons (the title screen) waits for Enter or Space instead.
  */
 import { markHandled, wasHandled } from './key-events';
 
@@ -12,8 +11,8 @@ export interface MenuOption {
   readonly select: () => void;
   /** Left (-1) or Right (+1) on a setting row. */
   readonly adjust?: (delta: 1 | -1) => void;
-  /** Shown at the bottom while this option is focused. */
-  readonly description?: string;
+  /** Text on the mouse buttons for Left and Right; − and + by default, ‹ › suit a choice. */
+  readonly stepLabels?: readonly [string, string];
 }
 
 export interface MenuContent {
@@ -94,23 +93,38 @@ export class MenuPanel {
     title.textContent = content.heading;
     const body = document.createElement('p');
     body.textContent = content.text ?? '';
+    body.hidden = !content.text;
+    const rows: HTMLElement[] = [];
     this.buttons = (content.options ?? []).map((option) => {
       const button = document.createElement('button');
       button.type = 'button';
-      button.textContent = option.adjust ? `‹ ${option.label} ›` : option.label;
+      button.textContent = option.label;
       button.addEventListener('click', option.select);
+      const adjust = option.adjust;
+      if (!adjust) {
+        rows.push(button);
+        return button;
+      }
+      // − and + are for the mouse; the keyboard uses Left and Right on the row itself.
+      const stepper = (text: string, delta: 1 | -1, label: string): HTMLButtonElement => {
+        const step = document.createElement('button');
+        step.type = 'button';
+        step.className = 'menu-step';
+        step.tabIndex = -1;
+        step.textContent = text;
+        step.setAttribute('aria-label', `${label} ${option.label}`);
+        // Keep the focus on the row, so the keyboard still works after a click.
+        step.addEventListener('mousedown', (event) => event.preventDefault());
+        step.addEventListener('click', () => adjust(delta));
+        return step;
+      };
+      const row = document.createElement('div');
+      row.className = 'menu-row';
+      const [lower, raise] = option.stepLabels ?? ['−', '+'];
+      row.append(stepper(lower, -1, 'Lower'), button, stepper(raise, 1, 'Raise'));
+      rows.push(row);
       return button;
     });
-    const description = document.createElement('p');
-    description.className = 'menu-description';
-    const describe = (index: number): void => {
-      description.textContent = content.options?.[index]?.description ?? '';
-      description.hidden = description.textContent === '';
-    };
-    this.buttons.forEach((button, index) =>
-      button.addEventListener('focus', () => describe(index)),
-    );
-    describe(-1);
     const back = document.createElement('button');
     back.type = 'button';
     back.className = 'menu-back';
@@ -131,15 +145,7 @@ export class MenuPanel {
       );
     }
     this.root.className = content.variant ? `menu ${content.variant}` : 'menu';
-    this.root.replaceChildren(
-      back,
-      title,
-      body,
-      previewBox,
-      content.body ?? '',
-      ...this.buttons,
-      description,
-    );
+    this.root.replaceChildren(back, title, body, previewBox, content.body ?? '', ...rows);
     this.root.hidden = false;
     this.content = content;
     (this.buttons[focus] ?? this.buttons[0])?.focus();

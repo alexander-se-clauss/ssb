@@ -30,8 +30,8 @@ knock each other off a floating stage. No install, instant play, readable and fu
 
 Set on character select, as in Melee: the banner at the top shows the rules and opens them.
 
-- **Stock:** each player has 1 to 9 lives; the last one with lives left wins.
-- **Time:** 1 to 10 minutes with unlimited respawns. Score is KOs minus falls, as in Smash; a
+- **Stock:** each player has 1 to 99 lives; the last one with lives left wins.
+- **Time:** 1 to 60 minutes with unlimited respawns. Score is KOs minus falls, as in Smash; a
   KO counts for whoever hit the fallen fighter last since it respawned, and a self-destruct is
   only a fall. The best score wins when time runs out; a tie is a draw (sudden death later).
 

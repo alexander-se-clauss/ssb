@@ -18,7 +18,8 @@ npm run dev      # open http://localhost:5173
 Menus: Enter or Space to start, arrow keys or W/S to move, Enter to pick. Esc or the Back
 button goes back. On character select each player uses their own controls: move to pick a
 fighter, attack (F / .) to pick, special (G / /) to cancel, then Enter when both are ready. Move
-up onto the rules banner and pick it (or click it) to change the match rules. Options holds the
+up onto the rules banner and pick it (or click it) to change the match rules;
+Done applies them; Esc or special discards them. Options holds the
 screen setting and the controls. After a match, the results screen offers a rematch or the main
 menu.
 

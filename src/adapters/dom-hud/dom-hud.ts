@@ -1,6 +1,8 @@
 import { TICK_RATE, score, timeLeftFrames, type FighterState, type MatchState } from '../../core';
 import type { GameView, SessionView } from '../../ports';
 
+const MAX_STOCK_DOTS = 5;
+
 const PLAYER_CSS_COLORS = ['#e94f4f', '#4f8fe9', '#4fd18b', '#f2c14e'];
 
 /** m:ss, rounded up so the clock shows 0:00 only when time is really up. */
@@ -73,7 +75,9 @@ export class DomHud implements GameView {
     }
     card.damage.textContent = `${Math.round(fighter.damage)}%`;
     if (match.rules.mode === 'stock') {
-      card.stocks.textContent = '●'.repeat(fighter.stocks);
+      // A row of dots for a few lives, a count once there are too many to read at a glance.
+      card.stocks.textContent =
+        fighter.stocks <= MAX_STOCK_DOTS ? '●'.repeat(fighter.stocks) : `● × ${fighter.stocks}`;
     } else {
       const points = score(fighter);
       card.stocks.textContent = points > 0 ? `+${points}` : String(points);

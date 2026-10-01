@@ -43,16 +43,10 @@ export const go = (from: Screen, to: Screen): Screen => {
 export interface MenuEntry {
   readonly label: string;
   readonly to: Screen;
-  /** Shown at the bottom while the entry is focused, as in Melee. */
-  readonly description: string;
 }
 
 /** The main menu, top to bottom. Escape goes back to the title screen. */
 export const MAIN_MENU: readonly MenuEntry[] = [
-  {
-    label: 'VS. Mode',
-    to: 'character-select',
-    description: 'Battle your friends. Choose the rules on the character select screen.',
-  },
-  { label: 'Options', to: 'options', description: 'Adjust the screen and view the controls.' },
+  { label: 'VS. Mode', to: 'character-select' },
+  { label: 'Options', to: 'options' },
 ];
