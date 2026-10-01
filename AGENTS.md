@@ -58,5 +58,5 @@ These rules are enforced by ESLint (`no-restricted-imports`) and by `tsconfig.co
 
 `window.__SSB__.screen()` returns the current screen and `window.__SSB__.state()` the current
 `MatchState` (undefined outside a match). `hold(player, input)` and `release(player)` take over
-a player's controls, e.g. to end a match. Use it from the Playwright MCP or e2e tests instead of
-reading pixels.
+a player's controls, e.g. to end a match. `sounds()` lists the cues, music tracks and volumes
+played so far. Use it from the Playwright MCP or e2e tests instead of reading pixels.

@@ -96,7 +96,7 @@ a playable build; it is done when that build works, not on a date.
       arms and legs, basic poses and per-part hurtboxes. Epics #3, #4.
 - [x] **S3 Move engine.** Move definition format (ADR), jab rebuilt as data, bone-attached
       hitboxes, knockback and hitlag, cancel windows and combos, hitbox debug overlay. Epic #5.
-- [ ] **Sound** (beside S3). Menu sounds, attack, hit and KO sounds, music for the menus and
+- [x] **Sound** (beside S3). Menu sounds, attack, hit and KO sounds, music for the menus and
       each stage, music and effects volume in Options. Synthesized in the browser, original.
       Epic #83.
 - [ ] **Polish** (beside S4). Blade wipe between screens, READY / GO! at match start and a

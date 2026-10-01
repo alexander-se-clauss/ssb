@@ -101,9 +101,9 @@ stage sit behind the fighters' plane, so they never look solid where fighters ca
 
 Sound goes through the `AudioOutput` port (ADR 0007): named cues such as `menu-move` or `hit`,
 and music tracks by id, on a music and an effects channel. `main.ts` gives `App` a
-`WebAudioOutput`, which synthesizes every cue from plain data (`cues.ts`: tones and noise bursts
-with a pitch glide and a fade). `RecordingAudioOutput` remembers what played, for tests. Core
-never plays sound. Menus play their cues in `MenuPanel` (move, confirm, adjust, back; an option
+`WebAudioOutput` wrapped in a `RecordingAudioOutput`; the recorder keeps the last 1000 cues and
+tracks for `__SSB__.sounds()`. `WebAudioOutput` synthesizes every cue from plain data (`cues.ts`: tones and noise bursts
+with a pitch glide and a fade). Core never plays sound. Menus play their cues in `MenuPanel` (move, confirm, adjust, back; an option
 can name its own cue, like `match-start` on a stage). Character select plays one cue per frame
 from the change between its state before and after (`selectCue` in `menu-sounds.ts`: join,
 leave, pick, un-pick, rules, cursor move), so a held button stays quiet. Start, Back and a click on the rules
@@ -205,11 +205,11 @@ Other logic follows the same pattern: define a port first, implement locally, sw
 
 ## Testing strategy
 
-| Level | Tool       | What                                                                                          | Where               |
-| ----- | ---------- | --------------------------------------------------------------------------------------------- | ------------------- |
-| Unit  | Vitest     | Game rules as scenarios (`settled`, `run`, `withFighter`)                                     | `src/**/*.test.ts`  |
-| Unit  | Vitest     | Adapters with fakes (e.g. keyboard with an `EventTarget`)                                     | next to the adapter |
-| E2E   | Playwright | Full flow from title to results and back (match ended via `__SSB__.hold`), keys move fighters | `e2e/`              |
+| Level | Tool       | What                                                                                                                           | Where               |
+| ----- | ---------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------- |
+| Unit  | Vitest     | Game rules as scenarios (`settled`, `run`, `withFighter`)                                                                      | `src/**/*.test.ts`  |
+| Unit  | Vitest     | Adapters with fakes (e.g. keyboard with an `EventTarget`)                                                                      | next to the adapter |
+| E2E   | Playwright | Full flow from title to results and back (match ended via `__SSB__.hold`), keys move fighters, sounds heard (`__SSB__.sounds`) | `e2e/`              |
 
 ## Decisions
 

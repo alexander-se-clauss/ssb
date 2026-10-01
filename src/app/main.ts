@@ -15,6 +15,7 @@ import { GAMEPAD_LABELS, GamepadInputSource } from '../adapters/gamepad-input/ga
 import { LocalGameSession } from '../adapters/local-session/local-game-session';
 import { ThreeView } from '../adapters/three-renderer/three-view';
 import { WebAudioOutput } from '../adapters/web-audio/web-audio-output';
+import { RecordingAudioOutput } from '../adapters/recording-audio/recording-audio-output';
 import { App } from './app';
 import { installDebugHandle } from './debug';
 import './style.css';
@@ -46,6 +47,9 @@ window.addEventListener('keydown', (event) => {
   setShowBoxes(!showBoxes);
 });
 
+// Recorded on the way to the speakers, so the debug handle can report what was played.
+const audio = new RecordingAudioOutput(new WebAudioOutput());
+
 const app = new App(container, {
   devices: [
     ...keyboards.map((source, index) => ({
@@ -70,7 +74,7 @@ const app = new App(container, {
     { device: 'Right keys', labels: describeKeys(PLAYER_TWO_KEYS) },
     { device: 'Gamepad', labels: GAMEPAD_LABELS },
   ],
-  audio: new WebAudioOutput(),
+  audio,
   // Looked up on each use: reading `localStorage` itself throws where storage is blocked.
   settings: {
     getItem: (key) => localStorage.getItem(key),
@@ -78,7 +82,11 @@ const app = new App(container, {
   },
 });
 
-installDebugHandle(app, [...keyboards, ...gamepads], setShowBoxes);
+installDebugHandle(app, [...keyboards, ...gamepads], setShowBoxes, () => ({
+  cues: audio.played.map((played) => played.cue),
+  tracks: [...audio.tracks],
+  volumes: { ...audio.volumes },
+}));
 
 window.addEventListener('resize', () => app.resize());
 

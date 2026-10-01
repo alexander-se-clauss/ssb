@@ -898,6 +898,9 @@ test('Sound settings change the volumes and are remembered after a reload', asyn
   await expect(effects).toHaveText('Effects: 10');
   await page.getByRole('button', { name: 'Lower Effects: 10' }).click();
   await expect(effects).toHaveText('Effects: 9');
+  await expect
+    .poll(async () => (await page.evaluate(() => window.__SSB__?.sounds()))?.volumes)
+    .toEqual({ music: ((start - 1) / 10) ** 2, effects: 0.81 });
 
   await page.reload();
   await page.keyboard.press('Enter');
@@ -1139,4 +1142,91 @@ test('fighter lobby shows neutral portraits, live colored previews, ownership an
   expect(yellow[1]).toBeGreaterThan((yellow[2] ?? 0) * 1.25);
   await inspectMenu(page, 'lobby-four', testInfo);
   await expect.poll(() => root.evaluate((node) => node.scrollHeight - node.clientHeight)).toBe(0);
+});
+
+/** What the game played so far, from the debug handle. */
+const sounds = (page: Page) =>
+  page.evaluate(() => {
+    const log = window.__SSB__?.sounds();
+    if (!log) throw new Error('No debug handle');
+    return log;
+  });
+const cues = async (page: Page) => (await sounds(page)).cues;
+const lastTrack = async (page: Page) => (await sounds(page)).tracks.at(-1);
+
+test('menus, a hit, a KO and the music change are heard', async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.goto('/');
+  await expect.poll(() => lastTrack(page)).toBe('menu');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('main-menu');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Escape');
+  await expect.poll(() => screen(page)).toBe('title');
+  expect(await cues(page)).toEqual(['menu-confirm', 'menu-move', 'menu-back']);
+
+  // One stock, so a single fall ends the match.
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('character-select');
+  await openRules(page);
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowLeft');
+  await page.keyboard.press('ArrowLeft');
+  await expect(page.getByRole('button', { name: 'Stocks: 1', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Done' }).click();
+  await tap(page, 'KeyS');
+  await bothPick(page);
+  expect(await cues(page)).toEqual(expect.arrayContaining(['join', 'pick']));
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('stage-select');
+  expect(await lastTrack(page)).toBe('menu');
+  // Final Destination: flat, so the fighters meet on the ground.
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('match');
+  await expect.poll(() => lastTrack(page)).toBe('final-destination');
+  // Fighters drop in at the start, so a landing may already follow the match-start cue.
+  expect(await cues(page)).toContain('match-start');
+
+  // A hit: player one runs up to player two, walks the last bit into reach and jabs. They turn
+  // back if a slow machine lets them pass player two, so they end up close and facing them.
+  const gap = async () => {
+    const [one, two] = (await gameState(page)).fighters;
+    return (two?.position.x ?? 0) - (one?.position.x ?? 0);
+  };
+  await expect
+    .poll(
+      async () => {
+        const distance = await gap();
+        const close = Math.abs(distance) > 0.3 && Math.abs(distance) < 1.2;
+        const speed = Math.abs(distance) > 3 ? 1 : 0.3;
+        const x = close ? 0 : Math.sign(distance) * speed;
+        await page.evaluate((x) => window.__SSB__?.hold(0, { x }), x);
+        return close;
+      },
+      // Check often: the window where player one is in reach lasts a fraction of a second.
+      { timeout: 30_000, intervals: [50] },
+    )
+    .toBe(true);
+  await expect
+    .poll(
+      async () => {
+        await page.evaluate(() => window.__SSB__?.hold(0, { attack: true }));
+        await nextFrames(page);
+        await page.evaluate(() => window.__SSB__?.hold(0, {}));
+        await nextFrames(page);
+        return cues(page);
+      },
+      { timeout: 10_000 },
+    )
+    .toContain('hit');
+  expect(await cues(page)).toContain('attack');
+
+  // A KO: player one walks off the stage, which ends the one-stock match.
+  await page.evaluate(() => window.__SSB__?.hold(0, { x: -1 }));
+  await expect.poll(() => screen(page), { timeout: 20_000 }).toBe('results');
+  await page.evaluate(() => window.__SSB__?.release(0));
+  expect(await cues(page)).toEqual(expect.arrayContaining(['ko', 'match-end']));
+  await expect.poll(() => lastTrack(page)).toBe('results');
 });

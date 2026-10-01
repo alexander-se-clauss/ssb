@@ -6,6 +6,7 @@ interface E2eFighter {
   stocks: number;
   position: { x: number; y: number };
   grounded: boolean;
+  action: string;
   pose: { torso: number; upperLegFront: number };
 }
 
@@ -26,5 +27,10 @@ interface Window {
     restart(): void;
     hold(player: number, input: { x?: number; y?: number; jump?: boolean; attack?: boolean }): void;
     release(player: number): void;
+    sounds(): {
+      cues: string[];
+      tracks: (string | null)[];
+      volumes: { music: number; effects: number };
+    };
   };
 }

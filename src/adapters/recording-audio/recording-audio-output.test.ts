@@ -19,6 +19,14 @@ describe('RecordingAudioOutput', () => {
     expect(audio.volumes).toEqual({ music: 0.3, effects: 1 });
   });
 
+  it('keeps only the most recent cues, so a long session does not grow without end', () => {
+    const audio = new RecordingAudioOutput(undefined, 3);
+    for (const cue of ['jump', 'land', 'attack', 'hit'] as const) audio.play(cue);
+    expect(audio.played.map((played) => played.cue)).toEqual(['land', 'attack', 'hit']);
+    for (const track of ['menu', 'battlefield', 'results', 'menu']) audio.playMusic(track);
+    expect(audio.tracks).toEqual(['battlefield', 'results', 'menu']);
+  });
+
   it('passes everything on to the output it wraps', () => {
     const calls: string[] = [];
     const inner: AudioOutput = {

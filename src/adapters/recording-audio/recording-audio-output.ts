@@ -15,15 +15,21 @@ export class RecordingAudioOutput implements AudioOutput {
   readonly tracks: (MusicTrack | null)[] = [];
   readonly volumes: Record<AudioChannel, number> = { music: 1, effects: 1 };
 
-  constructor(private readonly inner?: AudioOutput) {}
+  /** `limit` is how many recent cues and tracks are kept. */
+  constructor(
+    private readonly inner?: AudioOutput,
+    private readonly limit = 1000,
+  ) {}
 
   play(cue: SoundCue, strength?: number): void {
     this.played.push({ cue, strength });
+    if (this.played.length > this.limit) this.played.shift();
     this.inner?.play(cue, strength);
   }
 
   playMusic(track: MusicTrack | null): void {
     if (this.tracks.at(-1) !== track) this.tracks.push(track);
+    if (this.tracks.length > this.limit) this.tracks.shift();
     this.inner?.playMusic(track);
   }
 
