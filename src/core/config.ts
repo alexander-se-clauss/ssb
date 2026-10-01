@@ -85,3 +85,15 @@ export const STICK = {
   /** Frames after a flick in which attack still makes a smash, the flick frame included. */
   smashWindowFrames: 4,
 } as const;
+
+/** Body poses: how fast they blend and how the idle and run motions cycle. */
+export const POSE = {
+  /** Share of the remaining difference a pose closes each frame, so switches never pop. */
+  blend: 0.3,
+  /** One breath of the idle sway, in frames. */
+  idleCycleFrames: 150,
+  /** One full stride (both legs), in frames. */
+  runCycleFrames: 30,
+  /** Launch speed from which a hit fighter tumbles instead of flinching. */
+  tumbleSpeed: 0.4,
+} as const;

@@ -36,6 +36,9 @@ Fighter bodies are core data too (`skeleton.ts`): a 2D skeleton of bones with le
 and poses as joint angles. `boneSegments` turns a pose into world joint positions, so hurtboxes
 and hitboxes can follow bones and the view only draws what core computed: `ThreeView` places a
 sphere or capsule on each bone (`body-layout.ts`).
+Each fighter carries its current `pose` in `FighterState`: `step` eases it a little each frame towards
+the pose of its movement state, with idle breathing and a running stride (`poses.ts`), and the
+view interpolates it between frames like the position.
 
 **Enforced:** ESLint `no-restricted-imports` per folder (`eslint.config.js`) and a separate
 `tsconfig.core.json` without DOM types, so `document` or `window` in core fails typecheck.
@@ -115,3 +118,4 @@ Other logic follows the same pattern: define a port first, implement locally, sw
 - [0002 Ports and adapters around a pure core](adr/0002-ports-and-adapters.md)
 - [0003 Deterministic fixed-timestep simulation](adr/0003-deterministic-fixed-timestep.md)
 - [0004 TypeScript, Vite and Three.js](adr/0004-typescript-vite-threejs.md)
+- [0005 Body pose is part of the game state](adr/0005-body-pose-in-game-state.md)

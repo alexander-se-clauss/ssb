@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import {
   FIGHTER,
   HUMANOID,
-  REST_POSE,
   activeHitbox,
+  blendPose,
   boneSegments,
   vec2,
   type BoneId,
@@ -196,8 +196,9 @@ export class ThreeView implements GameView {
     // Mirror rather than turn around, so the near limbs stay near the camera either way.
     visual.root.scale.x = fighter.facing;
 
-    // Poses per movement state come with #24; until then everyone stands in the rest pose.
-    for (const part of bodyParts(boneSegments(HUMANOID, REST_POSE, vec2(0, 0), 1))) {
+    // Core eases the pose each frame; between frames the view interpolates like the position.
+    const pose = teleported ? fighter.pose : blendPose(before.pose, fighter.pose, t);
+    for (const part of bodyParts(boneSegments(HUMANOID, pose, vec2(0, 0), 1))) {
       const mesh = visual.parts.get(part.bone);
       mesh?.position.set(part.x, part.y, part.depth);
       mesh?.rotation.set(0, 0, part.angle);

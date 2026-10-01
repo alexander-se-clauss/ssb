@@ -1,6 +1,8 @@
 import { FIGHTER, JAB } from './config';
 import { NEUTRAL_INPUT, pressed } from './input';
 import { approach } from './math';
+import { nextPose } from './poses';
+import { REST_POSE } from './skeleton';
 import type {
   FighterAction,
   FighterState,
@@ -41,6 +43,7 @@ export const createFighter = (
     invulnerableFrames: 0,
     hitTargets: [],
     previousInput: NEUTRAL_INPUT,
+    pose: REST_POSE,
   };
 };
 
@@ -53,13 +56,15 @@ const standsOn = (x: number, y: number, platform: PlatformDef): boolean =>
   Math.abs(y - platform.bounds.top) < 1e-6;
 
 /**
- * Advances one fighter by one frame: control, physics and stage collision.
+ * Advances one fighter by one frame: control, physics, stage collision and its body pose.
  * Combat between fighters and blast zones are handled by the simulation afterwards.
  */
 export const updateFighter = (
   fighter: FighterState,
   input: PlayerInput,
   stage: StageDef,
+  /** The match frame, for the idle breathing. */
+  frame = 0,
 ): FighterState => {
   if (fighter.action === 'eliminated') return { ...fighter, previousInput: input };
 
@@ -193,7 +198,7 @@ export const updateFighter = (
     }
   }
 
-  return {
+  const moved: FighterState = {
     ...fighter,
     position: { x: px, y: py },
     velocity: { x: vx, y: vy },
@@ -207,4 +212,6 @@ export const updateFighter = (
     invulnerableFrames: Math.max(0, fighter.invulnerableFrames - 1),
     previousInput: input,
   };
+  // Eased before combat, so hurtboxes built from the pose match this frame's body.
+  return { ...moved, pose: nextPose(moved, frame) };
 };

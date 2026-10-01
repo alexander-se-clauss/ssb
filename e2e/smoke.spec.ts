@@ -304,6 +304,21 @@ test('player one moves right when D is held', async ({ page }) => {
   expect(endX).toBeGreaterThan(startX);
 });
 
+test('an idle fighter keeps moving, and running changes the pose', async ({ page }) => {
+  await startMatch(page);
+  await expect.poll(async () => (await gameState(page)).fighters[0]?.grounded).toBe(true);
+  const torso = async () => (await gameState(page)).fighters[0]?.pose.torso ?? 0;
+  const legs = async () => (await gameState(page)).fighters[0]?.pose.upperLegFront ?? 0;
+  // Breathing: the torso angle drifts while standing still.
+  const first = await torso();
+  await expect.poll(torso).not.toBeCloseTo(first, 1);
+
+  const idleLegs = await legs();
+  await page.keyboard.down('KeyD');
+  await expect.poll(async () => Math.abs((await legs()) - idleLegs)).toBeGreaterThan(10);
+  await page.keyboard.up('KeyD');
+});
+
 test('full flow: title, menus, a match ended through the debug handle, results, menu', async ({
   page,
 }) => {
