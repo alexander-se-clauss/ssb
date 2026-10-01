@@ -217,6 +217,17 @@ describe('starting from a controller', () => {
     expect(requestsStart(apply(ready, { type: 'rules', open: true }), confirm(0))).toBe(false);
   });
 
+  it('asks to start when a joined player presses Start, even before picking or on the banner', () => {
+    const start = (player: 0 | 1 | 2): SelectAction => ({ type: 'start', player });
+    expect(requestsStart(twoPlayers(), start(1))).toBe(true);
+    const onBanner = apply(ready, { type: 'move', player: 0, dx: 0, dy: -1 });
+    expect(requestsStart(onBanner, start(0))).toBe(true);
+    expect(apply(onBanner, start(0))).toEqual(onBanner);
+    const third = apply(createSelect(3), { type: 'join', device: 0 });
+    expect(requestsStart(third, start(2))).toBe(false);
+    expect(requestsStart(apply(ready, { type: 'rules', open: true }), start(0))).toBe(false);
+  });
+
   it('can start once everyone is ready and the rules are closed', () => {
     expect(canStart(ready)).toBe(true);
     expect(canStart(apply(twoPlayers(), confirm(0)))).toBe(false);
@@ -252,6 +263,12 @@ describe('menu actions from a player controller', () => {
   it('maps up on the stick to moving up the grid', () => {
     expect(menuActions(0, NEUTRAL_INPUT, inputOf({ y: 1, jump: true }))).toEqual([
       { type: 'move', player: 0, dx: 0, dy: -1 },
+    ]);
+  });
+
+  it('turns a Start press into a start request', () => {
+    expect(menuActions(1, NEUTRAL_INPUT, inputOf({ start: true }))).toEqual([
+      { type: 'start', player: 1 },
     ]);
   });
 

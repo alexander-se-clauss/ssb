@@ -17,6 +17,8 @@ export interface PlayerInput {
   readonly attack: boolean;
   readonly special: boolean;
   readonly shield: boolean;
+  /** The Start button. Menus use it; the simulation ignores it. */
+  readonly start: boolean;
 }
 
 export type FighterAction = 'idle' | 'run' | 'airborne' | 'jab' | 'hitstun' | 'eliminated';

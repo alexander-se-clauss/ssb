@@ -44,6 +44,7 @@ describe('describeKeys', () => {
       down: 'S',
       attack: 'F',
       special: 'G',
+      start: 'Enter',
     });
     expect(describeKeys(PLAYER_TWO_KEYS)).toEqual({
       move: '← / →',
@@ -51,6 +52,7 @@ describe('describeKeys', () => {
       down: '↓',
       attack: '.',
       special: '/',
+      start: 'Enter',
     });
   });
 });

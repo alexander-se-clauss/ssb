@@ -42,6 +42,7 @@ export interface KeyLabels {
   readonly down: string;
   readonly attack: string;
   readonly special: string;
+  readonly start: string;
 }
 
 const KEY_NAMES: Readonly<Record<string, string>> = {
@@ -72,6 +73,8 @@ export const describeKeys = (keys: KeyMap): KeyLabels => ({
   down: keyName(keys.down),
   attack: keyName(keys.attack),
   special: keyName(keys.special),
+  // Enter starts for every keyboard player, through the page's menu keys.
+  start: 'Enter',
 });
 
 export class KeyboardInputSource implements InputSource {
@@ -116,6 +119,8 @@ export class KeyboardInputSource implements InputSource {
       attack: is(k.attack),
       special: is(k.special),
       shield: is(k.shield),
+      // Enter is the keyboard's start, handled as a menu key, not per player.
+      start: false,
     };
     this.tapped.clear();
     return input;

@@ -15,6 +15,7 @@ const BUTTON = {
   y: 3, // top face button (Triangle)
   leftTrigger: 6,
   rightTrigger: 7,
+  start: 9,
   up: 12,
   down: 13,
   left: 14,
@@ -28,6 +29,7 @@ export const GAMEPAD_LABELS = {
   down: 'Stick down',
   attack: 'A',
   special: 'B',
+  start: 'Start',
 } as const;
 
 /** Reads every connected gamepad; `navigator.getGamepads` in the browser. */
@@ -40,7 +42,7 @@ const deadzoned = (value: number): number => (Math.abs(value) < STICK.deadzone ?
 
 /**
  * One gamepad as a player's input, with Melee's layout: A attacks, B specials, X and Y jump,
- * the triggers shield, the left stick or d-pad moves. The browser Gamepad API has no events for
+ * the triggers shield, Start starts, the left stick or d-pad moves. The browser Gamepad API has no events for
  * buttons, so `sample()` polls the pad; the app calls it once per frame.
  */
 export class GamepadInputSource implements InputSource {
@@ -70,6 +72,7 @@ export class GamepadInputSource implements InputSource {
       attack: is(BUTTON.a),
       special: is(BUTTON.b),
       shield: is(BUTTON.leftTrigger) || is(BUTTON.rightTrigger),
+      start: is(BUTTON.start),
     };
   }
 

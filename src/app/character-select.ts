@@ -26,6 +26,8 @@ export type SelectAction =
   | { readonly type: 'move'; readonly player: PlayerSlot; readonly dx: number; readonly dy: number }
   | { readonly type: 'confirm'; readonly player: PlayerSlot }
   | { readonly type: 'cancel'; readonly player: PlayerSlot }
+  /** Start: starts the match if everyone is ready, like Enter. Changes nothing itself. */
+  | { readonly type: 'start'; readonly player: PlayerSlot }
   /** A device not playing yet pressed attack: it takes the first free slot. */
   | { readonly type: 'join'; readonly device: number }
   /** Opens or closes the rules overlay, e.g. by mouse or from the overlay itself. */
@@ -107,6 +109,8 @@ export const reduceSelect = (
   const picked = state.picks[player] ?? null;
   const cursor = state.cursors[player] ?? 0;
   switch (action.type) {
+    case 'start':
+      return state;
     // As in Melee, a player can move on after picking; the pick stays until cancelled.
     case 'move':
       if (roster.length === 0) return state;
@@ -131,23 +135,27 @@ export const reduceSelect = (
 };
 
 /**
- * Whether an action asks to start the match: a joined player who already picked confirms again,
- * like Enter. This lets a gamepad, which has no Enter, get through. It depends only on that
- * player, so the screen can judge every request after all of a frame's actions (`canStart`).
+ * Whether an action asks to start the match: a joined player presses Start, or confirms again
+ * after picking, like Enter. It depends only on that player, so the screen can judge every
+ * request after all of a frame's actions (`canStart`).
  */
-export const requestsStart = (state: SelectState, action: SelectAction): boolean =>
-  action.type === 'confirm' &&
-  !state.rulesOpen &&
-  state.devices[action.player] != null &&
-  state.picks[action.player] != null &&
-  state.cursors[action.player] !== RULES_CURSOR;
+export const requestsStart = (state: SelectState, action: SelectAction): boolean => {
+  if (action.type !== 'start' && action.type !== 'confirm') return false;
+  const { player } = action;
+  if (state.rulesOpen || state.devices[player] == null) return false;
+  return (
+    action.type === 'start' ||
+    (state.picks[player] != null && state.cursors[player] !== RULES_CURSOR)
+  );
+};
 
 /** Whether the match may start now: everyone is ready and the rules overlay is closed. */
 export const canStart = (state: SelectState): boolean => !state.rulesOpen && allReady(state);
 
 /** Grid steps per stick direction; rows grow downwards. */
-const STEPS: Readonly<Record<Exclude<MenuCommand, 'confirm' | 'back'>, readonly [number, number]>> =
-  { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+const STEPS: Readonly<
+  Record<Exclude<MenuCommand, 'confirm' | 'back' | 'start'>, readonly [number, number]>
+> = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 
 /** The menu actions one player's controller produced this frame (presses only, not holds). */
 export const menuActions = (
@@ -158,6 +166,7 @@ export const menuActions = (
   menuCommands(previous, current).map((command): SelectAction => {
     if (command === 'confirm') return { type: 'confirm', player };
     if (command === 'back') return { type: 'cancel', player };
+    if (command === 'start') return { type: 'start', player };
     const [dx, dy] = STEPS[command];
     return { type: 'move', player, dx, dy };
   });
