@@ -283,12 +283,18 @@ export class App {
    * reads each player's controls instead, which include their gamepad.
    */
   private updateMenus(): void {
+    const screen = this.screen;
+    const rulesShown = this.rulesShown;
     this.adapters.menuInputs.forEach((source, index) => {
       const current = source.sample();
       // Sampled on every screen, so a button held from the last screen is not a new press.
       const previous = this.previousMenuInputs[index] ?? current;
       this.previousMenuInputs[index] = current;
       for (const command of menuCommands(previous, current)) {
+        // Once a command changed the screen or closed the overlay, the rest of this frame's
+        // presses were meant for the old one: two pads pressing A on the title must not also
+        // pick VS. Mode.
+        if (this.screen !== screen || this.rulesShown !== rulesShown) return;
         if (this.screen === 'character-select') {
           // A player's B already closes the rules through their controls, as special.
           const isPlayer = index < this.adapters.inputs.length;

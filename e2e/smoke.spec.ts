@@ -363,7 +363,13 @@ const flick = async (page: Page, pad: number, x: number, y: number) => {
 test('the whole menu flow works with gamepads only', async ({ page }) => {
   await installPads(page, 2);
   await page.goto('/');
-  await press(page, 0, PAD.a);
+  // Both pads press A in the same frame: that leaves the title once, not twice.
+  await setPad(page, 0, { button: PAD.a, on: true });
+  await setPad(page, 1, { button: PAD.a, on: true });
+  await nextFrames(page);
+  await setPad(page, 0, { button: PAD.a, on: false });
+  await setPad(page, 1, { button: PAD.a, on: false });
+  await nextFrames(page);
   await expect.poll(() => screen(page)).toBe('main-menu');
 
   // Down to Options, in and back out with B.
