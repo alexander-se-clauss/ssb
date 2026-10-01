@@ -128,5 +128,10 @@ describe('hurtboxes per body part', () => {
     // A ball, like the head, has both ends in one place.
     const head = boxes.find((box) => box.bone === 'head');
     expect(head?.start).toEqual(head?.end);
+    // A capsule's round ends stay inside its joints, the way the view draws it.
+    const shin = boxes.find((box) => box.bone === 'lowerLegFront');
+    const def = HUMANOID.bones.find((bone) => bone.id === 'lowerLegFront');
+    const core = shin ? Math.hypot(shin.end.x - shin.start.x, shin.end.y - shin.start.y) : 0;
+    expect(core + 2 * (def?.radius ?? 0)).toBeCloseTo(def?.length ?? 0, 9);
   });
 });
