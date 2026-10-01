@@ -45,6 +45,7 @@ export const createFighter = (
     damageDealt: 0,
     lastHitBy: null,
     hitstunFrames: 0,
+    hitlagFrames: 0,
     invulnerableFrames: 0,
     hitTargets: [],
     stick: CENTRED_STICK,
@@ -73,6 +74,16 @@ export const updateFighter = (
   frame = 0,
 ): FighterState => {
   if (fighter.action === 'eliminated') return { ...fighter, previousInput: input };
+  // Frozen by a hit: everything stands still, and the previous input is kept, so a button still
+  // held when the freeze ends counts as a press then. The stick is still tracked, so a stick
+  // pushed and held through the freeze is not read as a flick (a smash) afterwards.
+  if (fighter.hitlagFrames > 0) {
+    return {
+      ...fighter,
+      hitlagFrames: fighter.hitlagFrames - 1,
+      stick: trackStick(fighter.stick, input),
+    };
+  }
 
   const prev = fighter.previousInput;
   let { x: px, y: py } = fighter.position;

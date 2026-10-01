@@ -35,6 +35,8 @@ describe('move data', () => {
     expect(() => validateMove(broken({ from: -1 }))).toThrow(/jab/);
     expect(() => validateMove(broken({ radius: 0 }))).toThrow(/jab/);
     expect(() => validateMove(broken({ group: -1 }))).toThrow(/jab/);
+    expect(() => validateMove(broken({ hitlagScale: -1 }))).toThrow(/jab/);
+    expect(() => validateMove(broken({ hitlagScale: Infinity }))).toThrow(/jab/);
     expect(() => validateMove({ ...JAB, totalFrames: 0 })).toThrow(/jab/);
   });
 

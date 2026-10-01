@@ -60,6 +60,8 @@ export interface FighterState {
   /** Who hit this fighter last since it respawned; gets the KO credit. */
   readonly lastHitBy: PlayerSlot | null;
   readonly hitstunFrames: number;
+  /** Frames left frozen by a hit (ADR 0006): nothing moves, the move and pose stand still. */
+  readonly hitlagFrames: number;
   readonly invulnerableFrames: number;
   /** Who the current move already hit, per hitbox group, so one swing hits each target once. */
   readonly hitTargets: readonly HitRecord[];

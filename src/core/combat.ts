@@ -1,4 +1,4 @@
-import { FIGHTER, HITSTUN_PER_KNOCKBACK } from './config';
+import { FIGHTER, HITLAG, HITSTUN_PER_KNOCKBACK } from './config';
 import { circleIntersectsCapsule, type Vec2 } from './math';
 import { findMove } from './move-data';
 import type { HitboxDef } from './moves';
@@ -101,6 +101,12 @@ export const knockback = (
   weight: number,
 ): number => (attack.baseKnockback + damageAfterHit * attack.knockbackGrowth) / weight;
 
+/** How long a hit freezes attacker and target: longer for harder hits. */
+export const hitlagFrames = (attack: Pick<HitboxDef, 'damage' | 'hitlagScale'>): number =>
+  Math.floor(
+    (HITLAG.baseFrames + attack.damage / HITLAG.damagePerFrame) * (attack.hitlagScale ?? 1),
+  );
+
 /**
  * Resolves all hits for this frame. Hits are computed from the same snapshot,
  * so trades (both fighters hitting each other on the same frame) are symmetric.
@@ -128,6 +134,7 @@ export const resolveCombat = (
       const damage = current.damage + hitbox.attack.damage;
       const speed = knockback(hitbox.attack, damage, FIGHTER.weight);
       const radians = (hitbox.attack.angle * Math.PI) / 180;
+      const hitlag = hitlagFrames(hitbox.attack);
 
       next[target.slot] = {
         ...current,
@@ -138,6 +145,8 @@ export const resolveCombat = (
         actionFrame: 0,
         moveId: null,
         hitstunFrames: Math.round(speed * HITSTUN_PER_KNOCKBACK),
+        // The launch is set now but held until the freeze ends.
+        hitlagFrames: Math.max(current.hitlagFrames, hitlag),
         hitTargets: [],
         lastHitBy: attacker.slot,
       };
@@ -149,6 +158,7 @@ export const resolveCombat = (
           { slot: target.slot, group: hitbox.attack.group ?? 0 },
         ],
         damageDealt: attackerNow.damageDealt + hitbox.attack.damage,
+        hitlagFrames: Math.max(attackerNow.hitlagFrames, hitlag),
       };
       events.push({ type: 'hit', attacker: attacker.slot, target: target.slot, damage });
     }
