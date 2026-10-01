@@ -15,8 +15,10 @@ import {
   createSelect,
   menuActions,
   reduceSelect,
+  selectOutcome,
   type SelectState,
 } from './character-select';
+import { menuCommands } from './menu-commands';
 import { CharacterSelectView } from './character-select-view';
 import { renderControls, type ControlLabels } from './controls';
 import { MenuPanel, type MenuContent } from './menu-panel';
@@ -48,6 +50,11 @@ const LABELS: Readonly<Record<Screen, string>> = {
 /** How the app gets its adapters. `main.ts` decides which ones; `App` only uses the ports. */
 export interface AppAdapters {
   readonly inputs: readonly InputSource[];
+  /**
+   * Devices that drive the menus by polling (gamepads). The keyboard is not among them: menus
+   * read its keys as DOM events.
+   */
+  readonly menuInputs: readonly InputSource[];
   /** Starts a match: locally today, on a server later. */
   readonly createSession: (config: MatchConfig) => GameSession;
   readonly createViews: (container: HTMLElement, stage: StageDef) => readonly GameView[];
@@ -80,6 +87,8 @@ export class App {
   private picks: readonly string[] = [];
   /** Last frame's input per player, for press detection in menus. */
   private previousInputs: PlayerInput[] = [];
+  /** Last frame's input per menu device, for press detection. */
+  private previousMenuInputs: PlayerInput[] = [];
   private readonly menu: MenuPanel;
   /** The rules overlay on top of character select. */
   private readonly rulesPanel: MenuPanel;
@@ -140,7 +149,12 @@ export class App {
   }
 
   frame(now: number): void {
-    if (this.screen === 'character-select') this.updateCharacterSelect();
+    const rulesWereOpen = this.rulesShown;
+    this.updateMenus();
+    // A gamepad press that just closed the rules overlay (Done) must not also reach the grid
+    // below, where it would open the rules again from the banner.
+    const rulesJustClosed = rulesWereOpen && !this.rulesShown;
+    if (this.screen === 'character-select') this.updateCharacterSelect(rulesJustClosed);
     if (!this.match) return;
     const { session, views } = this.match;
     session.localSlots.forEach((slot, index) => {
@@ -264,20 +278,54 @@ export class App {
     else this.menu.hide();
   }
 
-  private updateCharacterSelect(): void {
-    let state = this.select;
-    if (!state) return;
+  /**
+   * Gamepads move the focus on menu screens and in the rules overlay. Character select itself
+   * reads each player's controls instead, which include their gamepad.
+   */
+  private updateMenus(): void {
+    const screen = this.screen;
+    const rulesShown = this.rulesShown;
+    this.adapters.menuInputs.forEach((source, index) => {
+      const current = source.sample();
+      // Sampled on every screen, so a button held from the last screen is not a new press.
+      const previous = this.previousMenuInputs[index] ?? current;
+      this.previousMenuInputs[index] = current;
+      for (const command of menuCommands(previous, current)) {
+        // Once a command changed the screen or closed the overlay, the rest of this frame's
+        // presses were meant for the old one: two pads pressing A on the title must not also
+        // pick VS. Mode.
+        if (this.screen !== screen || this.rulesShown !== rulesShown) return;
+        if (this.screen === 'character-select') {
+          // A player's B already closes the rules through their controls, as special.
+          const isPlayer = index < this.adapters.inputs.length;
+          if (this.rulesShown && !(command === 'back' && isPlayer)) {
+            this.rulesPanel.command(command);
+          }
+        } else if (this.screen !== 'match') {
+          this.menu.command(command);
+        }
+      }
+    });
+  }
+
+  private updateCharacterSelect(ignorePresses = false): void {
     this.adapters.inputs.forEach((source, player) => {
       const current = source.sample();
       const previous = this.previousInputs[player] ?? NEUTRAL_INPUT;
-      for (const action of menuActions(player, previous, current)) {
-        if (state) state = reduceSelect(state, action, CHARACTERS, GRID_COLUMNS);
-      }
       this.previousInputs[player] = current;
+      if (ignorePresses) return;
+      for (const action of menuActions(player, previous, current)) {
+        const state = this.select;
+        if (!state) return;
+        const outcome = selectOutcome(state, action);
+        if (outcome === 'start') return this.confirmCharacters();
+        if (outcome === 'back') return this.navigate('main-menu');
+        this.select = reduceSelect(state, action, CHARACTERS, GRID_COLUMNS);
+      }
     });
-    this.select = state;
+    if (!this.select) return;
     this.syncRulesPanel();
-    this.characterSelect.render(state, allReady(state), this.rules);
+    this.characterSelect.render(this.select, allReady(this.select), this.rules);
   }
 
   private rulesMenu(): MenuContent {

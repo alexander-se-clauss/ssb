@@ -6,6 +6,7 @@ import {
   createSelect,
   menuActions,
   reduceSelect,
+  selectOutcome,
   type SelectAction,
   type SelectState,
 } from './character-select';
@@ -130,6 +131,35 @@ describe('rules banner on character select', () => {
     const closed = apply(open, { type: 'rules', open: false }, { type: 'confirm', player: 0 });
     expect(closed.rulesOpen).toBe(false);
     expect(closed.picks[0]).toBe('a');
+  });
+});
+
+describe('leaving character select from a controller', () => {
+  const ready = apply(
+    createSelect(2),
+    { type: 'confirm', player: 0 },
+    { type: 'confirm', player: 1 },
+  );
+
+  it('starts once everyone has picked and someone confirms again', () => {
+    expect(selectOutcome(ready, { type: 'confirm', player: 1 })).toBe('start');
+    const half = apply(createSelect(2), { type: 'confirm', player: 0 });
+    expect(selectOutcome(half, { type: 'confirm', player: 0 })).toBeNull();
+  });
+
+  it('opens the rules instead of starting when the confirming cursor is on the banner', () => {
+    const onBanner = apply(ready, { type: 'move', player: 0, dx: 0, dy: -1 });
+    expect(selectOutcome(onBanner, { type: 'confirm', player: 0 })).toBeNull();
+  });
+
+  it('goes back when a player who has not picked cancels', () => {
+    expect(selectOutcome(createSelect(2), { type: 'cancel', player: 0 })).toBe('back');
+    expect(selectOutcome(ready, { type: 'cancel', player: 0 })).toBeNull();
+  });
+
+  it('does nothing while the rules are open', () => {
+    const open = apply(createSelect(2), { type: 'rules', open: true });
+    expect(selectOutcome(open, { type: 'cancel', player: 0 })).toBeNull();
   });
 });
 

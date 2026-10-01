@@ -129,7 +129,7 @@ export class CharacterSelectView {
         return slot;
       }),
     );
-    this.footer.textContent = ready ? 'Ready! Press Enter' : '';
+    this.footer.textContent = ready ? 'Ready! Press Enter or attack' : '';
     this.footer.classList.toggle('ready', ready);
   }
 

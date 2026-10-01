@@ -296,39 +296,136 @@ test('full flow: title, menus, a match ended through the debug handle, results, 
   await expect(page.getByRole('button', { name: 'VS. Mode' })).toBeFocused();
 });
 
-test('a gamepad picks on character select and moves its fighter', async ({ page }) => {
-  // A fake Standard Gamepad at index 0, so the test needs no hardware.
-  await page.addInitScript(() => {
-    const pad = {
+/**
+ * Fake Standard Gamepads, so the tests need no hardware. Browsers may leave slot 0 empty, as
+ * Alex's did, so the pads sit from slot 1 on.
+ */
+const installPads = (page: Page, count: number) =>
+  page.addInitScript((padCount) => {
+    const pads = Array.from({ length: padCount }, () => ({
       axes: [0, 0, 0, 0],
       buttons: Array.from({ length: 17 }, () => ({ pressed: false })),
-    };
-    Object.assign(window, { fakePad: pad });
-    navigator.getGamepads = () => [pad as unknown as Gamepad];
-  });
-  const setPad = (change: { axes?: number[]; a?: boolean }) =>
-    page.evaluate((next) => {
-      const pad = (
-        window as unknown as { fakePad: { axes: number[]; buttons: { pressed: boolean }[] } }
-      ).fakePad;
-      if (next.axes) pad.axes = next.axes;
-      if (next.a !== undefined && pad.buttons[0]) pad.buttons[0].pressed = next.a;
-    }, change);
+    }));
+    Object.assign(window, { fakePads: pads });
+    navigator.getGamepads = () => [null, ...pads] as unknown as Gamepad[];
+  }, count);
 
-  await toCharacterSelect(page);
-  await setPad({ a: true });
+/** Button indices of the Standard Gamepad layout. */
+const PAD = { a: 0, b: 1 } as const;
+
+const setPad = (
+  page: Page,
+  pad: number,
+  change: { axes?: number[]; button?: number; on?: boolean },
+) =>
+  page.evaluate(
+    ({ pad, change }) => {
+      const pads = (
+        window as unknown as { fakePads: { axes: number[]; buttons: { pressed: boolean }[] }[] }
+      ).fakePads;
+      const target = pads[pad];
+      if (!target) throw new Error(`No fake pad ${pad}`);
+      if (change.axes) target.axes = change.axes;
+      const button = change.button === undefined ? undefined : target.buttons[change.button];
+      if (button) button.pressed = change.on ?? false;
+    },
+    { pad, change },
+  );
+
+/**
+ * Pads are polled once per frame, so unlike a key tap a press must last until the game has run
+ * a frame. Waiting for animation frames instead of a fixed time keeps this reliable under load.
+ */
+const nextFrames = (page: Page) =>
+  page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
+
+/** Presses a pad button for a few frames, then lets go. */
+const press = async (page: Page, pad: number, button: number) => {
+  await setPad(page, pad, { button, on: true });
+  await nextFrames(page);
+  await setPad(page, pad, { button, on: false });
+  await nextFrames(page);
+};
+
+/** Pushes the left stick (x right, y down as the Gamepad API reports it), then centres it. */
+const flick = async (page: Page, pad: number, x: number, y: number) => {
+  await setPad(page, pad, { axes: [x, y, 0, 0] });
+  await nextFrames(page);
+  await setPad(page, pad, { axes: [0, 0, 0, 0] });
+  await nextFrames(page);
+};
+
+test('the whole menu flow works with gamepads only', async ({ page }) => {
+  await installPads(page, 2);
+  await page.goto('/');
+  // Both pads press A in the same frame: that leaves the title once, not twice.
+  await setPad(page, 0, { button: PAD.a, on: true });
+  await setPad(page, 1, { button: PAD.a, on: true });
+  await nextFrames(page);
+  await setPad(page, 0, { button: PAD.a, on: false });
+  await setPad(page, 1, { button: PAD.a, on: false });
+  await nextFrames(page);
+  await expect.poll(() => screen(page)).toBe('main-menu');
+
+  // Down to Options, in and back out with B.
+  await flick(page, 0, 0, 1);
+  await expect(page.getByRole('button', { name: 'Options' })).toBeFocused();
+  await press(page, 0, PAD.a);
+  await expect.poll(() => screen(page)).toBe('options');
+  await press(page, 0, PAD.b);
+  await expect.poll(() => screen(page)).toBe('main-menu');
+
+  // Up from the first entry reaches the Back button.
+  await expect(page.getByRole('button', { name: 'VS. Mode' })).toBeFocused();
+  await flick(page, 0, 0, -1);
+  await expect(page.getByRole('button', { name: 'Back' })).toBeFocused();
+  await flick(page, 0, 0, 1);
+  await press(page, 0, PAD.a);
+  await expect.poll(() => screen(page)).toBe('character-select');
+
+  // The rules overlay: up to the banner, open, raise the lives, Done.
+  await flick(page, 1, 0, -1);
+  await press(page, 1, PAD.a);
+  await expect(page.getByRole('heading', { name: 'Rules' })).toBeVisible();
+  await flick(page, 1, 0, 1);
+  await flick(page, 1, 1, 0);
+  await flick(page, 1, 0, 1);
+  await expect(page.getByRole('button', { name: 'Done' })).toBeFocused();
+  await press(page, 1, PAD.a);
+  await expect(page.getByRole('heading', { name: 'Rules' })).toBeHidden();
+  expect((await page.evaluate(() => window.__SSB__?.rules()))?.stocks).toBe(4);
+
+  // The first connected pad is player 1. Both pick, then A again starts.
+  await flick(page, 1, 0, 1);
+  await press(page, 0, PAD.a);
   await expect.poll(() => picks(page)).toEqual(['capsule', null]);
-  await setPad({ a: false });
-  await tap(page, 'Period');
-  for (const next of ['stage-select', 'match']) {
-    await page.keyboard.press('Enter');
-    await expect.poll(() => screen(page)).toBe(next);
-  }
+  await press(page, 1, PAD.a);
+  await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule']);
+  await press(page, 0, PAD.a);
+  await expect.poll(() => screen(page)).toBe('stage-select');
+  await press(page, 1, PAD.a);
+  await expect.poll(() => screen(page)).toBe('match');
 
   await expect.poll(async () => (await gameState(page)).fighters[0]?.grounded).toBe(true);
   const startX = (await gameState(page)).fighters[0]?.position.x ?? 0;
-  await setPad({ axes: [1, 0, 0, 0] });
+  await setPad(page, 0, { axes: [1, 0, 0, 0] });
   await expect
     .poll(async () => (await gameState(page)).fighters[0]?.position.x ?? 0)
     .toBeGreaterThan(startX + 1);
+});
+
+test('B on character select backs out once nobody has a pick', async ({ page }) => {
+  await installPads(page, 1);
+  await toCharacterSelect(page);
+  await press(page, 0, PAD.a);
+  await press(page, 0, PAD.b);
+  await expect.poll(() => picks(page)).toEqual([null, null]);
+  expect(await screen(page)).toBe('character-select');
+  await press(page, 0, PAD.b);
+  await expect.poll(() => screen(page)).toBe('main-menu');
 });
