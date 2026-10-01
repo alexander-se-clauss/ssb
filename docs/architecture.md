@@ -125,3 +125,4 @@ Other logic follows the same pattern: define a port first, implement locally, sw
 - [0003 Deterministic fixed-timestep simulation](adr/0003-deterministic-fixed-timestep.md)
 - [0004 TypeScript, Vite and Three.js](adr/0004-typescript-vite-threejs.md)
 - [0005 Body pose is part of the game state](adr/0005-body-pose-in-game-state.md)
+- [0006 Moves are plain data run by one move runner](adr/0006-move-definition-format.md)
