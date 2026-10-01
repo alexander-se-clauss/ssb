@@ -41,7 +41,8 @@ in `combat.ts` turns them into one hurtbox per body part, and hits test against 
 or a lean dodges what it looks like it dodges. The view only draws what core computed: `ThreeView`
 places a sphere or capsule of the same radius on each bone (`body-layout.ts`).
 Terms, as in Melee: a **hurtbox** is where a fighter can be hit (one per body part), a **hitbox**
-is where an attack hits (`activeHitboxes`). F2 shows both in the running game (yellow and red).
+is where an attack hits (`activeHitboxes`). F2 shows both in the running game: yellow hurtboxes,
+blue while invulnerable, red hitboxes (`debug-colors.ts`).
 Attacks are moves (ADR 0006): plain-data `MoveDef`s in `move-data/`, played by one move runner
 in `fighter.ts`. A fighter in the `attack` action stores only the move's id and its frame
 (`actionFrame`), and `activeHitboxes` reads the definition to find which hitboxes are on. A
