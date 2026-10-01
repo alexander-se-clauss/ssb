@@ -4,6 +4,7 @@ import {
   HUMANOID,
   activeHitbox,
   blendPose,
+  hurtboxes,
   plantedBoneSegments,
   vec2,
   type BoneId,
@@ -23,7 +24,13 @@ interface FighterVisual {
   /** The player's colour, and a darker shade for the limbs on the far side. */
   readonly materials: readonly THREE.MeshStandardMaterial[];
   readonly hitbox: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>;
+  /** Debug overlay: one shape per hurtbox, in world space. */
+  readonly hurtboxes: ReadonlyMap<BoneId, THREE.Mesh>;
 }
+
+/** Debug colours as in Melee's hitbox display: yellow where a fighter can be hit, red attacks. */
+const HURTBOX_COLOR = 0xffe066;
+const HITBOX_COLOR = 0xff4040;
 
 /**
  * Draws the match with Three.js. Read-only: it never changes game state, it only
@@ -35,6 +42,7 @@ export class ThreeView implements GameView {
   private readonly camera = new THREE.PerspectiveCamera(40, 16 / 9, 0.1, 200);
   private readonly fighters = new Map<number, FighterVisual>();
   private readonly cameraTarget = new THREE.Vector3(0, 2, 22);
+  private showBoxes = false;
 
   constructor(
     private readonly container: HTMLElement,
@@ -62,6 +70,11 @@ export class ThreeView implements GameView {
     }
     this.updateCamera(current.fighters);
     this.renderer.render(this.scene, this.camera);
+  }
+
+  /** Turns the debug overlay of hurtboxes and attack hitboxes on or off. */
+  setShowBoxes(on: boolean): void {
+    this.showBoxes = on;
   }
 
   resize(width: number, height: number): void {
@@ -144,15 +157,30 @@ export class ThreeView implements GameView {
     eye.position.set(0.12, 0.03, 0.08);
     parts.get('head')?.add(eye);
 
-    const hitbox = new THREE.Mesh(
-      new THREE.SphereGeometry(1, 16, 16),
-      new THREE.MeshBasicMaterial({ color: 0xffe066, transparent: true, opacity: 0.55 }),
-    );
+    // Drawn on top of the body, so the overlay stays readable.
+    const overlay = (color: number): THREE.MeshBasicMaterial =>
+      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.45, depthTest: false });
+    const hitbox = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 16), overlay(HITBOX_COLOR));
     hitbox.visible = false;
+    hitbox.renderOrder = 2;
+
+    const hurtboxes = new Map<BoneId, THREE.Mesh>();
+    const hurtboxMaterial = overlay(HURTBOX_COLOR);
+    for (const bone of HUMANOID.bones) {
+      const geometry =
+        bone.shape === 'ball'
+          ? new THREE.SphereGeometry(bone.radius, 12, 8)
+          : new THREE.CapsuleGeometry(bone.radius, bone.length, 4, 10);
+      const mesh = new THREE.Mesh(geometry, hurtboxMaterial);
+      mesh.visible = false;
+      mesh.renderOrder = 1;
+      hurtboxes.set(bone.id, mesh);
+      this.scene.add(mesh);
+    }
 
     this.scene.add(root, hitbox);
 
-    const visual = { root, parts, materials: [near, far], hitbox };
+    const visual = { root, parts, materials: [near, far], hitbox, hurtboxes };
     this.fighters.set(slot, visual);
     return visual;
   }
@@ -168,6 +196,7 @@ export class ThreeView implements GameView {
     visual.root.visible = !eliminated;
     if (eliminated) {
       visual.hitbox.visible = false;
+      for (const mesh of visual.hurtboxes.values()) mesh.visible = false;
       return;
     }
 
@@ -185,6 +214,7 @@ export class ThreeView implements GameView {
     // Core eases the pose each frame; between frames the view interpolates like the position.
     // Planting keeps the feet on the ground when the stance bends the knees.
     const pose = teleported ? fighter.pose : blendPose(before.pose, fighter.pose, t);
+    const position = vec2(visual.root.position.x, visual.root.position.y);
     for (const part of bodyParts(plantedBoneSegments(HUMANOID, pose, vec2(0, 0), 1))) {
       const mesh = visual.parts.get(part.bone);
       mesh?.position.set(part.x, part.y, part.depth);
@@ -196,8 +226,17 @@ export class ThreeView implements GameView {
       material.emissive.setHex(fighter.action === 'hitstun' ? 0x662222 : 0x000000);
     }
 
+    // Core's own hurtboxes for the in-between body, so the overlay sits on what is drawn.
+    for (const box of hurtboxes({ ...fighter, position, pose })) {
+      const mesh = visual.hurtboxes.get(box.bone);
+      if (!mesh) continue;
+      mesh.visible = this.showBoxes;
+      mesh.position.set((box.start.x + box.end.x) / 2, (box.start.y + box.end.y) / 2, 0);
+      mesh.rotation.set(0, 0, Math.atan2(-(box.end.x - box.start.x), box.end.y - box.start.y));
+    }
+
     const hitbox = activeHitbox(fighter);
-    visual.hitbox.visible = hitbox !== null;
+    visual.hitbox.visible = this.showBoxes && hitbox !== null;
     if (hitbox) {
       visual.hitbox.position.set(hitbox.center.x, hitbox.center.y, 0);
       visual.hitbox.scale.setScalar(hitbox.radius);
