@@ -19,6 +19,7 @@ import { App } from './app';
 import { installDebugHandle } from './debug';
 import './style.css';
 import './menu-theme.css';
+import './fighter-lobby.css';
 
 const container = document.querySelector<HTMLElement>('#app');
 if (!container) throw new Error('Missing #app container');
@@ -46,8 +47,16 @@ window.addEventListener('keydown', (event) => {
 
 const app = new App(container, {
   devices: [
-    ...keyboards.map((source) => ({ source, drivesMenus: false })),
-    ...gamepads.map((source) => ({ source, drivesMenus: true })),
+    ...keyboards.map((source, index) => ({
+      source,
+      drivesMenus: false,
+      label: index === 0 ? 'Left keys' : 'Right keys',
+    })),
+    ...gamepads.map((source, index) => ({
+      source,
+      drivesMenus: true,
+      label: `Gamepad ${index + 1}`,
+    })),
   ],
   createSession: (config) => new LocalGameSession(createMatch(config)),
   createViews: (root, stage) => {

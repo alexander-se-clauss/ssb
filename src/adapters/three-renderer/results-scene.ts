@@ -1,8 +1,7 @@
 import * as THREE from 'three';
-import { HUMANOID, POSES, plantedBoneSegments, vec2 } from '../../core';
-import { bodyParts } from './body-layout';
+import { POSES } from '../../core';
 import { disposeScene } from './dispose-scene';
-import { PLAYER_COLORS } from './three-view';
+import { fighterModel, poseFighter, PLAYER_COLORS } from './fighter-model';
 
 interface PodiumFighter {
   readonly slot: number;
@@ -137,41 +136,10 @@ export class ResultsScene {
   }
 
   private fighter(slot: number): THREE.Group {
-    const root = new THREE.Group();
-    root.scale.setScalar(1.15);
-    const near = new THREE.MeshStandardMaterial({
-      color: PLAYER_COLORS[slot % PLAYER_COLORS.length] ?? 0xffffff,
-      roughness: 0.5,
-    });
-    const far = near.clone();
-    far.color.multiplyScalar(0.65);
-    for (const part of bodyParts(plantedBoneSegments(HUMANOID, POSES.idle, vec2(0, 0), 1))) {
-      const bone = HUMANOID.bones.find((b) => b.id === part.bone);
-      if (!bone) continue;
-      const geometry =
-        bone.shape === 'ball'
-          ? new THREE.SphereGeometry(bone.radius, 16, 12)
-          : new THREE.CapsuleGeometry(
-              bone.radius,
-              Math.max(bone.length - bone.radius * 2, 0.01),
-              6,
-              12,
-            );
-      const mesh = new THREE.Mesh(geometry, bone.id.endsWith('Back') ? far : near);
-      mesh.position.set(part.x, part.y, part.depth);
-      mesh.rotation.z = part.angle;
-      mesh.castShadow = true;
-      if (bone.id === 'head') {
-        const eye = new THREE.Mesh(
-          new THREE.SphereGeometry(0.05, 10, 10),
-          new THREE.MeshStandardMaterial({ color: 0xffffff }),
-        );
-        eye.position.set(0.12, 0.03, 0.08);
-        mesh.add(eye);
-      }
-      root.add(mesh);
-    }
-    return root;
+    const model = fighterModel(PLAYER_COLORS[slot % PLAYER_COLORS.length] ?? 0xffffff);
+    poseFighter(model, POSES.idle);
+    model.root.scale.setScalar(1.15);
+    return model.root;
   }
 
   resize(): void {

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { NEUTRAL_INPUT, inputOf, type CharacterDef } from '../core';
 import {
   RULES_CURSOR,
+  previewCharacter,
   BACK_CURSOR,
   allReady,
   createSelect,
@@ -352,5 +353,22 @@ describe('menu actions from a player controller', () => {
       { type: 'cancel', player: 0 },
     ]);
     expect(menuActions(0, inputOf({ attack: true }), inputOf({ attack: true }))).toEqual([]);
+  });
+});
+
+describe('player panel preview', () => {
+  it('updates before picking, retains the fighter on headers, and locks the confirmed pick', () => {
+    const joined = apply(createSelect(4), { type: 'join', device: 0 });
+    expect(previewCharacter(joined, 0, ROSTER)?.id).toBe('a');
+    const moved = apply(joined, { type: 'move', player: 0, dx: 1, dy: 0 });
+    expect(previewCharacter(moved, 0, ROSTER)?.id).toBe('b');
+    const header = apply(moved, { type: 'move', player: 0, dx: 0, dy: -1 });
+    expect(previewCharacter(header, 0, ROSTER, 'b')?.id).toBe('b');
+    const picked = apply(moved, { type: 'confirm', player: 0 });
+    const browsingElsewhere = apply(picked, { type: 'move', player: 0, dx: 1, dy: 0 });
+    expect(previewCharacter(browsingElsewhere, 0, ROSTER)?.id).toBe('b');
+    const unpicked = apply(browsingElsewhere, { type: 'cancel', player: 0 });
+    expect(previewCharacter(unpicked, 0, ROSTER)?.id).toBe('c');
+    expect(previewCharacter(joined, 1, ROSTER)).toBeUndefined();
   });
 });

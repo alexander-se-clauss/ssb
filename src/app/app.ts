@@ -38,6 +38,7 @@ import { renderResults, resultHeading, resultPlacements, type Elimination } from
 import { ResultsScene } from '../adapters/three-renderer/results-scene';
 import { adjustRule, ruleRows, type RuleField } from './rules-menu';
 import { stageThumbnail } from '../adapters/three-renderer/stage-thumbnail';
+import { fighterPortrait } from '../adapters/three-renderer/fighter-portrait';
 import { TitleScene } from '../adapters/three-renderer/title-scene';
 import { titleScreenBody } from './title-screen';
 import { INITIAL_SCREEN, MAIN_MENU, go, nextScreens, type Screen } from './screens';
@@ -67,6 +68,7 @@ const LABELS: Readonly<Record<Screen, string>> = {
 
 /** One controller: a gamepad, or one player's half of the keyboard. */
 export interface InputDevice {
+  readonly label?: string;
   readonly source: InputSource;
   /**
    * Polled for menu commands (gamepads). False for the keyboard, whose keys reach the menus as
@@ -138,6 +140,8 @@ export class App {
     this.menu = new MenuPanel(container, play);
     this.rulesPanel = new MenuPanel(container, play);
     this.characterSelect = new CharacterSelectView(container, CHARACTERS, GRID_COLUMNS, {
+      portrait: fighterPortrait,
+      deviceName: (device) => this.adapters.devices[device]?.label ?? `Input ${device + 1}`,
       start: () => this.confirmCharacters(),
       back: () => this.leaveToMainMenu(),
       openRules: () => {

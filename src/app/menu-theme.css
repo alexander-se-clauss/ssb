@@ -277,78 +277,6 @@
   background: linear-gradient(120deg, transparent 35%, #ffd79b 50%, transparent 65%);
 }
 
-/* Match setup keeps its roster, player slots and rules banner, within the same arena family. */
-.css {
-  padding-top: 120px;
-  gap: 20px;
-}
-
-.css-topbar {
-  height: 88px;
-  background: linear-gradient(110deg, #283d58, #122033);
-  border-bottom-color: #efb977;
-}
-
-.css-topbar .menu-back {
-  top: 50%;
-  transform: translateY(-50%) skewX(-5deg);
-  translate: 0 0;
-}
-
-.css .css-rules {
-  font-size: 1.15rem;
-}
-
-.css-rules:is(:hover, :focus) .css-mode {
-  color: inherit;
-}
-
-.css-roster {
-  box-sizing: border-box;
-  width: min(720px, 100%);
-  padding: 20px 28px;
-  border: 1px solid #405570;
-  border-left: 6px solid #efb977;
-  background: rgb(17 30 47 / 85%);
-  display: grid;
-  justify-items: center;
-  gap: 20px;
-}
-
-.css h1 {
-  align-self: stretch;
-  font-size: clamp(1.6rem, 3.6vw, 2.8rem);
-  border-bottom: 1px solid #405570;
-  padding-bottom: 16px;
-  width: 100%;
-}
-
-.css-cell {
-  border-radius: 2px;
-  background: linear-gradient(135deg, #344c69, #122033);
-  font-style: italic;
-  text-transform: uppercase;
-}
-
-.css-cell:has(.css-badge) {
-  outline: 2px solid #fff0ce;
-  outline-offset: 3px;
-  border-color: #efb977;
-  box-shadow: 0 6px 0 #513921;
-}
-
-.css-slots {
-  width: min(800px, 100%);
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.css-slot {
-  min-width: 0;
-  border-radius: 2px;
-}
-
 .menu-overlay {
   background: rgb(6 12 23 / 94%) !important;
 }
@@ -459,24 +387,7 @@
     font-size: 1.05rem;
     padding: 16px 8px;
   }
-  .css-slots {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-  }
-  .css .css-rules {
-    margin-left: 110px;
-    margin-right: 16px;
-    padding: 8px 12px;
-    flex-direction: column;
-    gap: 2px;
-    font-size: 0.8rem;
-  }
-  .css-mode {
-    font-size: 0.7rem;
-  }
-  .css-roster {
-    padding: 16px;
-  }
+
   .menu-overlay .menu-options {
     padding-inline: 6px;
   }
@@ -560,43 +471,7 @@
   .menu-stage-select .menu-grid button span {
     padding: 8px 6px;
   }
-  .css {
-    padding-top: 86px;
-    gap: 12px;
-  }
-  .css-topbar {
-    height: 64px;
-  }
-  .css-roster {
-    grid-template-columns: 1fr auto;
-    align-items: center;
-    padding: 12px 20px;
-    gap: 16px;
-  }
-  .css h1 {
-    font-size: 1.5rem;
-    border: 0;
-    padding: 0;
-    align-self: center;
-  }
-  .css-grid {
-    grid-template-columns: repeat(var(--columns), 72px);
-  }
-  .css-cell {
-    height: 72px;
-    font-size: 0.8rem;
-  }
-  .css-slots {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
-  }
-  .css-slot {
-    padding: 8px;
-    font-size: 0.85rem;
-  }
-  .css-footer.ready {
-    font-size: 1rem;
-  }
+
   .menu-overlay .menu-heading h1 {
     font-size: 1.5rem;
   }
@@ -620,9 +495,6 @@
 }
 
 /* Header focus changes framing and brightness without shifting the layout. */
-.css-topbar button:is(:hover, :focus, :active) {
-  translate: 0 0;
-}
 
 /* The ceremony fills the results composition; actions stay beneath the podium. */
 .menu-results .menu-details {
