@@ -22,7 +22,7 @@ export interface PlayerInput {
   readonly start: boolean;
 }
 
-export type FighterAction = 'idle' | 'run' | 'airborne' | 'jab' | 'hitstun' | 'eliminated';
+export type FighterAction = 'idle' | 'run' | 'airborne' | 'attack' | 'hitstun' | 'eliminated';
 
 export interface FighterState {
   readonly slot: PlayerSlot;
@@ -34,8 +34,10 @@ export interface FighterState {
   readonly grounded: boolean;
   readonly jumpsRemaining: number;
   readonly action: FighterAction;
-  /** Frames spent in the current action. */
+  /** Frames spent in the current action; during an attack, the frame of the move. */
   readonly actionFrame: number;
+  /** The move being played while `action` is `'attack'` (ADR 0006), otherwise `null`. */
+  readonly moveId: string | null;
   /** Damage percent. Higher damage means stronger knockback. */
   readonly damage: number;
   /** Lives left in a stock match. Unused (0) in a time match. */

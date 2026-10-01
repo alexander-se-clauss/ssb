@@ -1,6 +1,7 @@
-import { FIGHTER, JAB } from './config';
+import { FIGHTER } from './config';
 import { NEUTRAL_INPUT, pressed } from './input';
 import { approach } from './math';
+import { findMove } from './move-data';
 import { nextPose } from './poses';
 import { REST_POSE } from './skeleton';
 import type {
@@ -33,6 +34,7 @@ export const createFighter = (
     jumpsRemaining: FIGHTER.totalJumps - 1,
     action: 'airborne',
     actionFrame: 0,
+    moveId: null,
     damage: 0,
     stocks,
     kos: 0,
@@ -71,7 +73,7 @@ export const updateFighter = (
   const prev = fighter.previousInput;
   let { x: px, y: py } = fighter.position;
   let { x: vx, y: vy } = fighter.velocity;
-  let { facing, grounded, jumpsRemaining, action, actionFrame, hitstunFrames, hitTargets } =
+  let { facing, grounded, jumpsRemaining, action, actionFrame, moveId, hitstunFrames, hitTargets } =
     fighter;
   const wantsDrop = input.y < DROP_THRESHOLD;
 
@@ -91,15 +93,19 @@ export const updateFighter = (
       action = grounded ? 'idle' : 'airborne';
       actionFrame = 0;
     }
-  } else if (action === 'jab') {
-    if (actionFrame >= JAB.totalFrames) {
+  } else if (action === 'attack') {
+    // The move runner (ADR 0006): play the move's frames, then hand control back.
+    if (moveId === null || actionFrame >= findMove(moveId).totalFrames) {
       action = grounded ? 'idle' : 'airborne';
       actionFrame = 0;
+      moveId = null;
       hitTargets = [];
     }
   } else if (pressed(input, prev, 'attack')) {
-    action = 'jab';
+    // Every attack is the jab until moves are picked by situation and direction (#28).
+    action = 'attack';
     actionFrame = 0;
+    moveId = 'jab';
     hitTargets = [];
   } else if (pressed(input, prev, 'jump') && jumpsRemaining > 0) {
     vy = grounded ? FIGHTER.jumpVelocity : FIGHTER.doubleJumpVelocity;
@@ -207,6 +213,7 @@ export const updateFighter = (
     jumpsRemaining,
     action,
     actionFrame,
+    moveId,
     hitstunFrames,
     hitTargets,
     invulnerableFrames: Math.max(0, fighter.invulnerableFrames - 1),

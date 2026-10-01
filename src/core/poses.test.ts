@@ -38,7 +38,7 @@ describe('poses for movement states', () => {
     const standing = fighter(settled(), 0);
     expect(poseName(standing)).toBe('idle');
     expect(poseName({ ...standing, action: 'run' })).toBe('run');
-    expect(poseName({ ...standing, action: 'jab' })).toBe('jab');
+    expect(poseName({ ...standing, action: 'attack', moveId: 'jab' })).toBe('jab');
     const air = { ...standing, action: 'airborne' as const, grounded: false };
     expect(poseName({ ...air, velocity: { x: 0, y: 0.2 } })).toBe('jump');
     expect(poseName({ ...air, velocity: { x: 0, y: -0.1 } })).toBe('fall');

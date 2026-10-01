@@ -25,12 +25,12 @@ browsers, rendering or networking.
 
 ## Layers
 
-| Layer    | Folder         | May import                         | Contains                                                                 |
-| -------- | -------------- | ---------------------------------- | ------------------------------------------------------------------------ |
-| Core     | `src/core`     | core only                          | Types, physics, combat, rules, stages, registry, skeleton, `step`, clock |
-| Ports    | `src/ports`    | core                               | Interfaces between client and game                                       |
-| Adapters | `src/adapters` | core (via index), ports, libraries | Keyboard, gamepad, local session, Three.js, HUD                          |
-| App      | `src/app`      | everything                         | `main.ts` wiring, screens and menus, debug handle, CSS                   |
+| Layer    | Folder         | May import                         | Contains                                                                        |
+| -------- | -------------- | ---------------------------------- | ------------------------------------------------------------------------------- |
+| Core     | `src/core`     | core only                          | Types, physics, combat, moves, rules, stages, registry, skeleton, `step`, clock |
+| Ports    | `src/ports`    | core                               | Interfaces between client and game                                              |
+| Adapters | `src/adapters` | core (via index), ports, libraries | Keyboard, gamepad, local session, Three.js, HUD                                 |
+| App      | `src/app`      | everything                         | `main.ts` wiring, screens and menus, debug handle, CSS                          |
 
 Fighter bodies are core data too (`skeleton.ts`): a 2D skeleton of bones with lengths and parents,
 and poses as joint angles. `boneSegments` turns a pose into world joint positions;
@@ -41,7 +41,10 @@ in `combat.ts` turns them into one hurtbox per body part, and hits test against 
 or a lean dodges what it looks like it dodges. The view only draws what core computed: `ThreeView`
 places a sphere or capsule of the same radius on each bone (`body-layout.ts`).
 Terms, as in Melee: a **hurtbox** is where a fighter can be hit (one per body part), a **hitbox**
-is where an attack hits (`activeHitbox`). F2 shows both in the running game (yellow and red).
+is where an attack hits (`activeHitboxes`). F2 shows both in the running game (yellow and red).
+Attacks are moves (ADR 0006): plain-data `MoveDef`s in `move-data/`, played by one move runner
+in `fighter.ts`. A fighter in the `attack` action stores only the move's id and its frame
+(`actionFrame`), and `activeHitboxes` reads the definition to find which hitboxes are on.
 Each fighter carries its current `pose` in `FighterState`: `step` eases it a little each frame towards
 the pose of its movement state, with idle breathing and a running stride (`poses.ts`), and the
 view interpolates it between frames like the position.

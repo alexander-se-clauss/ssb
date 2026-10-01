@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {
   FIGHTER,
   HUMANOID,
-  activeHitbox,
+  activeHitboxes,
   blendPose,
   hurtboxes,
   plantedBoneSegments,
@@ -23,7 +23,8 @@ interface FighterVisual {
   readonly parts: ReadonlyMap<BoneId, THREE.Mesh>;
   /** The player's colour, and a darker shade for the limbs on the far side. */
   readonly materials: readonly THREE.MeshStandardMaterial[];
-  readonly hitbox: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>;
+  /** Debug overlay: one sphere per active hitbox, grown as moves need more. */
+  readonly hitboxes: THREE.Mesh[];
   /** Debug overlay: one shape per hurtbox, in world space. */
   readonly hurtboxes: ReadonlyMap<BoneId, THREE.Mesh>;
 }
@@ -31,6 +32,10 @@ interface FighterVisual {
 /** Debug colours as in Melee's hitbox display: yellow where a fighter can be hit, red attacks. */
 const HURTBOX_COLOR = 0xffe066;
 const HITBOX_COLOR = 0xff4040;
+
+/** Debug overlay material, drawn on top of the body so it stays readable. */
+const overlay = (color: number): THREE.MeshBasicMaterial =>
+  new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.45, depthTest: false });
 
 /**
  * Draws the match with Three.js. Read-only: it never changes game state, it only
@@ -157,13 +162,6 @@ export class ThreeView implements GameView {
     eye.position.set(0.12, 0.03, 0.08);
     parts.get('head')?.add(eye);
 
-    // Drawn on top of the body, so the overlay stays readable.
-    const overlay = (color: number): THREE.MeshBasicMaterial =>
-      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.45, depthTest: false });
-    const hitbox = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 16), overlay(HITBOX_COLOR));
-    hitbox.visible = false;
-    hitbox.renderOrder = 2;
-
     const hurtboxes = new Map<BoneId, THREE.Mesh>();
     const hurtboxMaterial = overlay(HURTBOX_COLOR);
     for (const bone of HUMANOID.bones) {
@@ -183,9 +181,9 @@ export class ThreeView implements GameView {
       this.scene.add(mesh);
     }
 
-    this.scene.add(root, hitbox);
+    this.scene.add(root);
 
-    const visual = { root, parts, materials: [near, far], hitbox, hurtboxes };
+    const visual = { root, parts, materials: [near, far], hitboxes: [], hurtboxes };
     this.fighters.set(slot, visual);
     return visual;
   }
@@ -200,7 +198,7 @@ export class ThreeView implements GameView {
     const eliminated = fighter.action === 'eliminated';
     visual.root.visible = !eliminated;
     if (eliminated) {
-      visual.hitbox.visible = false;
+      for (const mesh of visual.hitboxes) mesh.visible = false;
       for (const mesh of visual.hurtboxes.values()) mesh.visible = false;
       return;
     }
@@ -240,12 +238,20 @@ export class ThreeView implements GameView {
       mesh.rotation.set(0, 0, Math.atan2(-(box.end.x - box.start.x), box.end.y - box.start.y));
     }
 
-    const hitbox = activeHitbox(fighter);
-    visual.hitbox.visible = this.showBoxes && hitbox !== null;
-    if (hitbox) {
-      visual.hitbox.position.set(hitbox.center.x, hitbox.center.y, 0);
-      visual.hitbox.scale.setScalar(hitbox.radius);
+    const hitboxes = this.showBoxes ? activeHitboxes(fighter) : [];
+    while (visual.hitboxes.length < hitboxes.length) {
+      const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 16), overlay(HITBOX_COLOR));
+      mesh.renderOrder = 2;
+      visual.hitboxes.push(mesh);
+      this.scene.add(mesh);
     }
+    visual.hitboxes.forEach((mesh, index) => {
+      const hitbox = hitboxes[index];
+      mesh.visible = hitbox !== undefined;
+      if (!hitbox) return;
+      mesh.position.set(hitbox.center.x, hitbox.center.y, 0);
+      mesh.scale.setScalar(hitbox.radius);
+    });
   }
 
   /** Smash-style camera: frame every fighter still in the game, zooming out as they spread. */

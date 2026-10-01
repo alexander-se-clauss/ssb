@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { JAB } from './config';
-import { activeHitbox, hurtboxes, knockback, resolveCombat } from './combat';
+import { activeHitboxes, hurtboxes, knockback, resolveCombat } from './combat';
+import { findMove } from './move-data';
+import { moveTiming } from './moves';
 import { POSES } from './poses';
 import { HUMANOID, type Pose } from './skeleton';
 import { step } from './simulation';
@@ -21,6 +22,11 @@ const faceOff = (p2Damage = 0): MatchState => {
 };
 
 const jab = [inputOf({ attack: true }), inputOf({})];
+
+// The jab's timing and its one hit, read from its move definition (ADR 0006).
+const jabHit = findMove('jab').hitboxes[0];
+if (!jabHit) throw new Error('The jab has a hitbox');
+const JAB = { ...moveTiming(findMove('jab')), ...jabHit };
 
 describe('combat', () => {
   it('a jab damages, launches and stuns the opponent', () => {
@@ -77,11 +83,12 @@ describe('hurtboxes per body part', () => {
     const p1: FighterState = {
       ...fighter(state, 0),
       position: attacker,
-      action: 'jab',
+      action: 'attack',
+      moveId: 'jab',
       actionFrame: JAB.startupFrames,
     };
     const p2: FighterState = { ...fighter(state, 1), position: target, facing: -1, pose };
-    expect(activeHitbox(p1)).not.toBeNull();
+    expect(activeHitboxes(p1)).not.toEqual([]);
     return resolveCombat([p1, p2]).fighters[1]?.damage ?? 0;
   };
 
@@ -113,7 +120,11 @@ describe('hurtboxes per body part', () => {
   it('judges a hit in a match by the pose the fighter has on that frame', () => {
     // P1's jab turns active on the next step; P2 stands just out of reach of the stance.
     const strike = (pose: Pose): number => {
-      let state = withFighter(faceOff(), 0, { action: 'jab', actionFrame: JAB.startupFrames - 1 });
+      let state = withFighter(faceOff(), 0, {
+        action: 'attack',
+        moveId: 'jab',
+        actionFrame: JAB.startupFrames - 1,
+      });
       state = withFighter(state, 1, { position: { x: 1.87, y: 0 }, pose });
       return fighter(step(state, []), 1).damage;
     };

@@ -38,34 +38,6 @@ export const FIGHTER = {
   respawnInvulnerabilityFrames: 120,
 } as const;
 
-export interface AttackDef {
-  readonly startupFrames: number;
-  readonly activeFrames: number;
-  readonly totalFrames: number;
-  /** Hitbox centre relative to the fighter's feet, x is mirrored by facing. */
-  readonly offsetX: number;
-  readonly offsetY: number;
-  readonly radius: number;
-  readonly damage: number;
-  readonly baseKnockback: number;
-  readonly knockbackGrowth: number;
-  /** Launch angle in degrees, 0 = straight forward, 90 = straight up. */
-  readonly angle: number;
-}
-
-export const JAB: AttackDef = {
-  startupFrames: 3,
-  activeFrames: 3,
-  totalFrames: 18,
-  offsetX: 0.75,
-  offsetY: 0.9,
-  radius: 0.45,
-  damage: 6,
-  baseKnockback: 0.12,
-  knockbackGrowth: 0.0045,
-  angle: 40,
-};
-
 /** Hitstun frames per unit of launch speed. */
 export const HITSTUN_PER_KNOCKBACK = 40;
 
