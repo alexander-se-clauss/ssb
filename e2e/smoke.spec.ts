@@ -222,13 +222,46 @@ const toStageSelect = async (page: Page) => {
   await expect.poll(() => screen(page)).toBe('stage-select');
 };
 
-test('stage select previews the focused stage and starts the match there', async ({ page }) => {
+test('stage grid centers rendered thumbnails and keyboard selection starts the chosen stage', async ({
+  page,
+}, testInfo) => {
   await toStageSelect(page);
-  await expect(page.getByLabel('Battlefield preview')).toBeVisible();
-  await page.keyboard.press('ArrowDown');
+  const grid = page.locator('.menu-grid');
+  await expect(grid.locator('img')).toHaveCount(2);
+  for (const image of await grid.locator('img').all()) {
+    await expect
+      .poll(() => image.evaluate((node: HTMLImageElement) => node.naturalWidth))
+      .toBe(640);
+    await expect(image).toHaveAttribute('src', /^data:image\/png;base64,/);
+  }
+  const box = await grid.boundingBox();
+  const viewport = page.viewportSize();
+  if (!box || !viewport) throw new Error('Missing grid or viewport');
+  expect(box.x + box.width / 2).toBeCloseTo(viewport.width / 2, 0);
+  expect(box.y + box.height / 2).toBeCloseTo(viewport.height / 2, 0);
+  await page.screenshot({ path: testInfo.outputPath('stage-grid-desktop.png') });
+  await page.setViewportSize({ width: 390, height: 844 });
+  const narrow = await grid.boundingBox();
+  if (!narrow) throw new Error('Missing narrow grid');
+  expect(narrow.x + narrow.width / 2).toBeCloseTo(195, 0);
+  expect(narrow.y + narrow.height / 2).toBeCloseTo(422, 0);
+  expect(narrow.x).toBeGreaterThanOrEqual(0);
+  expect(narrow.x + narrow.width).toBeLessThanOrEqual(390);
+  await page.screenshot({ path: testInfo.outputPath('stage-grid-narrow.png') });
+  await page.setViewportSize(viewport);
+  await page.keyboard.press('ArrowRight');
   await expect(page.getByRole('button', { name: 'Final Destination' })).toBeFocused();
-  await expect(page.getByLabel('Final Destination preview')).toBeVisible();
+  await page.keyboard.press('ArrowLeft');
+  await expect(page.getByRole('button', { name: 'Battlefield', exact: true })).toBeFocused();
+  await page.keyboard.press('KeyD');
   await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('match');
+  expect((await gameState(page)).stage.id).toBe('final-destination');
+});
+
+test('a stage thumbnail can be selected with the mouse', async ({ page }) => {
+  await toStageSelect(page);
+  await page.getByRole('button', { name: 'Final Destination' }).locator('img').click();
   await expect.poll(() => screen(page)).toBe('match');
   expect((await gameState(page)).stage.id).toBe('final-destination');
 });
@@ -341,7 +374,7 @@ test('full flow: title, menus, a match ended through the debug handle, results, 
   await bothPick(page);
   await page.keyboard.press('Enter');
   await expect.poll(() => screen(page)).toBe('stage-select');
-  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowRight');
   await page.keyboard.press('Enter');
   await expect.poll(() => screen(page)).toBe('match');
   expect((await gameState(page)).stage.id).toBe('final-destination');
@@ -475,6 +508,8 @@ test('the whole menu flow works with gamepads only', async ({ page }) => {
   await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule', null, null]);
   await press(page, 0, PAD.a);
   await expect.poll(() => screen(page)).toBe('stage-select');
+  await flick(page, 1, 1, 0);
+  await expect(page.getByRole('button', { name: 'Final Destination' })).toBeFocused();
   await press(page, 1, PAD.a);
   await expect.poll(() => screen(page)).toBe('match');
 

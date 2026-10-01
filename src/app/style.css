@@ -354,27 +354,64 @@ canvas {
   animation: pulse 1.6s ease-in-out infinite;
 }
 
-.menu-preview {
-  width: 320px;
-  aspect-ratio: 16 / 9;
-  margin-bottom: 8px;
-  border: 2px solid rgb(255 255 255 / 25%);
-  border-radius: 12px;
-  background: linear-gradient(#2a3470, #1b2140);
+.menu-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.menu-stage-select h1 {
+  position: absolute;
+  top: 64px;
+  font-size: clamp(1.4rem, 4vw, 3rem);
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 280px));
+  gap: 20px;
+  width: min(580px, calc(100% - 48px));
+}
+
+.menu-grid button {
+  min-width: 0;
+  padding: 0;
   overflow: hidden;
+  transform: none;
+  border-radius: 6px;
+  font-size: clamp(0.8rem, 2.5vw, 1.1rem);
+  transition:
+    border-color 120ms,
+    box-shadow 120ms;
 }
 
-.stage-preview {
+.menu-grid button span {
+  display: block;
+  padding: 12px 6px;
+}
+
+.menu-grid button:focus {
+  box-shadow:
+    0 0 0 3px var(--menu-gold),
+    0 0 28px rgb(242 193 78 / 35%);
+}
+
+.menu-option-image {
+  display: block;
   width: 100%;
-  height: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-bottom: 2px solid rgb(255 255 255 / 20%);
 }
 
-.stage-preview .platform {
-  fill: #8fa3d9;
-}
-
-.stage-preview .platform.pass-through {
-  fill: #c6d3ff;
+@media (max-height: 450px) {
+  .menu-stage-select h1 {
+    top: 16px;
+    font-size: 1.4rem;
+  }
+  .menu-grid {
+    width: min(440px, calc(100% - 48px));
+  }
 }
 
 .results-table,
