@@ -500,3 +500,38 @@ test('a join on the same frame as a start keeps everyone on character select', a
   await expect.poll(async () => (await characterSelect(page))?.devices).toEqual([3, 4, null, null]);
   expect(await screen(page)).toBe('character-select');
 });
+
+for (const first of [0, 1]) {
+  const other = 1 - first;
+
+  test(`a pick and a start on one frame start the match (pad ${first} picked first)`, async ({
+    page,
+  }) => {
+    await installPads(page, 2);
+    await toCharacterSelect(page);
+    await press(page, first, PAD.a);
+    await press(page, first, PAD.a);
+    await press(page, other, PAD.a);
+    await expect.poll(async () => (await characterSelect(page))?.picks[1]).toBeNull();
+    // The picked pad confirms again (a start) while the other one picks, on one frame.
+    await pressBoth(page);
+    await expect.poll(() => screen(page)).toBe('stage-select');
+  });
+
+  test(`opening the rules on the start frame keeps everyone on character select (pad ${first} starts)`, async ({
+    page,
+  }) => {
+    await installPads(page, 2);
+    await toCharacterSelect(page);
+    for (const pad of [first, other]) {
+      await press(page, pad, PAD.a);
+      await press(page, pad, PAD.a);
+    }
+    await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule', null, null]);
+    await flick(page, other, 0, -1);
+    // One pad confirms again (a start) while the other confirms the rules banner, on one frame.
+    await pressBoth(page);
+    await expect(page.getByRole('heading', { name: 'Rules' })).toBeVisible();
+    expect(await screen(page)).toBe('character-select');
+  });
+}
