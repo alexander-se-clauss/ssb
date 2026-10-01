@@ -87,6 +87,33 @@ test('the game boots into the title screen', async ({ page }) => {
   expect(await screen(page)).toBe('title');
 });
 
+test('title illustration supports resizing, reduced motion and mouse start, and is disposed on exit', async ({
+  page,
+}, testInfo) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  const canvas = page.locator('canvas.title-scene');
+  await expect(canvas).toBeVisible();
+  await nextFrames(page);
+  expect(await page.evaluate(() => window.__SSB__?.state())).toBeUndefined();
+  await page.screenshot({ path: testInfo.outputPath('title-desktop.png') });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await nextFrames(page);
+  await expect(page.getByRole('heading', { name: 'SSB', exact: true })).toBeVisible();
+  const start = page.getByRole('button', { name: 'Press start', exact: true });
+  await expect(start).toBeInViewport();
+  await page.screenshot({ path: testInfo.outputPath('title-narrow.png') });
+  await start.click();
+  await expect.poll(() => screen(page)).toBe('main-menu');
+  await expect(canvas).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect.poll(() => screen(page)).toBe('title');
+  await expect(canvas).toHaveCount(1);
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('main-menu');
+  await expect(canvas).toHaveCount(0);
+});
+
 test('start opens the main menu, and Escape goes back', async ({ page }) => {
   await page.goto('/');
   await page.keyboard.press('Space');

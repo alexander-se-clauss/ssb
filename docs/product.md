@@ -65,7 +65,8 @@ a playable build; it is done when that build works, not on a date.
 - [x] **M0 Walking skeleton.** Two capsule fighters, one stage, run, jump, double jump,
       fast-fall, drop-through platforms, a jab, damage, knockback, stocks, KO and respawn,
       HUD, fixed-timestep loop, tests and CI.
-- [x] **S1 Menus.** Title screen, main menu, options (screen, controls), Melee-style
+- [x] **S1 Menus.** A 3D arena title screen with posed fighters and keyboard/gamepad/mouse
+      start, main menu, options (screen, controls), Melee-style
       character select with the match rules in its top bar, a centered stage grid with rendered
       scenery thumbnails and keyboard/gamepad/mouse selection, results, Back
       buttons. Epic #1.

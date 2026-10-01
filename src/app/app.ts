@@ -37,6 +37,8 @@ import { MenuPanel, type MenuContent } from './menu-panel';
 import { renderResults, resultHeading } from './results';
 import { adjustRule, ruleRows, type RuleField } from './rules-menu';
 import { stageThumbnail } from '../adapters/three-renderer/stage-thumbnail';
+import { TitleScene } from '../adapters/three-renderer/title-scene';
+import { titleScreenBody } from './title-screen';
 import { INITIAL_SCREEN, MAIN_MENU, go, nextScreens, type Screen } from './screens';
 
 /** Player slots on character select, as in Melee. */
@@ -123,6 +125,7 @@ export class App {
   /** The rules being edited in the overlay; they apply only on Done. */
   private rulesDraft: MatchRules = DEFAULT_RULES;
   private readonly characterSelect: CharacterSelectView;
+  private titleScene: TitleScene | undefined;
 
   constructor(
     private readonly container: HTMLElement,
@@ -191,6 +194,7 @@ export class App {
   frame(now: number): void {
     const rulesWereOpen = this.rulesShown;
     this.updateMenus();
+    this.titleScene?.render(now);
     // A gamepad press that just closed the rules overlay (Done) must not also reach the grid
     // below, where it would open the rules again from the banner.
     const rulesJustClosed = rulesWereOpen && !this.rulesShown;
@@ -209,6 +213,7 @@ export class App {
   }
 
   resize(): void {
+    this.titleScene?.resize(this.container.clientWidth, this.container.clientHeight);
     for (const view of this.match?.views ?? []) {
       view.resize(this.container.clientWidth, this.container.clientHeight);
     }
@@ -217,6 +222,7 @@ export class App {
   private enter(screen: Screen): void {
     // Lets the CSS show things on one screen only, like the key hints during a match.
     this.container.dataset['screen'] = screen;
+    if (screen === 'title') this.titleScene = new TitleScene(this.container);
     if (screen === 'match') {
       this.startMatch();
       return;
@@ -242,8 +248,12 @@ export class App {
       case 'title':
         return {
           heading: GAME_NAME,
-          text: 'Press start (Enter or Space)',
+          text: 'Fight for the edge.',
           variant: 'menu-title',
+          body: titleScreenBody(() => {
+            this.adapters.audio.play('menu-confirm');
+            this.navigate('main-menu');
+          }),
           start: () => this.navigate('main-menu'),
         };
       case 'main-menu':
@@ -315,6 +325,10 @@ export class App {
   }
 
   private leave(screen: Screen): void {
+    if (screen === 'title') {
+      this.titleScene?.dispose();
+      this.titleScene = undefined;
+    }
     if (screen === 'match') this.stopMatch();
     else if (screen === 'character-select') this.leaveCharacterSelect();
     else this.menu.hide();
