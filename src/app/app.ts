@@ -30,6 +30,7 @@ import {
 } from './character-select';
 import { menuCommands } from './menu-commands';
 import { selectCue } from './menu-sounds';
+import { eventCue, stateCues, type FightCue } from './match-sounds';
 import { CharacterSelectView } from './character-select-view';
 import { renderControls, type ControlColumn } from './controls';
 import { MenuPanel, type MenuContent } from './menu-panel';
@@ -89,6 +90,8 @@ interface RunningMatch {
   readonly session: GameSession;
   readonly views: readonly GameView[];
   readonly unsubscribe: Unsubscribe;
+  /** The state fight sounds were last taken from (`stateCues`). */
+  heard: MatchState;
 }
 
 /**
@@ -201,6 +204,8 @@ export class App {
     session.update(now);
     const view = session.view();
     for (const v of views) v.render(view);
+    for (const cue of stateCues(this.match.heard, view.current)) this.playFight(cue);
+    this.match.heard = view.current;
   }
 
   resize(): void {
@@ -494,14 +499,19 @@ export class App {
     // Drop key taps made in the menus, so the match does not start with a stray jump.
     for (const device of this.adapters.devices) device.source.sample();
     const unsubscribe = session.onEvent((event) => {
+      this.playFight(eventCue(event));
       if (event.type !== 'match-end') return;
       setTimeout(() => {
         if (this.match?.session === session) this.navigate('results');
       }, RESULTS_DELAY_MS);
     });
-    this.match = { session, views, unsubscribe };
+    this.match = { session, views, unsubscribe, heard: session.view().current };
     this.lastResult = undefined;
     this.resize();
+  }
+
+  private playFight({ cue, strength }: FightCue): void {
+    this.adapters.audio.play(cue, strength);
   }
 
   private stopMatch(): void {
