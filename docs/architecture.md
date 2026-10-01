@@ -35,9 +35,13 @@ browsers, rendering or networking.
 Fighter bodies are core data too (`skeleton.ts`): a 2D skeleton of bones with lengths and parents,
 and poses as joint angles. `boneSegments` turns a pose into world joint positions;
 `plantedBoneSegments` then lowers the body until its feet rest on the fighter's position, so a
-bent-knee stance stands on the ground. That planted body is the one to use: hurtboxes and hitboxes
-follow its bones, and the view only draws what core computed (`ThreeView` places a sphere or
-capsule on each bone, `body-layout.ts`).
+bent-knee stance stands on the ground. That planted body is the one to use: each bone has a
+`radius` and a `shape` (capsule along the bone, or a ball in its middle for the head), `hurtboxes`
+in `combat.ts` turns them into one hurtbox per body part, and hits test against those, so a crouch
+or a lean dodges what it looks like it dodges. The view only draws what core computed: `ThreeView`
+places a sphere or capsule of the same radius on each bone (`body-layout.ts`).
+Terms, as in Melee: a **hurtbox** is where a fighter can be hit (one per body part), a **hitbox**
+is where an attack hits (`activeHitbox`). F2 shows both in the running game (yellow and red).
 Each fighter carries its current `pose` in `FighterState`: `step` eases it a little each frame towards
 the pose of its movement state, with idle breathing and a running stride (`poses.ts`), and the
 view interpolates it between frames like the position.

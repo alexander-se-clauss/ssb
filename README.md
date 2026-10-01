@@ -24,7 +24,8 @@ with Enter or the gamepad's Start (or attack again) once two to four players joi
 up onto the rules banner and pick it (or click it) to change the match rules;
 Done applies them; Esc or special discards them. Options holds the
 screen setting and the controls. After a match, the results screen offers a rematch or the main
-menu.
+menu. F2 shows or hides the debug overlay: yellow hurtboxes (where a fighter can be hit) and red
+hitboxes (attacks).
 
 ## Development
 

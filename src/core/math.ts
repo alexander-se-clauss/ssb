@@ -27,3 +27,24 @@ export const circleIntersectsRect = (center: Vec2, radius: number, rect: Rect): 
   const dy = center.y - nearestY;
   return dx * dx + dy * dy <= radius * radius;
 };
+
+/** Whether a circle touches a capsule: the points within `capsuleRadius` of the segment a to b. */
+export const circleIntersectsCapsule = (
+  center: Vec2,
+  radius: number,
+  a: Vec2,
+  b: Vec2,
+  capsuleRadius: number,
+): boolean => {
+  const abx = b.x - a.x;
+  const aby = b.y - a.y;
+  const lengthSquared = abx * abx + aby * aby;
+  const t =
+    lengthSquared === 0
+      ? 0
+      : clamp(((center.x - a.x) * abx + (center.y - a.y) * aby) / lengthSquared, 0, 1);
+  const dx = center.x - (a.x + abx * t);
+  const dy = center.y - (a.y + aby * t);
+  const reach = radius + capsuleRadius;
+  return dx * dx + dy * dy <= reach * reach;
+};

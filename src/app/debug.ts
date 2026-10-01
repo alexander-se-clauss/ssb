@@ -24,6 +24,8 @@ export interface DebugHandle {
    */
   hold(player: number, input: Partial<PlayerInput>): void;
   release(player: number): void;
+  /** Shows or hides the hurtbox and hitbox overlay, like pressing F2. */
+  showBoxes(on: boolean): void;
 }
 
 declare global {
@@ -38,7 +40,11 @@ export interface ControllableInput {
 }
 
 /** `devices` are the app's input devices, in the same order. */
-export const installDebugHandle = (app: App, devices: readonly ControllableInput[]): void => {
+export const installDebugHandle = (
+  app: App,
+  devices: readonly ControllableInput[],
+  showBoxes: (on: boolean) => void,
+): void => {
   const deviceOf = (player: number): ControllableInput | undefined => {
     const device = app.deviceOf(player);
     return device === undefined ? undefined : devices[device];
@@ -51,5 +57,6 @@ export const installDebugHandle = (app: App, devices: readonly ControllableInput
     restart: () => app.restartMatch(),
     hold: (player, input) => deviceOf(player)?.override(inputOf(input)),
     release: (player) => deviceOf(player)?.override(null),
+    showBoxes,
   };
 };

@@ -2,7 +2,7 @@
  * Which pose a fighter's body shows, and how it gets there. Each movement state has a pose; idle
  * breathes and sways, running swings arms and legs, and the body blends towards the current
  * target a little each frame, so switching states never pops. The pose lives in `FighterState`,
- * so hurtboxes can follow it later and the view only interpolates and draws it.
+ * so hurtboxes follow it and the view only interpolates and draws it.
  */
 import { HITSTUN_PER_KNOCKBACK, POSE } from './config';
 import { BONE_IDS, type BoneId, type Pose } from './skeleton';

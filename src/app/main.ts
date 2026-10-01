@@ -28,13 +28,31 @@ const keyboards = [PLAYER_ONE_KEYS, PLAYER_TWO_KEYS].map(
 );
 const gamepads = [0, 1, 2, 3].map((index) => new OverridableInput(new GamepadInputSource(index)));
 
+// Debug overlay of hurtboxes and attack hitboxes. F2 toggles it at runtime; it stays on across
+// matches until toggled off again.
+let showBoxes = false;
+let view: ThreeView | undefined;
+const setShowBoxes = (on: boolean): void => {
+  showBoxes = on;
+  view?.setShowBoxes(on);
+};
+window.addEventListener('keydown', (event) => {
+  if (event.code !== 'F2' || event.repeat) return;
+  event.preventDefault();
+  setShowBoxes(!showBoxes);
+});
+
 const app = new App(container, {
   devices: [
     ...keyboards.map((source) => ({ source, drivesMenus: false })),
     ...gamepads.map((source) => ({ source, drivesMenus: true })),
   ],
   createSession: (config) => new LocalGameSession(createMatch(config)),
-  createViews: (root, stage) => [new ThreeView(root, stage), new DomHud(root)],
+  createViews: (root, stage) => {
+    view = new ThreeView(root, stage);
+    view.setShowBoxes(showBoxes);
+    return [view, new DomHud(root)];
+  },
   controls: [
     { device: 'Left keys', labels: describeKeys(PLAYER_ONE_KEYS) },
     { device: 'Right keys', labels: describeKeys(PLAYER_TWO_KEYS) },
@@ -42,7 +60,7 @@ const app = new App(container, {
   ],
 });
 
-installDebugHandle(app, [...keyboards, ...gamepads]);
+installDebugHandle(app, [...keyboards, ...gamepads], setShowBoxes);
 
 window.addEventListener('resize', () => app.resize());
 
