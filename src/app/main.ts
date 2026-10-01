@@ -20,6 +20,7 @@ import { installDebugHandle } from './debug';
 import './style.css';
 import './menu-theme.css';
 import './fighter-lobby.css';
+import './screen-transition.css';
 
 const container = document.querySelector<HTMLElement>('#app');
 if (!container) throw new Error('Missing #app container');

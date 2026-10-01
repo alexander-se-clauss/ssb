@@ -50,6 +50,7 @@ import { stageThumbnail } from '../adapters/three-renderer/stage-thumbnail';
 import { fighterPortrait } from '../adapters/three-renderer/fighter-portrait';
 import { TitleScene } from '../adapters/three-renderer/title-scene';
 import { titleScreenBody } from './title-screen';
+import { ScreenTransition } from './screen-transition';
 import { INITIAL_SCREEN, MAIN_MENU, go, nextScreens, type Screen } from './screens';
 
 /** Player slots on character select, as in Melee. */
@@ -140,6 +141,8 @@ export class App {
   /** The rules being edited in the overlay; they apply only on Done. */
   private rulesDraft: MatchRules = DEFAULT_RULES;
   private readonly characterSelect: CharacterSelectView;
+  /** The blade wipe that plays over every screen change. */
+  private readonly transition: ScreenTransition;
   private titleScene: TitleScene | undefined;
   private resultsScene: ResultsScene | undefined;
   private eliminations: Elimination[] = [];
@@ -156,6 +159,7 @@ export class App {
     const play = (cue: SoundCue): void => adapters.audio.play(cue);
     this.menu = new MenuPanel(container, play);
     this.rulesPanel = new MenuPanel(container, play);
+    this.transition = new ScreenTransition(container);
     this.characterSelect = new CharacterSelectView(container, CHARACTERS, GRID_COLUMNS, {
       portrait: fighterPortrait,
       deviceName: (device) => this.adapters.devices[device]?.label ?? `Input ${device + 1}`,
@@ -203,6 +207,7 @@ export class App {
 
   navigate(to: Screen): void {
     const next = go(this.screen, to);
+    this.transition.play(() => this.renderScenes());
     this.leave(this.screen);
     this.screen = next;
     this.enter(next);
@@ -236,7 +241,18 @@ export class App {
     this.match.heard = view.current;
   }
 
+  /**
+   * Draws the 3D scenes once more, so the transition's snapshot (taken in the same task) holds
+   * their image: a WebGL canvas can only be read right after it was drawn.
+   */
+  private renderScenes(): void {
+    this.titleScene?.render(performance.now());
+    this.resultsScene?.render();
+    if (this.match) for (const view of this.match.views) view.render(this.match.session.view());
+  }
+
   resize(): void {
+    this.transition.resize();
     this.resultsScene?.resize();
     this.titleScene?.resize(this.container.clientWidth, this.container.clientHeight);
     for (const view of this.match?.views ?? []) {

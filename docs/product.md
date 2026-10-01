@@ -53,7 +53,9 @@ a Ready to Fight banner appears when all two to four joined players have confirm
 In Options, directions navigate selections; confirming Screen toggles fullscreen. Sound sets
 the Music and Effects volumes from 0 to 10; the game remembers them for the next visit.
 Hover and keyboard/gamepad focus use outline, shadow and position cues, with brief feedback that
-does not delay navigation. Layouts adapt to narrow and short viewports and respect reduced motion.
+does not delay navigation. Every screen change plays one signature transition: a band of slanted
+navy blades with a gold leading edge sweeps across and wipes the old screen away; the new screen
+takes input at once. Layouts adapt to narrow and short viewports and respect reduced motion.
 
 ## Combat concept (planned)
 
@@ -97,6 +99,8 @@ a playable build; it is done when that build works, not on a date.
 - [ ] **Sound** (beside S3). Menu sounds, attack, hit and KO sounds, music for the menus and
       each stage, music and effects volume in Options. Synthesized in the browser, original.
       Epic #83.
+- [ ] **Polish** (beside S4). Blade wipe between screens, READY / GO! at match start and a
+      GAME! banner at match end, all in one style. Epic #108.
 - [ ] **S4 Moves and dodges.** Tilts, standard smashes, aerials and landing lag; spot dodge,
       roll and air dodge. Epics #5, #6.
 - [ ] **S5 Off-stage play.** Ledge grab and getups, larger blast zones in stage data, a camera

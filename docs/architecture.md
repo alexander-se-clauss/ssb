@@ -162,6 +162,13 @@ stock eliminations (including their simulation frame) from existing session even
 podium; timed matches use KOs minus falls, and ties share a place. The static scene renders on resize
 and disposes its observer, geometry, textures and WebGL context when leaving results.
 
+Every screen change plays the blade wipe (`screen-transition.ts`): `App.navigate` renders its 3D
+scenes once more, then the wipe snapshots the container (DOM cloned, canvases copied to 2D) into
+a closed, `aria-hidden` shadow root on top and cuts it away behind a band of slanted blades
+(geometry in `screen-wipe.ts`, pure and tested). The real screen changes in the same task, so
+input, the debug handle and tests never wait on the animation, and the copies are invisible to
+locators. Reduced motion skips it.
+
 Menus with a way back show a Back button in their top left corner, except results and the
 rules overlay, whose own buttons (Main menu, Done) do that job. Every screen listens on `window`,
 so each handler checks and marks the event in `key-events.ts`: one key press changes the screen at
