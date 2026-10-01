@@ -18,6 +18,7 @@ import { WebAudioOutput } from '../adapters/web-audio/web-audio-output';
 import { App } from './app';
 import { installDebugHandle } from './debug';
 import './style.css';
+import './menu-theme.css';
 
 const container = document.querySelector<HTMLElement>('#app');
 if (!container) throw new Error('Missing #app container');

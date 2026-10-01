@@ -35,6 +35,15 @@ Set on character select, as in Melee: the banner at the top shows the rules and 
   KO counts for whoever hit the fallen fighter last since it respawned, and a self-destruct is
   only a fall. The best score wins when time runs out; a tie is a draw (sudden death later).
 
+## Menu presentation
+
+Menus share an original arena identity: fighter silhouettes, etched orbits, angled panels and
+bold titles connected to the screen framing. VS. Mode is the dominant main-menu destination;
+settings, controls, stage selection and results each use a composition suited to their content.
+Character select and rules retain their match-setup layouts within the same visual family.
+Hover and keyboard/gamepad focus use outline, shadow and position cues, with brief feedback that
+does not delay navigation. Layouts adapt to narrow and short viewports and respect reduced motion.
+
 ## Combat concept (planned)
 
 Smash meets Monster Hunter: defense is about commitment and timing, not a panic button.

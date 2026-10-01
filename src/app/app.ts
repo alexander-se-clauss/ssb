@@ -259,8 +259,10 @@ export class App {
       case 'main-menu':
         return {
           heading: 'Main menu',
+          variant: 'menu-main',
           options: MAIN_MENU.map((entry) => ({
             label: entry.label,
+            artwork: entry.to === 'character-select' ? ('versus' as const) : ('settings' as const),
             select: () => this.navigate(entry.to),
           })),
           back: () => this.navigate('title'),
@@ -268,15 +270,18 @@ export class App {
       case 'options':
         return {
           heading: 'Options',
+          variant: 'menu-settings',
           options: [
             {
               label: `Screen: ${document.fullscreenElement ? 'Fullscreen' : 'Window'}`,
+              artwork: 'display',
               select: () => this.toggleFullscreen(),
               adjust: () => this.toggleFullscreen(),
               stepLabels: ['‹', '›'],
             },
             {
               label: 'Controls',
+              artwork: 'controls',
               select: () => this.navigate('controls'),
             },
           ],
@@ -285,6 +290,7 @@ export class App {
       case 'controls':
         return {
           heading: 'Controls',
+          variant: 'menu-controls',
           body: renderControls(this.adapters.controls),
           back: () => this.navigate('options'),
         };
@@ -304,10 +310,16 @@ export class App {
       case 'results':
         return {
           heading: this.lastResult ? resultHeading(this.lastResult) : 'Results',
+          variant: 'menu-results',
           ...(this.lastResult ? { body: renderResults(this.lastResult) } : {}),
           options: [
-            { label: 'Rematch', select: () => this.navigate('match'), cue: 'match-start' },
-            { label: 'Main menu', select: () => this.navigate('main-menu') },
+            {
+              label: 'Rematch',
+              artwork: 'rematch',
+              select: () => this.navigate('match'),
+              cue: 'match-start',
+            },
+            { label: 'Main menu', artwork: 'home', select: () => this.navigate('main-menu') },
           ],
           back: () => this.navigate('main-menu'),
           backButton: false,
