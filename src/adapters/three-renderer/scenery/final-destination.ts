@@ -19,10 +19,10 @@ const SKY = /* glsl */ `
     float seed = hash12(vec2(floor(a), 3.0));
     float travel = fract(0.12 / (r + 0.03) + seed * 7.0 - uTime * (0.5 + seed));
     float streak = smoothstep(0.0, 0.03, travel) * (1.0 - smoothstep(0.03, 0.25, travel));
-    streak *= smoothstep(0.3, 0.05, abs(fract(a) - 0.5)) * smoothstep(0.08, 0.6, r);
+    streak *= (1.0 - smoothstep(0.05, 0.3, abs(fract(a) - 0.5))) * smoothstep(0.08, 0.6, r);
     vec3 tint = mix(vec3(0.3, 0.55, 1.0), vec3(0.85, 0.4, 1.0), seed);
     vec3 warp = tint * streak * 1.6 + vec3(0.55, 0.65, 1.0) * exp(-r * 4.0) * 0.7;
-    warp += vec3(0.08, 0.03, 0.2) * smoothstep(1.5, 0.0, r);
+    warp += vec3(0.08, 0.03, 0.2) * (1.0 - smoothstep(0.0, 1.5, r));
     col += (warp + st * 0.3) * uWarp;
   }
 

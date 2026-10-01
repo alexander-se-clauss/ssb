@@ -26,7 +26,7 @@ const SKY = /* glsl */ `
     vec2 suv = dir.xz / max(-h, 0.02) * 0.35 + vec2(uTime * 0.02, 0.0);
     float s = fbm(suv);
     vec3 sea = mix(uHorizon * 0.6, uCloud, smoothstep(0.35, 0.8, s));
-    sky = mix(sky, sea, smoothstep(0.0, -0.06, h));
+    sky = mix(sky, sea, 1.0 - smoothstep(-0.06, 0.0, h));
   }
   gl_FragColor = vec4(sky, 1.0);
 `;

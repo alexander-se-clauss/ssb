@@ -93,7 +93,7 @@ export const GLSL_NOISE = /* glsl */ `
     if (h < 0.992) return 0.0;
     float d = length(fract(p) - 0.5);
     float twinkle = 0.6 + 0.4 * sin(time * (1.0 + h * 4.0) + h * 80.0);
-    return smoothstep(0.35, 0.0, d) * twinkle * (h - 0.992) * 125.0;
+    return (1.0 - smoothstep(0.0, 0.35, d)) * twinkle * (h - 0.992) * 125.0;
   }
 `;
 
