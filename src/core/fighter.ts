@@ -1,7 +1,10 @@
+import { CENTRED_STICK, attackInput, trackStick } from './attack-input';
 import { FIGHTER } from './config';
 import { NEUTRAL_INPUT, pressed } from './input';
 import { approach } from './math';
 import { findMove } from './move-data';
+import { moveSlot } from './move-slots';
+import { findCharacter } from './registry';
 import { nextPose } from './poses';
 import { REST_POSE } from './skeleton';
 import type {
@@ -44,6 +47,7 @@ export const createFighter = (
     hitstunFrames: 0,
     invulnerableFrames: 0,
     hitTargets: [],
+    stick: CENTRED_STICK,
     previousInput: NEUTRAL_INPUT,
     pose: REST_POSE,
   };
@@ -75,7 +79,15 @@ export const updateFighter = (
   let { x: vx, y: vy } = fighter.velocity;
   let { facing, grounded, jumpsRemaining, action, actionFrame, moveId, hitstunFrames, hitTargets } =
     fighter;
-  const wantsDrop = input.y < DROP_THRESHOLD;
+  // A press asks for the move in a slot (#28); an empty slot does nothing.
+  const stick = trackStick(fighter.stick, input);
+  const button = pressed(input, prev, 'attack')
+    ? 'attack'
+    : pressed(input, prev, 'special')
+      ? 'special'
+      : null;
+  // Down with a button is a down attack on the platform, not a drop through it.
+  const wantsDrop = input.y < DROP_THRESHOLD && button === null;
 
   // Still supported by the platform we were standing on? Walking off an edge makes us airborne.
   const support = grounded ? stage.platforms.find((p) => standsOn(px, py, p)) : undefined;
@@ -86,6 +98,14 @@ export const updateFighter = (
   }
 
   actionFrame += 1;
+
+  const choice =
+    button === null ? null : moveSlot({ grounded, button, attack: attackInput(stick, facing) });
+  const startMoveId = choice ? findCharacter(fighter.characterId)?.moves[choice.slot] : undefined;
+  const startable =
+    choice && startMoveId !== undefined
+      ? { moveId: startMoveId, turnAround: choice.turnAround }
+      : null;
 
   if (action === 'hitstun') {
     hitstunFrames -= 1;
@@ -101,11 +121,11 @@ export const updateFighter = (
       moveId = null;
       hitTargets = [];
     }
-  } else if (pressed(input, prev, 'attack')) {
-    // Every attack is the jab until moves are picked by situation and direction (#28).
+  } else if (startable) {
     action = 'attack';
     actionFrame = 0;
-    moveId = 'jab';
+    moveId = startable.moveId;
+    if (startable.turnAround) facing = facing === 1 ? -1 : 1;
     hitTargets = [];
   } else if (pressed(input, prev, 'jump') && jumpsRemaining > 0) {
     vy = grounded ? FIGHTER.jumpVelocity : FIGHTER.doubleJumpVelocity;
@@ -217,6 +237,7 @@ export const updateFighter = (
     hitstunFrames,
     hitTargets,
     invulnerableFrames: Math.max(0, fighter.invulnerableFrames - 1),
+    stick,
     previousInput: input,
   };
   // Eased before combat, so hurtboxes built from the pose match this frame's body.

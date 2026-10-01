@@ -1,0 +1,82 @@
+/**
+ * Which move a press asks for (#28). The situation (ground or air), the button and the stick
+ * resolve to a move slot; each character fills its slots with move ids, and a slot can be empty.
+ */
+import type { AttackDirection, AttackStrength } from './attack-input';
+
+export const MOVE_SLOTS = [
+  'jab',
+  'forwardTilt',
+  'upTilt',
+  'downTilt',
+  'forwardSmash',
+  'upSmash',
+  'downSmash',
+  'neutralAir',
+  'forwardAir',
+  'backAir',
+  'upAir',
+  'downAir',
+  'neutralSpecial',
+  'sideSpecial',
+  'upSpecial',
+  'downSpecial',
+] as const;
+
+export type MoveSlot = (typeof MOVE_SLOTS)[number];
+
+export interface SlotSituation {
+  readonly grounded: boolean;
+  readonly button: 'attack' | 'special';
+  readonly attack: { readonly direction: AttackDirection; readonly strength: AttackStrength };
+}
+
+export interface SlotChoice {
+  readonly slot: MoveSlot;
+  /** The move is aimed behind the fighter, which turns around before it starts. */
+  readonly turnAround: boolean;
+}
+
+const GROUND_TILTS: Readonly<Record<AttackDirection, MoveSlot>> = {
+  neutral: 'jab',
+  forward: 'forwardTilt',
+  back: 'forwardTilt',
+  up: 'upTilt',
+  down: 'downTilt',
+};
+
+const GROUND_SMASHES: Readonly<Record<AttackDirection, MoveSlot>> = {
+  neutral: 'jab',
+  forward: 'forwardSmash',
+  back: 'forwardSmash',
+  up: 'upSmash',
+  down: 'downSmash',
+};
+
+const AERIALS: Readonly<Record<AttackDirection, MoveSlot>> = {
+  neutral: 'neutralAir',
+  forward: 'forwardAir',
+  back: 'backAir',
+  up: 'upAir',
+  down: 'downAir',
+};
+
+const SPECIALS: Readonly<Record<AttackDirection, MoveSlot>> = {
+  neutral: 'neutralSpecial',
+  forward: 'sideSpecial',
+  back: 'sideSpecial',
+  up: 'upSpecial',
+  down: 'downSpecial',
+};
+
+/**
+ * The slot for a press. Aerials have their own back slot, so only ground attacks and side
+ * specials turn the fighter around.
+ */
+export const moveSlot = ({ grounded, button, attack }: SlotSituation): SlotChoice => {
+  const back = attack.direction === 'back';
+  if (button === 'special') return { slot: SPECIALS[attack.direction], turnAround: back };
+  if (!grounded) return { slot: AERIALS[attack.direction], turnAround: false };
+  const table = attack.strength === 'smash' ? GROUND_SMASHES : GROUND_TILTS;
+  return { slot: table[attack.direction], turnAround: back };
+};
