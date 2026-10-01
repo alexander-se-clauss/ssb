@@ -12,7 +12,7 @@ Ports and adapters (hexagonal architecture) around a deterministic simulation.
             │  wires adapters together, runs requestAnimationFrame, installs debug handle   │
             └───────────────┬──────────────────────┬───────────────────────┬────────────────┘
                             │                      │                       │
- src/adapters   KeyboardInputSource      LocalGameSession            ThreeView, DomHud
+ src/adapters   Keyboard, Gamepad        LocalGameSession            ThreeView, DomHud
                 (InputSource)            (GameSession)               (GameView)
                             │                      │                       │
  src/ports      InputSource ──────────── GameSession ─────────────── GameView     (interfaces)
@@ -29,7 +29,7 @@ browsers, rendering or networking.
 | -------- | -------------- | ---------------------------------- | -------------------------------------------------------------- |
 | Core     | `src/core`     | core only                          | Types, physics, combat, rules, stages, registry, `step`, clock |
 | Ports    | `src/ports`    | core                               | Interfaces between client and game                             |
-| Adapters | `src/adapters` | core (via index), ports, libraries | Keyboard, local session, Three.js, HUD                         |
+| Adapters | `src/adapters` | core (via index), ports, libraries | Keyboard, gamepad, local session, Three.js, HUD                |
 | App      | `src/app`      | everything                         | `main.ts` wiring, screens and menus, debug handle, CSS         |
 
 **Enforced:** ESLint `no-restricted-imports` per folder (`eslint.config.js`) and a separate
@@ -38,7 +38,9 @@ browsers, rendering or networking.
 ## One frame
 
 1. While a match runs, `App` (`src/app/app.ts`) samples every `InputSource` and calls
-   `session.setInput(slot, input)`. Character select samples them too, for menu moves.
+   `session.setInput(slot, input)`. Each player's source is a `CombinedInput` of a keyboard half
+   and the gamepad with the same index; `GamepadInputSource` polls the Gamepad API right there,
+   since gamepad buttons have no events. Character select samples them too, for menu moves.
 2. `session.update(now)` asks `FixedStepClock` how many 1/60 s ticks are due and runs
    `step()` that many times. Rendering speed never changes game speed.
 3. Each `GameView` renders `session.view()`: previous state, current state and `alpha`, so
@@ -53,7 +55,7 @@ stage select, match, results) and the allowed moves between them, as plain data 
 `App` shows menu screens as HTML over the canvas. As in Melee, character select is where a match
 is set up: its top bar holds Back and the rules banner, which opens the rules overlay (a second
 `MenuPanel`, editing a draft that applies on Done). Options holds game settings only. Character select reads each player's
-`InputSource` (press detection in `character-select.ts`), so gamepads will work there
+`InputSource` (press detection in `character-select.ts`), so gamepads work there
 unchanged. The other menus (`MenuPanel`, stage select and the rules overlay included) still read
 DOM keys. Menus with a way back show a Back button in their top left corner, except results and
 the rules overlay, whose own buttons (Main menu, Done) do that job. Every screen

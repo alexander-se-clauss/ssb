@@ -68,3 +68,14 @@ export const JAB: AttackDef = {
 
 /** Hitstun frames per unit of launch speed. */
 export const HITSTUN_PER_KNOCKBACK = 40;
+
+/**
+ * Analog stick tuning, shared by every device with a stick. Values are stick deflection, 0..1.
+ * Input adapters apply these today; smash and tilt detection in core will read them too (#19).
+ */
+export const STICK = {
+  /** Deflection below this counts as centred, so a worn stick does not drift. */
+  deadzone: 0.2,
+  /** Pushing up at least this far jumps (tap-jump), like "up" on the keyboard. */
+  tapJump: 0.7,
+} as const;

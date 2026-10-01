@@ -295,3 +295,40 @@ test('full flow: title, menus, a match ended through the debug handle, results, 
   await expect.poll(() => screen(page)).toBe('main-menu');
   await expect(page.getByRole('button', { name: 'VS. Mode' })).toBeFocused();
 });
+
+test('a gamepad picks on character select and moves its fighter', async ({ page }) => {
+  // A fake Standard Gamepad at index 0, so the test needs no hardware.
+  await page.addInitScript(() => {
+    const pad = {
+      axes: [0, 0, 0, 0],
+      buttons: Array.from({ length: 17 }, () => ({ pressed: false })),
+    };
+    Object.assign(window, { fakePad: pad });
+    navigator.getGamepads = () => [pad as unknown as Gamepad];
+  });
+  const setPad = (change: { axes?: number[]; a?: boolean }) =>
+    page.evaluate((next) => {
+      const pad = (
+        window as unknown as { fakePad: { axes: number[]; buttons: { pressed: boolean }[] } }
+      ).fakePad;
+      if (next.axes) pad.axes = next.axes;
+      if (next.a !== undefined && pad.buttons[0]) pad.buttons[0].pressed = next.a;
+    }, change);
+
+  await toCharacterSelect(page);
+  await setPad({ a: true });
+  await expect.poll(() => picks(page)).toEqual(['capsule', null]);
+  await setPad({ a: false });
+  await tap(page, 'Period');
+  for (const next of ['stage-select', 'match']) {
+    await page.keyboard.press('Enter');
+    await expect.poll(() => screen(page)).toBe(next);
+  }
+
+  await expect.poll(async () => (await gameState(page)).fighters[0]?.grounded).toBe(true);
+  const startX = (await gameState(page)).fighters[0]?.position.x ?? 0;
+  await setPad({ axes: [1, 0, 0, 0] });
+  await expect
+    .poll(async () => (await gameState(page)).fighters[0]?.position.x ?? 0)
+    .toBeGreaterThan(startX + 1);
+});
