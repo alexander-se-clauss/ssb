@@ -97,8 +97,11 @@ Sound goes through the `AudioOutput` port (ADR 0007): named cues such as `menu-m
 and music tracks by id, on a music and an effects channel. `main.ts` gives `App` a
 `WebAudioOutput`, which synthesizes every cue from plain data (`cues.ts`: tones and noise bursts
 with a pitch glide and a fade). `RecordingAudioOutput` remembers what played, for tests. Core
-never plays sound. Epic #83 wires the cues in step by step; so far the title screen plays
-`menu-confirm`.
+never plays sound. Menus play their cues in `MenuPanel` (move, confirm, adjust, back; an option
+can name its own cue, like `match-start` on a stage). Character select plays one cue per frame
+from the change between its state before and after (`selectCue` in `menu-sounds.ts`: join,
+leave, pick, un-pick, rules, cursor move), so a held button stays quiet. Start, Back and a click on the rules
+banner play their cue in `App` directly.
 
 ## Screens
 

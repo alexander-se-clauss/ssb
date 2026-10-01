@@ -18,6 +18,9 @@ interface Graph {
   readonly noise: AudioBuffer;
 }
 
+/** True while handling a key press or click; true where the browser cannot tell. */
+const hasUserActivation = (): boolean => navigator.userActivation?.isActive ?? true;
+
 const glide = (param: AudioParam, tone: Tone, start: number, end: number): void => {
   param.setValueAtTime(tone.from, start);
   param.exponentialRampToValueAtTime(tone.to, end);
@@ -43,6 +46,10 @@ export class WebAudioOutput implements AudioOutput {
   }
 
   play(cue: SoundCue, strength?: number): void {
+    // Audio the browser has not allowed yet would queue this cue on a stopped clock and play it
+    // late, on whatever screen comes next. Drop it, unless it comes from a key press or click
+    // that unlocks audio right now (a gamepad press does not).
+    if (this.graph?.context.state !== 'running' && !hasUserActivation()) return;
     const graph = this.unlock();
     const now = graph.context.currentTime;
     for (const tone of shapeCue(cue, strength)) this.playTone(graph, tone, now + tone.at);

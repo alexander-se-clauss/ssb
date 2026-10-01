@@ -10,7 +10,14 @@ import {
   type MatchState,
   type StageDef,
 } from '../core';
-import type { AudioOutput, GameSession, GameView, InputSource, Unsubscribe } from '../ports';
+import type {
+  AudioOutput,
+  GameSession,
+  GameView,
+  InputSource,
+  SoundCue,
+  Unsubscribe,
+} from '../ports';
 import {
   allReady,
   canStart,
@@ -22,6 +29,7 @@ import {
   type SelectState,
 } from './character-select';
 import { menuCommands } from './menu-commands';
+import { selectCue } from './menu-sounds';
 import { CharacterSelectView } from './character-select-view';
 import { renderControls, type ControlColumn } from './controls';
 import { MenuPanel, type MenuContent } from './menu-panel';
@@ -117,12 +125,16 @@ export class App {
     private readonly container: HTMLElement,
     private readonly adapters: AppAdapters,
   ) {
-    this.menu = new MenuPanel(container);
-    this.rulesPanel = new MenuPanel(container);
+    const play = (cue: SoundCue): void => adapters.audio.play(cue);
+    this.menu = new MenuPanel(container, play);
+    this.rulesPanel = new MenuPanel(container, play);
     this.characterSelect = new CharacterSelectView(container, CHARACTERS, GRID_COLUMNS, {
       start: () => this.confirmCharacters(),
-      back: () => this.navigate('main-menu'),
-      openRules: () => this.setRulesOpen(true),
+      back: () => this.leaveToMainMenu(),
+      openRules: () => {
+        this.adapters.audio.play('menu-confirm');
+        this.setRulesOpen(true);
+      },
     });
     document.addEventListener('fullscreenchange', () => {
       if (this.screen === 'options') this.menu.show(this.menuFor('options'), 0);
@@ -227,10 +239,7 @@ export class App {
           heading: GAME_NAME,
           text: 'Press start (Enter or Space)',
           variant: 'menu-title',
-          start: () => {
-            this.adapters.audio.play('menu-confirm');
-            this.navigate('main-menu');
-          },
+          start: () => this.navigate('main-menu'),
         };
       case 'main-menu':
         return {
@@ -270,6 +279,7 @@ export class App {
           options: STAGES.map((stage) => ({
             label: stage.name,
             select: () => this.chooseStage(stage.id),
+            cue: 'match-start' as const,
           })),
           back: () => this.navigate('character-select'),
           preview: (index) => {
@@ -282,7 +292,7 @@ export class App {
           heading: this.lastResult ? resultHeading(this.lastResult) : 'Results',
           ...(this.lastResult ? { body: renderResults(this.lastResult) } : {}),
           options: [
-            { label: 'Rematch', select: () => this.navigate('match') },
+            { label: 'Rematch', select: () => this.navigate('match'), cue: 'match-start' },
             { label: 'Main menu', select: () => this.navigate('main-menu') },
           ],
           back: () => this.navigate('main-menu'),
@@ -341,7 +351,8 @@ export class App {
     // Leaving the screen waits until every device's presses this frame are in, so whether it
     // starts or goes back does not depend on device order. A back from a device that has not
     // joined still counts when a start on the same frame is not possible.
-    const rulesWereOpen = this.select?.rulesOpen ?? false;
+    const before = this.select;
+    const rulesWereOpen = before?.rulesOpen ?? false;
     let startRequested = false;
     let backRequested = false;
     this.adapters.devices.forEach(({ source }, device) => {
@@ -370,8 +381,10 @@ export class App {
     });
     // A start is judged after this frame's joins, picks, leaves and rules banner presses.
     if (startRequested && this.select && canStart(this.select)) return this.confirmCharacters();
-    if (backRequested && !this.select?.rulesOpen) return this.navigate('main-menu');
+    if (backRequested && !this.select?.rulesOpen) return this.leaveToMainMenu();
     if (!this.select) return;
+    const cue = before ? selectCue(before, this.select) : null;
+    if (cue) this.adapters.audio.play(cue);
     this.syncRulesPanel();
     this.characterSelect.render(this.select, allReady(this.select), this.rules);
   }
@@ -392,6 +405,7 @@ export class App {
             if (row.field === 'mode') this.changeRule(row.field, 1, index);
           },
           adjust: (delta: 1 | -1) => this.changeRule(row.field, delta, index),
+          ...(row.field === 'mode' ? {} : { cue: null }),
           ...(row.field === 'mode' ? { stepLabels: ['‹', '›'] as const } : {}),
         })),
         { label: 'Done', select: done },
@@ -440,7 +454,13 @@ export class App {
     });
     this.picks = players.map((player) => player.pick);
     this.playerDevices = players.map((player) => player.device);
+    this.adapters.audio.play('menu-confirm');
     this.navigate('stage-select');
+  }
+
+  private leaveToMainMenu(): void {
+    this.adapters.audio.play('menu-back');
+    this.navigate('main-menu');
   }
 
   /** The input of a player in the match, or during character select of a joined slot. */
