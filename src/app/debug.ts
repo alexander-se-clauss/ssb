@@ -1,11 +1,13 @@
-import type { MatchRules, MatchState } from '../core';
+import { inputOf, type MatchRules, type MatchState, type PlayerInput } from '../core';
 import type { App } from './app';
 import type { SelectState } from './character-select';
+import type { OverridableInput } from './debug-input';
 import type { Screen } from './screens';
 
 /**
  * A small window handle for automated tests and AI agents (via the Playwright MCP)
- * to read game state without scraping pixels. Read-mostly on purpose.
+ * to read game state without scraping pixels. Read-mostly on purpose: the only way to change
+ * the game is to play it, by taking over a player's input.
  */
 export interface DebugHandle {
   /** The screen the app shows right now. */
@@ -17,6 +19,9 @@ export interface DebugHandle {
   /** The rules the next match will use, as set in the rules overlay on character select. */
   rules(): MatchRules;
   restart(): void;
+  /** Takes over a player (0 = P1): reports `input` instead of their keys until `release`. */
+  hold(player: number, input: Partial<PlayerInput>): void;
+  release(player: number): void;
 }
 
 declare global {
@@ -25,12 +30,14 @@ declare global {
   }
 }
 
-export const installDebugHandle = (app: App): void => {
+export const installDebugHandle = (app: App, inputs: readonly OverridableInput[]): void => {
   window.__SSB__ = {
     screen: () => app.currentScreen,
     state: () => app.matchState(),
     characterSelect: () => app.selectState,
     rules: () => app.currentRules,
     restart: () => app.restartMatch(),
+    hold: (player, input) => inputs[player]?.override(inputOf(input)),
+    release: (player) => inputs[player]?.override(null),
   };
 };

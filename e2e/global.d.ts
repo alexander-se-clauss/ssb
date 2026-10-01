@@ -21,5 +21,7 @@ interface Window {
     characterSelect(): { cursors: number[]; picks: (string | null)[] } | undefined;
     rules(): { mode: string; stocks: number; timeLimitSeconds: number };
     restart(): void;
+    hold(player: number, input: { x?: number; y?: number; jump?: boolean; attack?: boolean }): void;
+    release(player: number): void;
   };
 }

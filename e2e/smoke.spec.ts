@@ -254,3 +254,44 @@ test('player one moves right when D is held', async ({ page }) => {
   const endX = (await gameState(page)).fighters[0]?.position.x ?? 0;
   expect(endX).toBeGreaterThan(startX);
 });
+
+test('full flow: title, menus, a match ended through the debug handle, results, menu', async ({
+  page,
+}) => {
+  await page.goto('/');
+  expect(await screen(page)).toBe('title');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('main-menu');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('character-select');
+
+  // One stock, so a single fall ends the match.
+  await openRules(page);
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowLeft');
+  await page.keyboard.press('ArrowLeft');
+  await page.getByRole('button', { name: 'Done' }).click();
+  await expect(page.locator('.css-rules')).toContainText('Stock · 1 life');
+  await tap(page, 'KeyS');
+
+  await tap(page, 'KeyF');
+  await tap(page, 'Period');
+  await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule']);
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('stage-select');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('match');
+  expect((await gameState(page)).stage.id).toBe('plateau');
+  expect((await gameState(page)).rules.stocks).toBe(1);
+
+  // End the match: take over player one and walk off the stage.
+  await page.evaluate(() => window.__SSB__?.hold(0, { x: -1 }));
+  await expect.poll(() => screen(page), { timeout: 20_000 }).toBe('results');
+  await page.evaluate(() => window.__SSB__?.release(0));
+  await expect(page.getByRole('heading', { name: 'Player 2 wins!' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Main menu' }).click();
+  await expect.poll(() => screen(page)).toBe('main-menu');
+  await expect(page.getByRole('button', { name: 'VS. Mode' })).toBeFocused();
+});

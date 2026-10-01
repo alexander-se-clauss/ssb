@@ -85,11 +85,11 @@ Other logic follows the same pattern: define a port first, implement locally, sw
 
 ## Testing strategy
 
-| Level | Tool       | What                                                                         | Where               |
-| ----- | ---------- | ---------------------------------------------------------------------------- | ------------------- |
-| Unit  | Vitest     | Game rules as scenarios (`settled`, `run`, `withFighter`)                    | `src/**/*.test.ts`  |
-| Unit  | Vitest     | Adapters with fakes (e.g. keyboard with an `EventTarget`)                    | next to the adapter |
-| E2E   | Playwright | Boots to title, menus reach a match, keys move fighters via `window.__SSB__` | `e2e/`              |
+| Level | Tool       | What                                                                                          | Where               |
+| ----- | ---------- | --------------------------------------------------------------------------------------------- | ------------------- |
+| Unit  | Vitest     | Game rules as scenarios (`settled`, `run`, `withFighter`)                                     | `src/**/*.test.ts`  |
+| Unit  | Vitest     | Adapters with fakes (e.g. keyboard with an `EventTarget`)                                     | next to the adapter |
+| E2E   | Playwright | Full flow from title to results and back (match ended via `__SSB__.hold`), keys move fighters | `e2e/`              |
 
 ## Decisions
 
