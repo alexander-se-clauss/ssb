@@ -3,7 +3,6 @@ import {
   STAGES,
   DEFAULT_RULES,
   NEUTRAL_INPUT,
-  pressed,
   type PlayerInput,
   type MatchConfig,
   type MatchRules,
@@ -25,6 +24,7 @@ import {
   menuActions,
   reduceSelect,
   requestsStart,
+  requestsBack,
   slotOf,
   type SelectState,
 } from './character-select';
@@ -220,7 +220,7 @@ export class App {
   }
 
   private enter(screen: Screen): void {
-    // Lets the CSS show things on one screen only, like the key hints during a match.
+    // Lets the CSS apply screen-specific presentation.
     this.container.dataset['screen'] = screen;
     if (screen === 'title') this.titleScene = new TitleScene(this.container);
     if (screen === 'match') {
@@ -276,8 +276,6 @@ export class App {
               label: `Screen: ${document.fullscreenElement ? 'Fullscreen' : 'Window'}`,
               artwork: 'display',
               select: () => this.toggleFullscreen(),
-              adjust: () => this.toggleFullscreen(),
-              stepLabels: ['‹', '›'],
             },
             {
               label: 'Controls',
@@ -379,8 +377,7 @@ export class App {
 
   private updateCharacterSelect(ignorePresses = false): void {
     // Leaving the screen waits until every device's presses this frame are in, so whether it
-    // starts or goes back does not depend on device order. A back from a device that has not
-    // joined still counts when a start on the same frame is not possible.
+    // starts or goes back does not depend on device order. Back prevents a simultaneous start.
     const before = this.select;
     const rulesWereOpen = before?.rulesOpen ?? false;
     let startRequested = false;
@@ -393,24 +390,37 @@ export class App {
       if (ignorePresses || !state) return;
       const player = slotOf(state, device);
       if (player < 0) {
-        // A device not playing yet: attack joins, special goes back, as Escape does.
+        // Unjoined devices navigate header actions; attack with no header focus joins.
         if (rulesWereOpen) return;
-        if (pressed(current, previous, 'attack')) {
-          this.select = reduceSelect(state, { type: 'join', device }, CHARACTERS, GRID_COLUMNS);
-        } else if (pressed(current, previous, 'special')) {
-          backRequested = true;
+        for (const action of menuActions(player, previous, current)) {
+          const now = this.select;
+          if (!now) return;
+          if (action.type === 'move') {
+            this.select = reduceSelect(
+              now,
+              { ...action, type: 'guest-move', device },
+              CHARACTERS,
+              GRID_COLUMNS,
+            );
+          } else if (action.type === 'confirm') {
+            const confirm = { type: 'guest-confirm' as const, device };
+            if (requestsBack(now, confirm)) backRequested = true;
+            this.select = reduceSelect(now, confirm, CHARACTERS, GRID_COLUMNS);
+          } else if (action.type === 'cancel') backRequested = true;
         }
         return;
       }
       for (const action of menuActions(player, previous, current)) {
         const now = this.select;
         if (!now) return;
+        if (requestsBack(now, action)) backRequested = true;
         if (requestsStart(now, action)) startRequested = true;
         this.select = reduceSelect(now, action, CHARACTERS, GRID_COLUMNS);
       }
     });
-    // A start is judged after this frame's joins, picks, leaves and rules banner presses.
-    if (startRequested && this.select && canStart(this.select)) return this.confirmCharacters();
+    // Back and rules confirmations take precedence over another device starting this frame.
+    if (!backRequested && startRequested && this.select && canStart(this.select))
+      return this.confirmCharacters();
     if (backRequested && !this.select?.rulesOpen) return this.leaveToMainMenu();
     if (!this.select) return;
     const cue = before ? selectCue(before, this.select) : null;
@@ -460,7 +470,12 @@ export class App {
     this.rulesShown = open;
     this.rulesDraft = this.rules;
     if (open) this.rulesPanel.show(this.rulesMenu());
-    else this.rulesPanel.hide();
+    else {
+      this.rulesPanel.hide();
+      // DOM keys can close the overlay between frames. Consume its pending taps so they
+      // cannot move a character-select cursor or activate a header action underneath.
+      this.previousInputs = this.adapters.devices.map(({ source }) => source.sample());
+    }
   }
 
   private toggleFullscreen(): void {

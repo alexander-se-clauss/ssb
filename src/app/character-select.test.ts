@@ -2,12 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { NEUTRAL_INPUT, inputOf, type CharacterDef } from '../core';
 import {
   RULES_CURSOR,
+  BACK_CURSOR,
   allReady,
   createSelect,
   menuActions,
   canStart,
   reduceSelect,
   requestsStart,
+  requestsBack,
   slotOf,
   type SelectAction,
   type SelectState,
@@ -176,6 +178,21 @@ describe('rules banner on character select', () => {
     expect(state.picks[0]).toBe('a');
   });
 
+  it('reaches Back to the left of rules and returns without losing a pick', () => {
+    const state = apply(twoPlayers(), { type: 'confirm', player: 0 }, up(0), {
+      type: 'move',
+      player: 0,
+      dx: -1,
+      dy: 0,
+    });
+    expect(state.cursors[0]).toBe(BACK_CURSOR);
+    expect(state.picks[0]).toBe('a');
+    expect(requestsBack(state, { type: 'confirm', player: 0 })).toBe(true);
+    expect(requestsStart(state, { type: 'confirm', player: 0 })).toBe(false);
+    expect(apply(state, { type: 'move', player: 0, dx: 1, dy: 0 }).cursors[0]).toBe(RULES_CURSOR);
+    expect(apply(state, down(0)).cursors[0]).toBe(0);
+  });
+
   it('closes the rules when a player presses special', () => {
     const open = apply(twoPlayers(), { type: 'rules', open: true });
     const closed = apply(open, { type: 'cancel', player: 1 });
@@ -194,6 +211,61 @@ describe('rules banner on character select', () => {
     const closed = apply(open, { type: 'rules', open: false }, { type: 'confirm', player: 0 });
     expect(closed.rulesOpen).toBe(false);
     expect(closed.picks[0]).toBe('a');
+  });
+});
+
+describe('browsing character select before joining', () => {
+  it('reaches and opens rules without registering a player', () => {
+    const state = apply(createSelect(4), { type: 'guest-move', device: 3, dx: 0, dy: -1 });
+    expect(state.guestCursors[3]).toBe(RULES_CURSOR);
+    const open = apply(state, { type: 'guest-confirm', device: 3 });
+    expect(open.rulesOpen).toBe(true);
+    expect(open.devices).toEqual([null, null, null, null]);
+  });
+
+  it('can reach Back and requests navigation instead of joining', () => {
+    const state = apply(
+      createSelect(4),
+      { type: 'guest-move', device: 0, dx: 0, dy: -1 },
+      { type: 'guest-move', device: 0, dx: -1, dy: 0 },
+    );
+    const action: SelectAction = { type: 'guest-confirm', device: 0 };
+    expect(state.guestCursors[0]).toBe(BACK_CURSOR);
+    expect(requestsBack(state, action)).toBe(true);
+    expect(apply(state, action).devices).toEqual([null, null, null, null]);
+  });
+
+  it('restricts unjoined cursors to header actions and clears focus to join', () => {
+    let state = createSelect(4);
+    for (const [dx, dy] of [
+      [1, 0],
+      [0, -1],
+      [-1, 0],
+      [1, 0],
+    ]) {
+      state = apply(state, { type: 'guest-move', device: 0, dx: dx ?? 0, dy: dy ?? 0 });
+      expect([RULES_CURSOR, BACK_CURSOR]).toContain(state.guestCursors[0]);
+      expect(state.devices).toEqual([null, null, null, null]);
+    }
+    state = apply(state, { type: 'guest-move', device: 3, dx: 0, dy: -1 });
+    const cleared = apply(state, { type: 'guest-move', device: 0, dx: 0, dy: 1 });
+    expect(cleared.guestCursors).toEqual({ 3: RULES_CURSOR });
+    const joined = apply(cleared, { type: 'guest-confirm', device: 0 });
+    expect(joined.devices).toEqual([0, null, null, null]);
+    expect(joined.cursors[0]).toBe(0);
+    expect(joined.guestCursors).toEqual({ 3: RULES_CURSOR });
+    expect(apply(joined, { type: 'confirm', player: 0 }).picks[0]).toBe('a');
+  });
+
+  it('pauses guest navigation while rules are open', () => {
+    const state = apply(createSelect(4), { type: 'rules', open: true });
+    expect(
+      apply(
+        state,
+        { type: 'guest-move', device: 0, dx: 1, dy: 0 },
+        { type: 'guest-confirm', device: 3 },
+      ),
+    ).toEqual(state);
   });
 });
 

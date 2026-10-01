@@ -115,14 +115,19 @@ arena illustration with posed fighters, colored lighting and gently drifting spa
 core skeleton and poses without running a match, respects reduced-motion preferences, and releases
 its WebGL resources on leaving the title. The HTML start button also accepts keyboard and gamepad input. As in Melee, character select is where a match is
 set up: its top bar holds Back and the rules banner, which opens the rules overlay (a second
-`MenuPanel`, editing a draft that applies on Done). Options holds game settings only. On character
+`MenuPanel`, editing a draft that applies on Done). Options holds game settings only: directions
+navigate between its panels, and confirming Screen toggles fullscreen. On character
 select a device joins the first of four free player slots by pressing attack, then moves that
 player's cursor; special un-picks, then leaves the slot (later players move up, so slots have no
-gaps), and from a device that has not joined goes back. Start, or attack once everyone joined
+gaps), and from a device that has not joined goes back. Before joining, directions select only match rules and Back. Down clears header focus,
+allowing attack to join at the first fighter. Unjoined devices cannot browse the roster;
+confirming a header action opens rules or goes back. Joined players use the same header navigation and keep
+their picks. The last device to act synchronizes native header focus, so keyboard Enter activates
+Back or rules when focused. Start, or attack on the roster once everyone joined
 has picked, starts (two to four players); `PlayerInput.start` is the pad's Start button, and the
 simulation ignores it. The match gets the joined players in slot order, each with their own
-device. The controls screen and the in-match hint name devices (left keys, right keys, gamepad),
-not players. Press detection lives in `character-select.ts`. The other menus (`MenuPanel`, stage
+device. The controls screen names devices (left keys, right keys, gamepad), not players.
+Matches do not display control instructions. Press detection lives in `character-select.ts`. The other menus (`MenuPanel`, stage
 select and the rules overlay included) read the keyboard as DOM keys and the gamepads as polled
 devices: `menu-commands.ts` turns presses into commands for `MenuPanel.command()`, which moves the
 focus to the nearest button in that direction (`spatial-focus.ts`), so the Back button is reachable

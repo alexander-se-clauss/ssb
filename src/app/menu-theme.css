@@ -92,8 +92,7 @@
 }
 
 .menu:not(.menu-title) button:is(:hover, :focus),
-.css button:is(:hover, :focus),
-.css-rules:has(.css-badge) {
+.css button:is(:hover, :focus) {
   outline: 2px solid #fff0ce;
   outline-offset: 3px;
   border-color: #ffd79b;
@@ -176,7 +175,7 @@
   background: linear-gradient(110deg, #ffdf9c, #e9a85c);
 }
 
-/* Settings are large offset equipment panels, with mouse steppers at the row edges. */
+/* Settings are large offset equipment panels. Confirm changes the focused setting. */
 .menu-settings .menu-options {
   display: grid;
   grid-template-columns: 1.3fr 1fr;
@@ -184,18 +183,12 @@
   align-items: start;
 }
 
-.menu-settings .menu-row {
-  gap: 8px;
-  align-items: stretch;
-}
-
 .menu:not(.menu-title) .menu-row button {
   transform: none;
 }
 
-.menu-settings .menu-row > button:not(.menu-step) {
-  min-width: 0;
-  flex: 1;
+.menu-settings .menu-options > button:first-child {
+  margin-top: 0;
   min-height: 210px;
   padding: 100px 18px 24px;
   font-size: clamp(1.2rem, 2.6vw, 2rem);
@@ -213,11 +206,6 @@
   min-height: 180px;
   min-width: 0;
   padding: 100px 16px 24px;
-  font-size: 2rem;
-}
-
-.menu-settings .menu-step {
-  width: 40px;
   font-size: 2rem;
 }
 
@@ -349,14 +337,15 @@
 
 .css-topbar .menu-back {
   top: 50%;
+  transform: translateY(-50%) skewX(-5deg);
+  translate: 0 0;
 }
 
 .css .css-rules {
   font-size: 1.15rem;
 }
 
-.css-rules:is(:hover, :focus) .css-mode,
-.css-rules:has(.css-badge) .css-mode {
+.css-rules:is(:hover, :focus) .css-mode {
   color: inherit;
 }
 
@@ -489,7 +478,7 @@
     right: 8px;
     top: 0;
   }
-  .menu-settings .menu-row > button:not(.menu-step) {
+  .menu-settings .menu-options > button:first-child {
     min-height: 170px;
     padding-top: 90px;
   }
@@ -602,7 +591,6 @@
     grid-template-columns: 1.2fr 1fr;
     gap: 24px;
   }
-  .menu-settings .menu-row > button:not(.menu-step),
   .menu-settings .menu-options > button {
     min-height: 116px;
     padding: 68px 12px 12px;
@@ -610,6 +598,12 @@
   }
   .menu-settings .menu-options > button {
     margin-top: 30px;
+  }
+  .menu-settings .menu-options > button:first-child {
+    margin-top: 0;
+    min-height: 116px;
+    padding: 68px 12px 12px;
+    font-size: 1.1rem;
   }
   .menu-settings .menu-artwork {
     height: 70px;
@@ -693,4 +687,9 @@
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* Header focus changes framing and brightness without shifting the layout. */
+.css-topbar button:is(:hover, :focus, :active) {
+  translate: 0 0;
 }
