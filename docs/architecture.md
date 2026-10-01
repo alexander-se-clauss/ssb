@@ -110,7 +110,10 @@ one, so core needs no sound events. A fighter in hitstun only makes a landing so
 
 `src/app/screens.ts` lists the screens (title, main menu, options, controls, character select,
 stage select, match, results) and the allowed moves between them, as plain data with a unit test.
-`App` shows menu screens as HTML over the canvas. As in Melee, character select is where a match is
+`App` shows menu screens as HTML over the canvas. The title screen owns a decorative Three.js
+arena illustration with posed fighters, colored lighting and gently drifting sparks. It uses the
+core skeleton and poses without running a match, respects reduced-motion preferences, and releases
+its WebGL resources on leaving the title. The HTML start button also accepts keyboard and gamepad input. As in Melee, character select is where a match is
 set up: its top bar holds Back and the rules banner, which opens the rules overlay (a second
 `MenuPanel`, editing a draft that applies on Done). Options holds game settings only. On character
 select a device joins the first of four free player slots by pressing attack, then moves that
