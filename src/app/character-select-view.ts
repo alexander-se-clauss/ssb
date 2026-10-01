@@ -1,6 +1,6 @@
 import { markHandled, wasHandled } from './key-events';
 import type { CharacterDef, MatchRules } from '../core';
-import { RULES_CURSOR, type SelectState } from './character-select';
+import { BACK_CURSOR, RULES_CURSOR, type SelectState } from './character-select';
 import { ruleSummary } from './rules-menu';
 import { menuAtmosphere } from './menu-art';
 
@@ -29,7 +29,7 @@ export class CharacterSelectView {
   private readonly footer: HTMLElement;
   private readonly rulesBanner: HTMLButtonElement;
   private readonly rulesText: HTMLElement;
-  private readonly rulesCursors: HTMLElement;
+  private readonly backButton: HTMLButtonElement;
   private state: SelectState | undefined;
   private ready = false;
   private rules: MatchRules | undefined;
@@ -39,9 +39,21 @@ export class CharacterSelectView {
     if (event.code === 'Escape') {
       markHandled(event);
       this.callbacks.back();
-    } else if (event.code === 'Enter' && this.ready) {
-      markHandled(event);
-      this.callbacks.start();
+    } else if (event.code === 'Enter') {
+      const focus = document.activeElement;
+      const header =
+        focus === this.backButton
+          ? this.backButton
+          : focus === this.rulesBanner
+            ? this.rulesBanner
+            : undefined;
+      if (header) {
+        markHandled(event);
+        header.click();
+      } else if (this.ready) {
+        markHandled(event);
+        this.callbacks.start();
+      }
     }
   };
 
@@ -60,18 +72,19 @@ export class CharacterSelectView {
     back.type = 'button';
     back.className = 'menu-back';
     back.textContent = '◀ Back';
+    back.setAttribute('aria-label', 'Back');
     back.addEventListener('click', () => callbacks.back());
+    this.backButton = back;
     this.rulesBanner = document.createElement('button');
     this.rulesBanner.type = 'button';
     this.rulesBanner.className = 'css-rules';
+    this.rulesBanner.setAttribute('aria-label', 'Match rules');
     this.rulesBanner.addEventListener('click', () => callbacks.openRules());
     const mode = document.createElement('span');
     mode.className = 'css-mode';
     mode.textContent = 'VS. Mode';
     this.rulesText = document.createElement('strong');
-    this.rulesCursors = document.createElement('div');
-    this.rulesCursors.className = 'css-cursors';
-    this.rulesBanner.append(mode, this.rulesText, this.rulesCursors);
+    this.rulesBanner.append(mode, this.rulesText);
     topBar.append(back, this.rulesBanner);
     const heading = document.createElement('h1');
     heading.textContent = 'Choose your fighter';
@@ -98,11 +111,6 @@ export class CharacterSelectView {
     this.root.hidden = false;
     this.rulesText.textContent = ruleSummary(rules);
     this.rulesBanner.title = 'Rules: move up here and pick, or click';
-    this.rulesCursors.replaceChildren(
-      ...state.cursors.flatMap((cursor, player) =>
-        cursor === RULES_CURSOR && state.devices[player] != null ? [this.badge(player)] : [],
-      ),
-    );
     this.grid.replaceChildren(
       ...this.roster.map((character, index) => {
         const cell = document.createElement('div');
@@ -112,9 +120,7 @@ export class CharacterSelectView {
         name.textContent = character.name;
         const cursors = document.createElement('div');
         cursors.className = 'css-cursors';
-        state.cursors.forEach((cursor, player) => {
-          if (cursor === index && state.devices[player] != null) cursors.append(this.badge(player));
-        });
+        cursors.append(...this.cursorsAt(state, index));
         cell.append(name, cursors);
         return cell;
       }),
@@ -140,6 +146,24 @@ export class CharacterSelectView {
     );
     this.footer.textContent = ready ? 'Ready! Press Enter, Start or attack' : '';
     this.footer.classList.toggle('ready', ready);
+    if (!state.rulesOpen) {
+      const player = state.activeDevice === null ? -1 : state.devices.indexOf(state.activeDevice);
+      const cursor =
+        player >= 0 ? state.cursors[player] : state.guestCursors[state.activeDevice ?? -1];
+      const header =
+        cursor === BACK_CURSOR
+          ? this.backButton
+          : cursor === RULES_CURSOR
+            ? this.rulesBanner
+            : undefined;
+      if (header) header.focus({ preventScroll: true });
+      else if (
+        document.activeElement === this.backButton ||
+        document.activeElement === this.rulesBanner
+      ) {
+        (document.activeElement as HTMLButtonElement).blur();
+      }
+    }
   }
 
   hide(): void {
@@ -159,5 +183,12 @@ export class CharacterSelectView {
     badge.textContent = `P${player + 1}`;
     badge.style.setProperty('--player-color', PLAYER_COLORS[player % 4] ?? '#fff');
     return badge;
+  }
+
+  private cursorsAt(state: SelectState, target: number): HTMLElement[] {
+    const players = state.cursors.flatMap((cursor, player) =>
+      cursor === target && state.devices[player] != null ? [this.badge(player)] : [],
+    );
+    return players;
   }
 }

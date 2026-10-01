@@ -30,8 +30,12 @@ export const selectCue = (before: SelectState, after: SelectState): SoundCue | n
   if (pickedIn(after, before)) return 'pick';
   if (pickedIn(before, after)) return 'menu-back';
   if (after.rulesOpen !== before.rulesOpen) return after.rulesOpen ? 'menu-confirm' : 'menu-back';
-  const moved = after.devices.some(
-    (device) => device !== null && cursorOf(after, device) !== cursorOf(before, device),
-  );
+  const moved =
+    after.devices.some(
+      (device) => device !== null && cursorOf(after, device) !== cursorOf(before, device),
+    ) ||
+    Object.entries(after.guestCursors).some(
+      ([device, cursor]) => cursor !== (before.guestCursors[Number(device)] ?? 0),
+    );
   return moved ? 'menu-move' : null;
 };

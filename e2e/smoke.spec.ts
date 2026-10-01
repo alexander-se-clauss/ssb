@@ -780,3 +780,149 @@ test('hover and focus share outline and lift cues, and confirmation never delays
   });
   expect(reduced).toEqual({ screen: 'options', animations: 0 });
 });
+
+test('Options directions navigate panels and screen mode changes only on confirmation', async ({
+  page,
+}) => {
+  await installPads(page, 1);
+  await page.goto('/');
+  await page.keyboard.press('Enter');
+  await page.getByRole('button', { name: 'Options', exact: true }).click();
+  await page.evaluate(() => {
+    let requests = 0;
+    document.documentElement.requestFullscreen = async () => {
+      requests++;
+    };
+    Object.defineProperty(window, 'fullscreenRequests', { get: () => requests });
+  });
+  const requests = () =>
+    page.evaluate(() => (window as unknown as { fullscreenRequests: number }).fullscreenRequests);
+  const screenMode = page.getByRole('button', { name: /^Screen: Window/ });
+  const controls = page.getByRole('button', { name: 'Controls', exact: true });
+  await expect(screenMode).toBeFocused();
+  await page.keyboard.press('ArrowRight');
+  await expect(controls).toBeFocused();
+  await page.keyboard.press('ArrowLeft');
+  await expect(screenMode).toBeFocused();
+  await flick(page, 0, 1, 0);
+  await expect(controls).toBeFocused();
+  await flick(page, 0, -1, 0);
+  await expect(screenMode).toBeFocused();
+  expect(await requests()).toBe(0);
+  await page.keyboard.press('Enter');
+  expect(await requests()).toBe(1);
+  await press(page, 0, PAD.a);
+  expect(await requests()).toBe(2);
+  await screenMode.click();
+  expect(await requests()).toBe(3);
+  await flick(page, 0, 1, 0);
+  await press(page, 0, PAD.a);
+  await expect.poll(() => screen(page)).toBe('controls');
+  await press(page, 0, PAD.b);
+  await expect.poll(() => screen(page)).toBe('options');
+});
+
+test('keyboard navigation reaches character-select rules and Back before joining and after picking', async ({
+  page,
+}, testInfo) => {
+  await toCharacterSelect(page);
+  const rules = page.getByRole('button', { name: 'Match rules', exact: true });
+  const back = page.getByRole('button', { name: 'Back', exact: true });
+  const initialBack = await back.boundingBox();
+  const initialRules = await rules.boundingBox();
+  await tap(page, 'ArrowRight');
+  await expect(rules).toBeFocused();
+  await expect(page.locator('.css-grid .css-badge')).toHaveCount(0);
+  expect(await rules.boundingBox()).toEqual(initialRules);
+  await tap(page, 'ArrowDown');
+  await expect(rules).not.toBeFocused();
+  await expect(page.locator('.css-grid .css-badge')).toHaveCount(0);
+  await tap(page, 'ArrowUp');
+  await expect(rules).toBeFocused();
+  expect((await characterSelect(page))?.devices).toEqual([null, null, null, null]);
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { name: 'Rules', exact: true })).toBeVisible();
+  expect((await characterSelect(page))?.devices).toEqual([null, null, null, null]);
+  await page.keyboard.press('Escape');
+  await tap(page, 'ArrowLeft');
+  await expect(back).toBeFocused();
+  expect(await back.boundingBox()).toEqual(initialBack);
+  await page.screenshot({ path: testInfo.outputPath('guest-back-focus.png') });
+  await page.setViewportSize({ width: 844, height: 390 });
+  await nextFrames(page);
+  await expect(back).toBeInViewport();
+  await expect(page.locator('.css-topbar .css-badge')).toHaveCount(0);
+  const button = await back.boundingBox();
+  const banner = await rules.boundingBox();
+  if (!button || !banner) throw new Error('Missing header navigation');
+  expect(Math.abs(button.y + button.height / 2 - banner.y - banner.height / 2)).toBeLessThan(6);
+  await page.screenshot({ path: testInfo.outputPath('guest-back-landscape.png') });
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('main-menu');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('character-select');
+  await bothPick(page);
+  await tap(page, 'ArrowUp');
+  await expect(rules).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { name: 'Rules', exact: true })).toBeVisible();
+  expect(await screen(page)).toBe('character-select');
+  await page.keyboard.press('Escape');
+  await tap(page, 'ArrowLeft');
+  await expect(back).toBeFocused();
+  expect(await picks(page)).toEqual(['capsule', 'capsule', null, null]);
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('main-menu');
+});
+
+test('controllers reach character-select header actions before joining, and Back wins over a simultaneous start', async ({
+  page,
+}) => {
+  await installPads(page, 2);
+  await toCharacterSelect(page);
+  const rules = page.getByRole('button', { name: 'Match rules', exact: true });
+  const back = page.getByRole('button', { name: 'Back', exact: true });
+  await flick(page, 0, 0, -1);
+  await expect(rules).toBeFocused();
+  await press(page, 0, PAD.a);
+  await expect(page.getByRole('heading', { name: 'Rules', exact: true })).toBeVisible();
+  expect((await characterSelect(page))?.devices).toEqual([null, null, null, null]);
+  await press(page, 0, PAD.b);
+  await expect(page.getByRole('heading', { name: 'Rules', exact: true })).toBeHidden();
+  expect(await screen(page)).toBe('character-select');
+  await flick(page, 0, -1, 0);
+  await expect(back).toBeFocused();
+  await press(page, 0, PAD.a);
+  await expect.poll(() => screen(page)).toBe('main-menu');
+  await press(page, 0, PAD.a);
+  await expect.poll(() => screen(page)).toBe('character-select');
+  for (const pad of [0, 1]) {
+    await press(page, pad, PAD.a);
+    await press(page, pad, PAD.a);
+  }
+  await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule', null, null]);
+  await flick(page, 0, 0, -1);
+  await expect(rules).toBeFocused();
+  await press(page, 0, PAD.a);
+  await expect(page.getByRole('heading', { name: 'Rules', exact: true })).toBeVisible();
+  await press(page, 0, PAD.b);
+  await flick(page, 0, -1, 0);
+  await expect(back).toBeFocused();
+  await setPads(page, [
+    [0, { button: PAD.a, on: true }],
+    [1, { button: PAD.start, on: true }],
+  ]);
+  await nextFrames(page);
+  await setPads(page, [
+    [0, { button: PAD.a, on: false }],
+    [1, { button: PAD.start, on: false }],
+  ]);
+  await expect.poll(() => screen(page)).toBe('main-menu');
+});
+
+test('matches omit the control instructions overlay', async ({ page }) => {
+  await startMatch(page);
+  await expect(page.locator('#app > .controls')).toHaveCount(0);
+  await expect(page.getByText('Left keys:', { exact: false })).toHaveCount(0);
+});

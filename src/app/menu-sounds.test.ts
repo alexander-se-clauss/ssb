@@ -49,6 +49,14 @@ describe('selectCue', () => {
     expect(cueFor(onePlayer, { type: 'move', player: 0, dx: 1, dy: 0 })).toBe('menu-move');
   });
 
+  it('plays menu cues while browsing before joining', () => {
+    const empty = createSelect(4);
+    const banner = apply(empty, { type: 'guest-move', device: 3, dx: 0, dy: -1 });
+    expect(selectCue(empty, banner)).toBe('menu-move');
+    expect(cueFor(banner, { type: 'guest-confirm', device: 3 })).toBe('menu-confirm');
+    expect(selectCue(banner, banner)).toBeNull();
+  });
+
   it('plays confirm when the rules open and back when they close', () => {
     const onBanner = apply(onePlayer, { type: 'move', player: 0, dx: 0, dy: -1 });
     expect(cueFor(onBanner, { type: 'confirm', player: 0 })).toBe('menu-confirm');

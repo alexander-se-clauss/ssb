@@ -2,20 +2,26 @@
  * Character select as plain data and pure functions: a device joins the first free player slot by
  * pressing attack, then that player moves a cursor over the grid, picks with attack and un-picks
  * with special; special without a pick leaves the slot, and later players move up so slots have no
- * gaps. Above the grid sits the rules banner, as in Melee: moving up onto it and picking opens the
- * rules. The screen (character-select-view.ts) only draws this state and feeds it actions.
+ * gaps. Before joining, devices navigate only rules and Back; down clears header focus so
+ * attack can join. Confirming a header action opens rules or leaves the screen. The screen (character-select-view.ts) only draws this state and feeds it actions.
  */
 import type { CharacterDef, PlayerInput, PlayerSlot } from '../core';
 import { menuCommands, type MenuCommand } from './menu-commands';
 
 /** Cursor position of a player who is on the rules banner instead of the grid. */
 export const RULES_CURSOR = -1;
+/** The Back button sits to the left of the rules banner. */
+export const BACK_CURSOR = -2;
 
 export interface SelectState {
   /** Which input device (index in the app's device list) has joined each slot, or null. */
   readonly devices: readonly (number | null)[];
-  /** Grid index under each player's cursor, or `RULES_CURSOR`. */
+  /** Grid index under each player's cursor, or a header button's cursor. */
   readonly cursors: readonly number[];
+  /** Devices can browse the screen before registering a player slot. */
+  readonly guestCursors: Readonly<Record<number, number>>;
+  /** Last device to act, used to synchronize visible header focus with keyboard Enter. */
+  readonly activeDevice: number | null;
   /** Picked character id per player, or null while still choosing. */
   readonly picks: readonly (string | null)[];
   /** The rules overlay is open; players' grid controls pause meanwhile. */
@@ -30,6 +36,13 @@ export type SelectAction =
   | { readonly type: 'start'; readonly player: PlayerSlot }
   /** A device not playing yet pressed attack: it takes the first free slot. */
   | { readonly type: 'join'; readonly device: number }
+  | {
+      readonly type: 'guest-move';
+      readonly device: number;
+      readonly dx: number;
+      readonly dy: number;
+    }
+  | { readonly type: 'guest-confirm'; readonly device: number }
   /** Opens or closes the rules overlay, e.g. by mouse or from the overlay itself. */
   | { readonly type: 'rules'; readonly open: boolean };
 
@@ -37,6 +50,8 @@ export type SelectAction =
 export const createSelect = (slots: number): SelectState => ({
   devices: Array.from({ length: slots }, () => null),
   cursors: Array.from({ length: slots }, () => 0),
+  guestCursors: {},
+  activeDevice: null,
   picks: Array.from({ length: slots }, () => null),
   rulesOpen: false,
 });
@@ -57,10 +72,11 @@ const wrap = (value: number, size: number): number => ((value % size) + size) % 
 
 /**
  * Left/right walks the roster in order; up/down jumps a row, staying in the column. Up from the
- * top row reaches the rules banner, and down from the banner returns to the first fighter.
+ * top row reaches rules; left from rules reaches Back. Down from either returns to the roster.
  */
 const moveCursor = (index: number, dx: number, dy: number, count: number, columns: number) => {
-  if (index === RULES_CURSOR) return dy > 0 ? 0 : RULES_CURSOR;
+  if (index === BACK_CURSOR) return dy > 0 ? 0 : dx > 0 ? RULES_CURSOR : BACK_CURSOR;
+  if (index === RULES_CURSOR) return dy > 0 ? 0 : dx < 0 ? BACK_CURSOR : RULES_CURSOR;
   if (dy < 0 && index < columns) return RULES_CURSOR;
   if (dx !== 0) return wrap(index + dx, count);
   const rows = Math.ceil(count / columns);
@@ -94,13 +110,41 @@ export const reduceSelect = (
   if (action.type === 'rules') return { ...state, rulesOpen: action.open };
   // While the rules are open, special closes them and everything else waits.
   if (state.rulesOpen) return action.type === 'cancel' ? { ...state, rulesOpen: false } : state;
-  if (action.type === 'join') {
-    const slot = state.devices.indexOf(null);
-    if (slot < 0 || state.devices.includes(action.device)) return state;
+  if (action.type === 'guest-move') {
+    if (state.devices.includes(action.device) || roster.length === 0) return state;
+    const cursor = state.guestCursors[action.device] ?? RULES_CURSOR;
+    const guestCursors = Object.fromEntries(
+      Object.entries(state.guestCursors).filter(([device]) => Number(device) !== action.device),
+    );
+    if (action.dy <= 0) {
+      guestCursors[action.device] =
+        action.dx < 0 ? BACK_CURSOR : action.dx > 0 ? RULES_CURSOR : cursor;
+    }
     return {
       ...state,
+      activeDevice: action.device,
+      guestCursors,
+    };
+  }
+  if (action.type === 'join' || action.type === 'guest-confirm') {
+    const cursor = state.guestCursors[action.device] ?? 0;
+    if (action.type === 'guest-confirm') {
+      if (state.devices.includes(action.device)) return state;
+      if (cursor === RULES_CURSOR)
+        return { ...state, activeDevice: action.device, rulesOpen: true };
+      if (cursor === BACK_CURSOR) return state;
+    }
+    const slot = state.devices.indexOf(null);
+    if (slot < 0 || state.devices.includes(action.device)) return state;
+    const guestCursors = Object.fromEntries(
+      Object.entries(state.guestCursors).filter(([device]) => Number(device) !== action.device),
+    );
+    return {
+      ...state,
+      guestCursors,
+      activeDevice: action.device,
       devices: replace(state.devices, slot, action.device),
-      cursors: replace(state.cursors, slot, 0),
+      cursors: replace(state.cursors, slot, Math.max(0, cursor)),
       picks: replace(state.picks, slot, null),
     };
   }
@@ -116,6 +160,7 @@ export const reduceSelect = (
       if (roster.length === 0) return state;
       return {
         ...state,
+        activeDevice: state.devices[player] ?? null,
         cursors: replace(
           state.cursors,
           player,
@@ -123,14 +168,23 @@ export const reduceSelect = (
         ),
       };
     case 'confirm': {
-      if (cursor === RULES_CURSOR) return { ...state, rulesOpen: true };
+      if (cursor === RULES_CURSOR)
+        return { ...state, activeDevice: state.devices[player] ?? null, rulesOpen: true };
       const character = roster[cursor];
       if (picked !== null || !character) return state;
-      return { ...state, picks: replace(state.picks, player, character.id) };
+      return {
+        ...state,
+        activeDevice: state.devices[player] ?? null,
+        picks: replace(state.picks, player, character.id),
+      };
     }
     case 'cancel':
       if (picked === null) return leave(state, player);
-      return { ...state, picks: replace(state.picks, player, null) };
+      return {
+        ...state,
+        activeDevice: state.devices[player] ?? null,
+        picks: replace(state.picks, player, null),
+      };
   }
 };
 
@@ -144,8 +198,18 @@ export const requestsStart = (state: SelectState, action: SelectAction): boolean
   const { player } = action;
   if (state.rulesOpen || state.devices[player] == null) return false;
   return (
-    action.type === 'start' ||
-    (state.picks[player] != null && state.cursors[player] !== RULES_CURSOR)
+    action.type === 'start' || (state.picks[player] != null && (state.cursors[player] ?? 0) >= 0)
+  );
+};
+
+/** Confirming Back leaves the screen, independently of whether this device has joined. */
+export const requestsBack = (state: SelectState, action: SelectAction): boolean => {
+  if (state.rulesOpen) return false;
+  if (action.type === 'guest-confirm') return state.guestCursors[action.device] === BACK_CURSOR;
+  return (
+    action.type === 'confirm' &&
+    state.devices[action.player] != null &&
+    state.cursors[action.player] === BACK_CURSOR
   );
 };
 

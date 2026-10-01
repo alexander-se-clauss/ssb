@@ -41,6 +41,9 @@ Menus share an original arena identity: fighter silhouettes, etched orbits, angl
 bold titles connected to the screen framing. VS. Mode is the dominant main-menu destination;
 settings, controls, stage selection and results each use a composition suited to their content.
 Character select and rules retain their match-setup layouts within the same visual family.
+Keyboard and controller users can reach rules and Back before or after joining a player slot.
+Before joining, only these header actions can be selected; fighter cursors appear after joining.
+In Options, directions navigate selections; confirming Screen toggles fullscreen.
 Hover and keyboard/gamepad focus use outline, shadow and position cues, with brief feedback that
 does not delay navigation. Layouts adapt to narrow and short viewports and respect reduced motion.
 
