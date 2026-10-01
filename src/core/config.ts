@@ -9,12 +9,12 @@ export const TICK_MS = 1000 / TICK_RATE;
 
 export const DEFAULT_RULES: MatchRules = { mode: 'stock', stocks: 3, timeLimitSeconds: 120 };
 
-/** What the options screen lets players pick. */
+/** What the rules overlay on character select lets players pick. */
 export const RULE_LIMITS = {
   minStocks: 1,
-  maxStocks: 9,
+  maxStocks: 99,
   minTimeLimitSeconds: 60,
-  maxTimeLimitSeconds: 600,
+  maxTimeLimitSeconds: 3600,
   timeLimitStepSeconds: 60,
 } as const;
 

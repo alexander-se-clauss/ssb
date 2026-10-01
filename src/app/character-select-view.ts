@@ -1,7 +1,6 @@
 import { markHandled, wasHandled } from './key-events';
 import type { CharacterDef, MatchRules } from '../core';
 import { RULES_CURSOR, type SelectState } from './character-select';
-import type { ControlLabels } from './controls';
 import { ruleSummary } from './rules-menu';
 
 /** Same order as the HUD's player colours. */
@@ -49,7 +48,6 @@ export class CharacterSelectView {
     container: HTMLElement,
     private readonly roster: readonly CharacterDef[],
     columns: number,
-    private readonly controls: readonly ControlLabels[],
     private readonly callbacks: CharacterSelectCallbacks,
   ) {
     this.root = document.createElement('div');
@@ -131,14 +129,7 @@ export class CharacterSelectView {
         return slot;
       }),
     );
-    this.footer.textContent = ready
-      ? 'Ready! Press Enter'
-      : [
-          ...this.controls.map(
-            (keys, player) => `P${player + 1}: ${keys.attack} pick · ${keys.special} cancel`,
-          ),
-          'Move up to the rules banner to change the rules · Esc: back',
-        ].join('\n');
+    this.footer.textContent = ready ? 'Ready! Press Enter' : '';
     this.footer.classList.toggle('ready', ready);
   }
 

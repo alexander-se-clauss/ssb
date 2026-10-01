@@ -8,13 +8,9 @@ export interface RuleRow {
   readonly label: string;
 }
 
-/** Steps `value` by `delta` within [min, max], wrapping around at both ends. */
-const cycle = (value: number, delta: number, min: number, max: number): number => {
-  const next = value + delta;
-  if (next > max) return min;
-  if (next < min) return max;
-  return next;
-};
+/** Steps `value` by `delta`, staying within [min, max]. */
+const step = (value: number, delta: number, min: number, max: number): number =>
+  Math.min(max, Math.max(min, value + delta));
 
 /** The rules after pressing left (-1) or right (+1) on one row. */
 export const adjustRule = (rules: MatchRules, field: RuleField, delta: 1 | -1): MatchRules => {
@@ -24,12 +20,12 @@ export const adjustRule = (rules: MatchRules, field: RuleField, delta: 1 | -1): 
     case 'stocks':
       return {
         ...rules,
-        stocks: cycle(rules.stocks, delta, RULE_LIMITS.minStocks, RULE_LIMITS.maxStocks),
+        stocks: step(rules.stocks, delta, RULE_LIMITS.minStocks, RULE_LIMITS.maxStocks),
       };
     case 'time':
       return {
         ...rules,
-        timeLimitSeconds: cycle(
+        timeLimitSeconds: step(
           rules.timeLimitSeconds,
           delta * RULE_LIMITS.timeLimitStepSeconds,
           RULE_LIMITS.minTimeLimitSeconds,

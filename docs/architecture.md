@@ -52,7 +52,7 @@ browsers, rendering or networking.
 stage select, match, results) and the allowed moves between them, as plain data with a unit test.
 `App` shows menu screens as HTML over the canvas. As in Melee, character select is where a match
 is set up: its top bar holds Back and the rules banner, which opens the rules overlay (a second
-`MenuPanel`). Options holds game settings only. Character select reads each player's
+`MenuPanel`, editing a draft that applies on Done). Options holds game settings only. Character select reads each player's
 `InputSource` (press detection in `character-select.ts`), so gamepads will work there
 unchanged. The other menus (`MenuPanel`, stage select and the rules overlay included) still read
 DOM keys. Menus with a way back show a Back button in their top left corner, except results and

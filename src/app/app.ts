@@ -84,6 +84,8 @@ export class App {
   /** The rules overlay on top of character select. */
   private readonly rulesPanel: MenuPanel;
   private rulesShown = false;
+  /** The rules being edited in the overlay; they apply only on Done. */
+  private rulesDraft: MatchRules = DEFAULT_RULES;
   private readonly characterSelect: CharacterSelectView;
 
   constructor(
@@ -92,17 +94,11 @@ export class App {
   ) {
     this.menu = new MenuPanel(container);
     this.rulesPanel = new MenuPanel(container);
-    this.characterSelect = new CharacterSelectView(
-      container,
-      CHARACTERS,
-      GRID_COLUMNS,
-      adapters.controls,
-      {
-        start: () => this.confirmCharacters(),
-        back: () => this.navigate('main-menu'),
-        openRules: () => this.setRulesOpen(true),
-      },
-    );
+    this.characterSelect = new CharacterSelectView(container, CHARACTERS, GRID_COLUMNS, {
+      start: () => this.confirmCharacters(),
+      back: () => this.navigate('main-menu'),
+      openRules: () => this.setRulesOpen(true),
+    });
     document.addEventListener('fullscreenchange', () => {
       if (this.screen === 'options') this.menu.show(this.menuFor('options'), 0);
     });
@@ -197,10 +193,8 @@ export class App {
       case 'main-menu':
         return {
           heading: 'Main menu',
-          text: 'Esc to go back',
           options: MAIN_MENU.map((entry) => ({
             label: entry.label,
-            description: entry.description,
             select: () => this.navigate(entry.to),
           })),
           back: () => this.navigate('title'),
@@ -208,17 +202,15 @@ export class App {
       case 'options':
         return {
           heading: 'Options',
-          text: '←/→ to change · Esc to go back',
           options: [
             {
               label: `Screen: ${document.fullscreenElement ? 'Fullscreen' : 'Window'}`,
-              description: 'Play in a window or fill the whole screen.',
               select: () => this.toggleFullscreen(),
               adjust: () => this.toggleFullscreen(),
+              stepLabels: ['‹', '›'],
             },
             {
               label: 'Controls',
-              description: 'See which keys each player uses.',
               select: () => this.navigate('controls'),
             },
           ],
@@ -227,14 +219,12 @@ export class App {
       case 'controls':
         return {
           heading: 'Controls',
-          text: 'Esc to go back',
           body: renderControls(this.adapters.controls),
           back: () => this.navigate('options'),
         };
       case 'stage-select':
         return {
           heading: 'Choose a stage',
-          text: 'Enter to pick · Esc to go back',
           options: STAGES.map((stage) => ({
             label: stage.name,
             select: () => this.chooseStage(stage.id),
@@ -291,20 +281,27 @@ export class App {
   }
 
   private rulesMenu(): MenuContent {
-    const close = (): void => this.setRulesOpen(false);
+    const done = (): void => {
+      this.rules = this.rulesDraft;
+      this.setRulesOpen(false);
+    };
     return {
       heading: 'Rules',
-      text: '←/→ to change · Esc or special to close',
       variant: 'menu-overlay',
       options: [
-        ...ruleRows(this.rules).map((row, index) => ({
+        ...ruleRows(this.rulesDraft).map((row, index) => ({
           label: row.label,
-          select: () => this.changeRule(row.field, 1, index),
+          // Enter flips the rule; numbers change only with Left/Right or − and +.
+          select: () => {
+            if (row.field === 'mode') this.changeRule(row.field, 1, index);
+          },
           adjust: (delta: 1 | -1) => this.changeRule(row.field, delta, index),
+          ...(row.field === 'mode' ? { stepLabels: ['‹', '›'] as const } : {}),
         })),
-        { label: 'Done', select: close },
+        { label: 'Done', select: done },
       ],
-      back: close,
+      // Escape (or special) closes without applying the changes.
+      back: () => this.setRulesOpen(false),
       backButton: false,
     };
   }
@@ -321,6 +318,7 @@ export class App {
     const open = this.select?.rulesOpen ?? false;
     if (open === this.rulesShown) return;
     this.rulesShown = open;
+    this.rulesDraft = this.rules;
     if (open) this.rulesPanel.show(this.rulesMenu());
     else this.rulesPanel.hide();
   }
@@ -349,9 +347,8 @@ export class App {
   }
 
   private changeRule(field: RuleField, delta: 1 | -1, row: number): void {
-    this.rules = adjustRule(this.rules, field, delta);
+    this.rulesDraft = adjustRule(this.rulesDraft, field, delta);
     this.rulesPanel.show(this.rulesMenu(), row);
-    if (this.select) this.characterSelect.render(this.select, allReady(this.select), this.rules);
   }
 
   private startMatch(): void {

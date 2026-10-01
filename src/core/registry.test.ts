@@ -46,6 +46,18 @@ describe('match setup from registry ids', () => {
     expect(() => createMatch({ ...setup, players })).toThrow(/unknown character "nobody"/i);
   });
 
+  it('accepts up to 99 lives and 60 minutes, and nothing beyond', () => {
+    const rules = (stocks: number, timeLimitSeconds: number) => ({
+      ...setup,
+      rules: { mode: 'stock' as const, stocks, timeLimitSeconds },
+    });
+    expect(() => createMatch(rules(99, 3600))).not.toThrow();
+    expect(() => createMatch(rules(1, 60))).not.toThrow();
+    expect(() => createMatch(rules(100, 120))).toThrow(/stocks out of range/i);
+    expect(() => createMatch(rules(3, 3660))).toThrow(/time limit out of range/i);
+    expect(() => createMatch(rules(0, 120))).toThrow(/stocks out of range/i);
+  });
+
   it('rejects a match without players', () => {
     expect(() => createMatch({ ...setup, players: [] })).toThrow(/at least one player/);
   });

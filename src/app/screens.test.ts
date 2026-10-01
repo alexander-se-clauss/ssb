@@ -62,9 +62,8 @@ describe('options', () => {
 });
 
 describe('main menu', () => {
-  it('offers VS. Mode and Options, each with a description', () => {
+  it('offers VS. Mode and Options', () => {
     expect(MAIN_MENU.map((entry) => entry.label)).toEqual(['VS. Mode', 'Options']);
-    for (const entry of MAIN_MENU) expect(entry.description).not.toBe('');
   });
 
   it('leads to character select and options', () => {
