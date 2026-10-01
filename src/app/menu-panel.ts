@@ -1,7 +1,9 @@
 /**
  * A plain HTML menu drawn over the canvas: a heading, a line of text and a column of
  * buttons. Up/Down (or W/S) move the focus, Enter picks, Left/Right (or A/D) change a setting,
- * Escape goes back. A menu without buttons (the title screen) waits for Enter or Space instead.
+ * Escape or the Back button in the corner goes back. A menu without buttons (the title screen)
+ * waits for Enter or Space instead. As in Melee, the focused option's description shows at the
+ * bottom.
  */
 import { markHandled, wasHandled } from './key-events';
 
@@ -10,6 +12,8 @@ export interface MenuOption {
   readonly select: () => void;
   /** Left (-1) or Right (+1) on a setting row. */
   readonly adjust?: (delta: 1 | -1) => void;
+  /** Shown at the bottom while this option is focused. */
+  readonly description?: string;
 }
 
 export interface MenuContent {
@@ -22,8 +26,10 @@ export interface MenuContent {
   readonly options?: readonly MenuOption[];
   /** Enter or Space on a menu without buttons, e.g. "press start". */
   readonly start?: () => void;
-  /** Escape. */
+  /** Escape, and the Back button in the top left corner. */
   readonly back?: () => void;
+  /** False hides the Back button, e.g. when an option already says where back goes. */
+  readonly backButton?: boolean;
   /** Drawn next to the buttons for the focused option, e.g. a stage preview. */
   readonly preview?: (optionIndex: number) => Node | null;
 }
@@ -95,6 +101,22 @@ export class MenuPanel {
       button.addEventListener('click', option.select);
       return button;
     });
+    const description = document.createElement('p');
+    description.className = 'menu-description';
+    const describe = (index: number): void => {
+      description.textContent = content.options?.[index]?.description ?? '';
+      description.hidden = description.textContent === '';
+    };
+    this.buttons.forEach((button, index) =>
+      button.addEventListener('focus', () => describe(index)),
+    );
+    describe(-1);
+    const back = document.createElement('button');
+    back.type = 'button';
+    back.className = 'menu-back';
+    back.textContent = '◀ Back';
+    back.hidden = !content.back || content.backButton === false;
+    if (content.back) back.addEventListener('click', content.back);
     const preview = content.preview;
     const previewBox = document.createElement('div');
     previewBox.className = 'menu-preview';
@@ -109,7 +131,15 @@ export class MenuPanel {
       );
     }
     this.root.className = content.variant ? `menu ${content.variant}` : 'menu';
-    this.root.replaceChildren(title, body, previewBox, content.body ?? '', ...this.buttons);
+    this.root.replaceChildren(
+      back,
+      title,
+      body,
+      previewBox,
+      content.body ?? '',
+      ...this.buttons,
+      description,
+    );
     this.root.hidden = false;
     this.content = content;
     (this.buttons[focus] ?? this.buttons[0])?.focus();

@@ -23,6 +23,7 @@ describe('screen state machine', () => {
   it('allows going back one step from every menu', () => {
     expect(canGo('main-menu', 'title')).toBe(true);
     expect(canGo('options', 'main-menu')).toBe(true);
+    expect(canGo('controls', 'options')).toBe(true);
     expect(canGo('character-select', 'main-menu')).toBe(true);
     expect(canGo('stage-select', 'character-select')).toBe(true);
   });
@@ -54,9 +55,16 @@ describe('screen state machine', () => {
   });
 });
 
+describe('options', () => {
+  it('leads to the controls screen', () => {
+    expect(canGo('options', 'controls')).toBe(true);
+  });
+});
+
 describe('main menu', () => {
-  it('offers Versus and Options', () => {
-    expect(MAIN_MENU.map((entry) => entry.label)).toEqual(['Versus', 'Options']);
+  it('offers VS. Mode and Options, each with a description', () => {
+    expect(MAIN_MENU.map((entry) => entry.label)).toEqual(['VS. Mode', 'Options']);
+    for (const entry of MAIN_MENU) expect(entry.description).not.toBe('');
   });
 
   it('leads to character select and options', () => {

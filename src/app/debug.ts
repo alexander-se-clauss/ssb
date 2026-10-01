@@ -12,9 +12,9 @@ export interface DebugHandle {
   screen(): Screen;
   /** The running match, the last finished one on the results screen, otherwise undefined. */
   state(): MatchState | undefined;
-  /** Each player's cursor and pick while character select is open, otherwise undefined. */
+  /** Each player's cursor and pick, and whether the rules are open, during character select. */
   characterSelect(): SelectState | undefined;
-  /** The rules the next match will use, as set on the options screen. */
+  /** The rules the next match will use, as set in the rules overlay on character select. */
   rules(): MatchRules;
   restart(): void;
 }

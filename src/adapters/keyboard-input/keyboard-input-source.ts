@@ -35,6 +35,45 @@ export const PLAYER_TWO_KEYS: KeyMap = {
   shield: 'ShiftRight',
 };
 
+/** Readable names for the keys a player uses, for the controls screen. */
+export interface KeyLabels {
+  readonly move: string;
+  readonly jump: string;
+  readonly down: string;
+  readonly attack: string;
+  readonly special: string;
+}
+
+const KEY_NAMES: Readonly<Record<string, string>> = {
+  ArrowLeft: '←',
+  ArrowRight: '→',
+  ArrowUp: '↑',
+  ArrowDown: '↓',
+  Period: '.',
+  Slash: '/',
+  Comma: ',',
+  Space: 'Space',
+  ShiftLeft: 'Left Shift',
+  ShiftRight: 'Right Shift',
+};
+
+/** `KeyA` -> `A`, `Numpad0` -> `Num 0`, `ArrowLeft` -> `←`. */
+const keyName = (code: string): string =>
+  KEY_NAMES[code] ??
+  code
+    .replace(/^Key/, '')
+    .replace(/^Digit/, '')
+    .replace(/^Numpad(.+)$/, 'Num $1');
+
+export const describeKeys = (keys: KeyMap): KeyLabels => ({
+  move: `${keyName(keys.left)} / ${keyName(keys.right)}`,
+  // Tap-jump: up jumps too.
+  jump: `${keyName(keys.up)} or ${keyName(keys.jump)}`,
+  down: keyName(keys.down),
+  attack: keyName(keys.attack),
+  special: keyName(keys.special),
+});
+
 export class KeyboardInputSource implements InputSource {
   private readonly held = new Set<string>();
   /** Keys pressed since the last sample, so a tap shorter than one frame is not lost. */

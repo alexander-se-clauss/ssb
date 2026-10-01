@@ -8,6 +8,7 @@ import {
   KeyboardInputSource,
   PLAYER_ONE_KEYS,
   PLAYER_TWO_KEYS,
+  describeKeys,
 } from '../adapters/keyboard-input/keyboard-input-source';
 import { LocalGameSession } from '../adapters/local-session/local-game-session';
 import { ThreeView } from '../adapters/three-renderer/three-view';
@@ -22,6 +23,7 @@ const app = new App(container, {
   inputs: [new KeyboardInputSource(PLAYER_ONE_KEYS), new KeyboardInputSource(PLAYER_TWO_KEYS)],
   createSession: (config) => new LocalGameSession(createMatch(config)),
   createViews: (root, stage) => [new ThreeView(root, stage), new DomHud(root)],
+  controls: [describeKeys(PLAYER_ONE_KEYS), describeKeys(PLAYER_TWO_KEYS)],
 });
 
 installDebugHandle(app);

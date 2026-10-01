@@ -18,10 +18,11 @@ import {
   type SelectState,
 } from './character-select';
 import { CharacterSelectView } from './character-select-view';
+import { renderControls, type ControlLabels } from './controls';
 import { MenuPanel, type MenuContent } from './menu-panel';
 import { renderResults, resultHeading } from './results';
+import { adjustRule, ruleRows, type RuleField } from './rules-menu';
 import { renderPreview } from './stage-preview';
-import { adjustRule, optionRows, type RuleField } from './options';
 import { INITIAL_SCREEN, MAIN_MENU, go, nextScreens, type Screen } from './screens';
 
 /** Characters per row on the character select grid. */
@@ -37,6 +38,7 @@ const LABELS: Readonly<Record<Screen, string>> = {
   title: 'Title',
   'main-menu': 'Main menu',
   options: 'Options',
+  controls: 'Controls',
   'character-select': 'Character select',
   'stage-select': 'Stage select',
   match: 'Match',
@@ -49,6 +51,8 @@ export interface AppAdapters {
   /** Starts a match: locally today, on a server later. */
   readonly createSession: (config: MatchConfig) => GameSession;
   readonly createViews: (container: HTMLElement, stage: StageDef) => readonly GameView[];
+  /** Key names per player, for the controls screen. */
+  readonly controls: readonly ControlLabels[];
 }
 
 /** Everything that exists only while a match is running. */
@@ -66,7 +70,7 @@ export class App {
   private screen: Screen = INITIAL_SCREEN;
   private match: RunningMatch | undefined;
   private lastResult: MatchState | undefined;
-  /** Chosen on the options screen; used by every following match. */
+  /** Chosen in the rules overlay on character select; used by every following match. */
   private rules: MatchRules = DEFAULT_RULES;
   /** Character select progress while that screen is open. */
   private select: SelectState | undefined;
@@ -77,6 +81,9 @@ export class App {
   /** Last frame's input per player, for press detection in menus. */
   private previousInputs: PlayerInput[] = [];
   private readonly menu: MenuPanel;
+  /** The rules overlay on top of character select. */
+  private readonly rulesPanel: MenuPanel;
+  private rulesShown = false;
   private readonly characterSelect: CharacterSelectView;
 
   constructor(
@@ -84,9 +91,20 @@ export class App {
     private readonly adapters: AppAdapters,
   ) {
     this.menu = new MenuPanel(container);
-    this.characterSelect = new CharacterSelectView(container, CHARACTERS, GRID_COLUMNS, {
-      start: () => this.confirmCharacters(),
-      back: () => this.navigate('main-menu'),
+    this.rulesPanel = new MenuPanel(container);
+    this.characterSelect = new CharacterSelectView(
+      container,
+      CHARACTERS,
+      GRID_COLUMNS,
+      adapters.controls,
+      {
+        start: () => this.confirmCharacters(),
+        back: () => this.navigate('main-menu'),
+        openRules: () => this.setRulesOpen(true),
+      },
+    );
+    document.addEventListener('fullscreenchange', () => {
+      if (this.screen === 'options') this.menu.show(this.menuFor('options'), 0);
     });
     this.enter(this.screen);
   }
@@ -145,6 +163,8 @@ export class App {
   }
 
   private enter(screen: Screen): void {
+    // Lets the CSS show things on one screen only, like the key hints during a match.
+    this.container.dataset['screen'] = screen;
     if (screen === 'match') {
       this.startMatch();
       return;
@@ -153,7 +173,7 @@ export class App {
       this.select = createSelect(this.adapters.inputs.length);
       // Start press detection from the current state, so a held button doesn't pick at once.
       this.previousInputs = this.adapters.inputs.map((source) => source.sample());
-      this.characterSelect.render(this.select, false);
+      this.characterSelect.render(this.select, false, this.rules);
       return;
     }
     const focus = screen === 'stage-select' ? STAGES.findIndex((s) => s.id === this.stageId) : 0;
@@ -180,6 +200,7 @@ export class App {
           text: 'Esc to go back',
           options: MAIN_MENU.map((entry) => ({
             label: entry.label,
+            description: entry.description,
             select: () => this.navigate(entry.to),
           })),
           back: () => this.navigate('title'),
@@ -189,26 +210,35 @@ export class App {
           heading: 'Options',
           text: '←/→ to change · Esc to go back',
           options: [
-            ...optionRows(this.rules).map((row, index) => ({
-              label: row.label,
-              select: () => this.changeRule(row.field, 1, index),
-              adjust: (delta: 1 | -1) => this.changeRule(row.field, delta, index),
-            })),
-            { label: 'Back', select: () => this.navigate('main-menu') },
+            {
+              label: `Screen: ${document.fullscreenElement ? 'Fullscreen' : 'Window'}`,
+              description: 'Play in a window or fill the whole screen.',
+              select: () => this.toggleFullscreen(),
+              adjust: () => this.toggleFullscreen(),
+            },
+            {
+              label: 'Controls',
+              description: 'See which keys each player uses.',
+              select: () => this.navigate('controls'),
+            },
           ],
           back: () => this.navigate('main-menu'),
+        };
+      case 'controls':
+        return {
+          heading: 'Controls',
+          text: 'Esc to go back',
+          body: renderControls(this.adapters.controls),
+          back: () => this.navigate('options'),
         };
       case 'stage-select':
         return {
           heading: 'Choose a stage',
           text: 'Enter to pick · Esc to go back',
-          options: [
-            ...STAGES.map((stage) => ({
-              label: stage.name,
-              select: () => this.chooseStage(stage.id),
-            })),
-            { label: 'Back', select: () => this.navigate('character-select') },
-          ],
+          options: STAGES.map((stage) => ({
+            label: stage.name,
+            select: () => this.chooseStage(stage.id),
+          })),
           back: () => this.navigate('character-select'),
           preview: (index) => {
             const stage = STAGES[index];
@@ -224,6 +254,7 @@ export class App {
             { label: 'Main menu', select: () => this.navigate('main-menu') },
           ],
           back: () => this.navigate('main-menu'),
+          backButton: false,
         };
       default:
         // The match has no menu; this only keeps the switch exhaustive.
@@ -255,7 +286,51 @@ export class App {
       this.previousInputs[player] = current;
     });
     this.select = state;
-    this.characterSelect.render(state, allReady(state));
+    this.syncRulesPanel();
+    this.characterSelect.render(state, allReady(state), this.rules);
+  }
+
+  private rulesMenu(): MenuContent {
+    const close = (): void => this.setRulesOpen(false);
+    return {
+      heading: 'Rules',
+      text: '←/→ to change · Esc or special to close',
+      variant: 'menu-overlay',
+      options: [
+        ...ruleRows(this.rules).map((row, index) => ({
+          label: row.label,
+          select: () => this.changeRule(row.field, 1, index),
+          adjust: (delta: 1 | -1) => this.changeRule(row.field, delta, index),
+        })),
+        { label: 'Done', select: close },
+      ],
+      back: close,
+      backButton: false,
+    };
+  }
+
+  private setRulesOpen(open: boolean): void {
+    if (!this.select) return;
+    this.select = reduceSelect(this.select, { type: 'rules', open }, CHARACTERS, GRID_COLUMNS);
+    this.syncRulesPanel();
+    this.characterSelect.render(this.select, allReady(this.select), this.rules);
+  }
+
+  /** Shows or hides the rules overlay to match the character select state. */
+  private syncRulesPanel(): void {
+    const open = this.select?.rulesOpen ?? false;
+    if (open === this.rulesShown) return;
+    this.rulesShown = open;
+    if (open) this.rulesPanel.show(this.rulesMenu());
+    else this.rulesPanel.hide();
+  }
+
+  private toggleFullscreen(): void {
+    // The options menu redraws on `fullscreenchange`. Browsers may refuse, e.g. in tests.
+    const change = document.fullscreenElement
+      ? document.exitFullscreen()
+      : document.documentElement.requestFullscreen();
+    change.catch(() => undefined);
   }
 
   /** Enter on character select: only here do the picks become the next match's fighters. */
@@ -269,12 +344,14 @@ export class App {
 
   private leaveCharacterSelect(): void {
     this.select = undefined;
+    this.syncRulesPanel();
     this.characterSelect.hide();
   }
 
   private changeRule(field: RuleField, delta: 1 | -1, row: number): void {
     this.rules = adjustRule(this.rules, field, delta);
-    this.menu.show(this.menuFor('options'), row);
+    this.rulesPanel.show(this.rulesMenu(), row);
+    if (this.select) this.characterSelect.render(this.select, allReady(this.select), this.rules);
   }
 
   private startMatch(): void {

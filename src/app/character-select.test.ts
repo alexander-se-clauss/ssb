@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { NEUTRAL_INPUT, inputOf, type CharacterDef } from '../core';
 import {
+  RULES_CURSOR,
   allReady,
   createSelect,
   menuActions,
@@ -26,6 +27,7 @@ describe('character select', () => {
     const state = createSelect(2);
     expect(state.cursors).toEqual([0, 0]);
     expect(state.picks).toEqual([null, null]);
+    expect(state.rulesOpen).toBe(false);
     expect(allReady(state)).toBe(false);
   });
 
@@ -60,13 +62,15 @@ describe('character select', () => {
     expect(state.picks[0]).toBe('b');
   });
 
-  it('keeps the cursor still while a player has picked', () => {
+  it('lets a player move on after picking, as in Melee, keeping the pick', () => {
     const state = apply(
       createSelect(2),
       { type: 'confirm', player: 0 },
       { type: 'move', player: 0, dx: 1, dy: 0 },
+      { type: 'confirm', player: 0 },
     );
-    expect(state.cursors[0]).toBe(0);
+    expect(state.cursors[0]).toBe(1);
+    expect(state.picks[0]).toBe('a');
   });
 
   it('lets two players pick the same character', () => {
@@ -76,6 +80,56 @@ describe('character select', () => {
       { type: 'confirm', player: 1 },
     );
     expect(state.picks).toEqual(['a', 'a']);
+  });
+});
+
+describe('rules banner on character select', () => {
+  const up = (player: 0 | 1): SelectAction => ({ type: 'move', player, dx: 0, dy: -1 });
+  const down = (player: 0 | 1): SelectAction => ({ type: 'move', player, dx: 0, dy: 1 });
+
+  it('moves a cursor from the top row up onto the rules banner and back down', () => {
+    const onBanner = apply(createSelect(2), { type: 'move', player: 0, dx: 1, dy: 0 }, up(0));
+    expect(onBanner.cursors[0]).toBe(RULES_CURSOR);
+    expect(apply(onBanner, up(0)).cursors[0]).toBe(RULES_CURSOR);
+    expect(apply(onBanner, { type: 'move', player: 0, dx: 1, dy: 0 }).cursors[0]).toBe(
+      RULES_CURSOR,
+    );
+    expect(apply(onBanner, down(0)).cursors[0]).toBe(0);
+  });
+
+  it('opens the rules when a player picks the banner, without picking a fighter', () => {
+    const state = apply(createSelect(2), up(1), { type: 'confirm', player: 1 });
+    expect(state.rulesOpen).toBe(true);
+    expect(state.picks).toEqual([null, null]);
+  });
+
+  it('lets a player who already picked open the rules', () => {
+    const state = apply(createSelect(2), { type: 'confirm', player: 0 }, up(0), {
+      type: 'confirm',
+      player: 0,
+    });
+    expect(state.rulesOpen).toBe(true);
+    expect(state.picks[0]).toBe('a');
+  });
+
+  it('closes the rules when a player presses special', () => {
+    const open = apply(createSelect(2), { type: 'rules', open: true });
+    const closed = apply(open, { type: 'cancel', player: 1 });
+    expect(closed.rulesOpen).toBe(false);
+  });
+
+  it('ignores players while the rules are open, until they are closed', () => {
+    const open = apply(createSelect(2), { type: 'rules', open: true });
+    expect(open.rulesOpen).toBe(true);
+    const still = apply(
+      open,
+      { type: 'confirm', player: 0 },
+      { type: 'move', player: 1, dx: 1, dy: 0 },
+    );
+    expect(still).toEqual(open);
+    const closed = apply(open, { type: 'rules', open: false }, { type: 'confirm', player: 0 });
+    expect(closed.rulesOpen).toBe(false);
+    expect(closed.picks[0]).toBe('a');
   });
 });
 
