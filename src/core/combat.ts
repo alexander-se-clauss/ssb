@@ -26,7 +26,10 @@ export const activeHitbox = (fighter: FighterState): Hitbox | null => {
   };
 };
 
-/** Where one body part can be hit: a capsule from `start` to `end`, or a ball when they meet. */
+/**
+ * Where one body part can be hit: every point within `radius` of the segment `start` to `end`
+ * (a ball when they meet). It has exactly the size and place of the drawn part.
+ */
 export interface Hurtbox {
   readonly bone: BoneId;
   readonly start: Vec2;
@@ -42,9 +45,16 @@ export const hurtboxes = (fighter: FighterState): Hurtbox[] => {
   const segments = plantedBoneSegments(HUMANOID, fighter.pose, fighter.position, fighter.facing);
   return HUMANOID.bones.map((bone) => {
     const { start, end } = segments[bone.id];
-    if (bone.shape === 'capsule') return { bone: bone.id, start, end, radius: bone.radius };
     const middle = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
-    return { bone: bone.id, start: middle, end: middle, radius: bone.radius };
+    // A capsule's round ends stay within its joints, as drawn: the core segment is inset by the
+    // radius at both ends (a ball keeps only the middle).
+    const half = bone.shape === 'capsule' ? Math.max(bone.length / 2 - bone.radius, 0) : 0;
+    const t = bone.length === 0 ? 0 : half / bone.length;
+    const at = (sign: number) => ({
+      x: middle.x + (end.x - start.x) * t * sign,
+      y: middle.y + (end.y - start.y) * t * sign,
+    });
+    return { bone: bone.id, start: at(-1), end: at(1), radius: bone.radius };
   });
 };
 

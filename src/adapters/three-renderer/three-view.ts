@@ -170,7 +170,12 @@ export class ThreeView implements GameView {
       const geometry =
         bone.shape === 'ball'
           ? new THREE.SphereGeometry(bone.radius, 12, 8)
-          : new THREE.CapsuleGeometry(bone.radius, bone.length, 4, 10);
+          : new THREE.CapsuleGeometry(
+              bone.radius,
+              Math.max(bone.length - bone.radius * 2, 0.01),
+              4,
+              10,
+            );
       const mesh = new THREE.Mesh(geometry, hurtboxMaterial);
       mesh.visible = false;
       mesh.renderOrder = 1;
