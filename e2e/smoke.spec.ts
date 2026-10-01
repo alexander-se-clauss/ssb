@@ -305,7 +305,7 @@ test('stage select goes back to character select', async ({ page }) => {
   await expect.poll(() => screen(page)).toBe('character-select');
 });
 
-test('results show the winner and stats, and Rematch starts a new match', async ({ page }) => {
+test('results show the winner podium, and Rematch starts a new match', async ({ page }) => {
   // One stock, so walking off the stage once ends the match.
   await toCharacterSelect(page);
   await openRules(page);
@@ -327,16 +327,19 @@ test('results show the winner and stats, and Rematch starts a new match', async 
   await page.keyboard.up('KeyA');
 
   await expect(page.getByRole('heading', { name: 'Player 2 wins!' })).toBeVisible();
-  const rows = page.locator('.results-table tbody tr');
-  await expect(rows).toHaveCount(2);
-  await expect(rows.nth(0)).toContainText('P1');
-  await expect(rows.nth(1)).toHaveClass(/winner/);
-  await expect(rows.nth(0).locator('td').nth(3)).toHaveText('1');
+  await expect(page.locator('.results-scene canvas')).toBeVisible();
+  const standings = page.locator('.results-placements li');
+  await expect(standings).toHaveCount(2);
+  await expect(standings.nth(0)).toHaveAttribute('data-player', '2');
+  await expect(standings.nth(0)).toHaveAttribute('data-place', '1');
+  await expect(standings.nth(1)).toHaveAttribute('data-place', '2');
+  await expect(page.locator('.results-table')).toHaveCount(0);
 
   await expect(page.getByRole('button', { name: 'Rematch' })).toBeFocused();
   await page.keyboard.press('Enter');
   await expect.poll(() => screen(page)).toBe('match');
   expect((await gameState(page)).frame).toBeLessThan(120);
+  await expect(page.locator('.results-scene canvas')).toHaveCount(0);
 });
 
 test('a match starts from the menus, renders and simulates', async ({ page }) => {
@@ -926,3 +929,48 @@ test('matches omit the control instructions overlay', async ({ page }) => {
   await expect(page.locator('#app > .controls')).toHaveCount(0);
   await expect(page.getByText('Left keys:', { exact: false })).toHaveCount(0);
 });
+
+for (const count of [2, 3, 4]) {
+  test(`results podium renders ${count} participants and releases the scene on Back`, async ({
+    page,
+  }, testInfo) => {
+    test.setTimeout(60_000);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await installPads(page, 2);
+    await toCharacterSelect(page);
+    await page.locator('.css-rules').click();
+    await page.getByRole('button', { name: /^Lower Stocks/ }).click();
+    await page.getByRole('button', { name: /^Lower Stocks/ }).click();
+    await page.getByRole('button', { name: 'Done', exact: true }).click();
+    await bothPick(page);
+    for (let pad = 0; pad < count - 2; pad++) {
+      await press(page, pad, PAD.a);
+      await press(page, pad, PAD.a);
+    }
+    await page.keyboard.press('Enter');
+    await expect.poll(() => screen(page)).toBe('stage-select');
+    await page.keyboard.press('Enter');
+    await expect.poll(() => screen(page)).toBe('match');
+    // Eliminate one participant at a time to verify real stock placement, not slot order.
+    for (let player = 0; player < count - 1; player++) {
+      await page.evaluate((slot) => window.__SSB__?.hold(slot, { x: -1 }), player);
+      if (player < count - 2) {
+        await expect.poll(async () => (await gameState(page)).fighters[player]?.stocks).toBe(0);
+      }
+    }
+    await expect.poll(() => screen(page), { timeout: 20_000 }).toBe('results');
+    const entries = page.locator('.results-placements li');
+    await expect(entries).toHaveCount(count);
+    for (let index = 0; index < count; index++) {
+      await expect(entries.nth(index)).toHaveAttribute('data-place', String(index + 1));
+      await expect(entries.nth(index)).toHaveAttribute('data-player', String(count - index));
+      await expect(entries.nth(index)).toHaveAttribute('data-character', 'capsule');
+    }
+    await expect(page.locator('.results-scene canvas')).toBeVisible();
+    await expect(page.getByText('Damage dealt', { exact: true })).toHaveCount(0);
+    await page.screenshot({ path: testInfo.outputPath(`podium-${count}.png`) });
+    await page.keyboard.press('Escape');
+    await expect.poll(() => screen(page)).toBe('main-menu');
+    await expect(page.locator('.results-scene canvas')).toHaveCount(0);
+  });
+}

@@ -34,7 +34,8 @@ import { eventCue, stateCues, type FightCue } from './match-sounds';
 import { CharacterSelectView } from './character-select-view';
 import { renderControls, type ControlColumn } from './controls';
 import { MenuPanel, type MenuContent } from './menu-panel';
-import { renderResults, resultHeading } from './results';
+import { renderResults, resultHeading, resultPlacements, type Elimination } from './results';
+import { ResultsScene } from '../adapters/three-renderer/results-scene';
 import { adjustRule, ruleRows, type RuleField } from './rules-menu';
 import { stageThumbnail } from '../adapters/three-renderer/stage-thumbnail';
 import { TitleScene } from '../adapters/three-renderer/title-scene';
@@ -126,6 +127,8 @@ export class App {
   private rulesDraft: MatchRules = DEFAULT_RULES;
   private readonly characterSelect: CharacterSelectView;
   private titleScene: TitleScene | undefined;
+  private resultsScene: ResultsScene | undefined;
+  private eliminations: Elimination[] = [];
 
   constructor(
     private readonly container: HTMLElement,
@@ -213,6 +216,7 @@ export class App {
   }
 
   resize(): void {
+    this.resultsScene?.resize();
     this.titleScene?.resize(this.container.clientWidth, this.container.clientHeight);
     for (const view of this.match?.views ?? []) {
       view.resize(this.container.clientWidth, this.container.clientHeight);
@@ -305,11 +309,17 @@ export class App {
           })),
           back: () => this.navigate('character-select'),
         };
-      case 'results':
+      case 'results': {
+        const placements = this.lastResult
+          ? resultPlacements(this.lastResult, this.eliminations)
+          : [];
+        const body = renderResults(placements);
+        const host = body.querySelector<HTMLElement>('.results-scene');
+        if (host) this.resultsScene = new ResultsScene(host, placements);
         return {
           heading: this.lastResult ? resultHeading(this.lastResult) : 'Results',
           variant: 'menu-results',
-          ...(this.lastResult ? { body: renderResults(this.lastResult) } : {}),
+          body,
           options: [
             {
               label: 'Rematch',
@@ -322,6 +332,7 @@ export class App {
           back: () => this.navigate('main-menu'),
           backButton: false,
         };
+      }
       default:
         // The match has no menu; this only keeps the switch exhaustive.
         return {
@@ -335,6 +346,10 @@ export class App {
   }
 
   private leave(screen: Screen): void {
+    if (screen === 'results') {
+      this.resultsScene?.dispose();
+      this.resultsScene = undefined;
+    }
     if (screen === 'title') {
       this.titleScene?.dispose();
       this.titleScene = undefined;
@@ -538,7 +553,11 @@ export class App {
     const views = this.adapters.createViews(this.container, session.view().current.stage);
     // Drop key taps made in the menus, so the match does not start with a stray jump.
     for (const device of this.adapters.devices) device.source.sample();
+    this.eliminations = [];
     const unsubscribe = session.onEvent((event) => {
+      if (event.type === 'ko' && event.stocksLeft === 0) {
+        this.eliminations.push({ slot: event.slot, frame: session.view().current.frame });
+      }
       this.playFight(eventCue(event));
       if (event.type !== 'match-end') return;
       setTimeout(() => {
