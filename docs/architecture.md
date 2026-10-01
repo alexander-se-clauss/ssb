@@ -47,7 +47,9 @@ in `fighter.ts`. A fighter in the `attack` action stores only the move's id and 
 (`actionFrame`), and `activeHitboxes` reads the definition to find which hitboxes are on. A
 hitbox sits on a bone of the planted body (the jab on the fist) or relative to the feet. It hits
 each target once per `group`; when several touch one target, the highest `priority` wins
-(`strikingHitbox`), and `hitTargets` records who each group already hit. A
+(`strikingHitbox`), and `hitTargets` records who each group already hit. Each hitbox sets its
+own damage, angle and knockback. A hit freezes attacker and target for `hitlagFrames`, longer for
+harder hits (`HITLAG` in `config.ts`): nothing moves, and the launch is held until it ends. A
 press of attack or special picks a move slot from the situation and the stick (`move-slots.ts`:
 jab, tilts and smashes on the ground, five aerials, four specials), and the character's `moves`
 table fills each slot with a move id or leaves it empty.

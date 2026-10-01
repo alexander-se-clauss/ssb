@@ -42,6 +42,12 @@ export const FIGHTER = {
 export const HITSTUN_PER_KNOCKBACK = 40;
 
 /**
+ * Hitlag (ADR 0006): on a hit, attacker and target both freeze for
+ * `floor((baseFrames + damage / damagePerFrame) * hitlagScale)` frames, as in Melee.
+ */
+export const HITLAG = { baseFrames: 3, damagePerFrame: 3 } as const;
+
+/**
  * Analog stick tuning, shared by every device with a stick. Values are stick deflection, 0..1.
  * Input adapters apply the deadzone and tap-jump; `attack-input.ts` tells tilts from smashes.
  */

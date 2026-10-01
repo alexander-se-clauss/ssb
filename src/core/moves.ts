@@ -31,6 +31,8 @@ export interface HitboxDef {
   readonly baseKnockback: number;
   /** Extra knockback per percent of the target's damage. */
   readonly knockbackGrowth: number;
+  /** Multiplies this hit's hitlag (`HITLAG` in config); default 1. */
+  readonly hitlagScale?: number;
 }
 
 export interface PoseKey {
@@ -84,6 +86,8 @@ export const validateMove = (move: MoveDef): void => {
     }
     if (to > move.totalFrames) fail(`hitbox ${index} ends after the move (${to})`);
     if (!(hitbox.radius > 0)) fail(`hitbox ${index} needs a positive radius`);
+    const scale = hitbox.hitlagScale ?? 1;
+    if (!(Number.isFinite(scale) && scale >= 0)) fail(`hitbox ${index} has a bad hitlagScale`);
     const group = hitbox.group ?? 0;
     if (!Number.isInteger(group) || group < 0) fail(`hitbox ${index} has a bad group ${group}`);
     const { anchor } = hitbox;
