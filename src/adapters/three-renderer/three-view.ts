@@ -17,20 +17,6 @@ export const PLAYER_COLORS = [0xe94f4f, 0x4f8fe9, 0x4fd18b, 0xf2c14e] as const;
 
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
 
-/** How thick each part is drawn. Visual only for now; hurtboxes per bone come with #25. */
-const PART_RADIUS: Readonly<Record<BoneId, number>> = {
-  head: 0.17,
-  torso: 0.2,
-  upperArmFront: 0.08,
-  lowerArmFront: 0.07,
-  upperArmBack: 0.08,
-  lowerArmBack: 0.07,
-  upperLegFront: 0.1,
-  lowerLegFront: 0.09,
-  upperLegBack: 0.1,
-  lowerLegBack: 0.09,
-};
-
 interface FighterVisual {
   readonly root: THREE.Group;
   readonly parts: ReadonlyMap<BoneId, THREE.Mesh>;
@@ -138,10 +124,10 @@ export class ThreeView implements GameView {
     const root = new THREE.Group();
     const parts = new Map<BoneId, THREE.Mesh>();
     for (const bone of HUMANOID.bones) {
-      const radius = PART_RADIUS[bone.id];
-      // The head is a ball on its bone; every other part is a capsule spanning its bone.
+      // Drawn exactly as thick as the hurtbox, so what you see is what can be hit.
+      const { radius } = bone;
       const geometry =
-        bone.id === 'head'
+        bone.shape === 'ball'
           ? new THREE.SphereGeometry(radius, 16, 12)
           : new THREE.CapsuleGeometry(radius, Math.max(bone.length - radius * 2, 0.01), 6, 12);
       const mesh = new THREE.Mesh(geometry, bone.id.endsWith('Back') ? far : near);

@@ -1,5 +1,6 @@
 import { FIGHTER, HITSTUN_PER_KNOCKBACK, JAB, type AttackDef } from './config';
-import { circleIntersectsRect, type Rect, type Vec2 } from './math';
+import { circleIntersectsCapsule, type Vec2 } from './math';
+import { HUMANOID, plantedBoneSegments, type BoneId } from './skeleton';
 import type { FighterState, GameEvent } from './types';
 
 export interface Hitbox {
@@ -25,12 +26,32 @@ export const activeHitbox = (fighter: FighterState): Hitbox | null => {
   };
 };
 
-export const hurtbox = (fighter: FighterState): Rect => ({
-  left: fighter.position.x - FIGHTER.width / 2,
-  right: fighter.position.x + FIGHTER.width / 2,
-  bottom: fighter.position.y,
-  top: fighter.position.y + FIGHTER.height,
-});
+/** Where one body part can be hit: a capsule from `start` to `end`, or a ball when they meet. */
+export interface Hurtbox {
+  readonly bone: BoneId;
+  readonly start: Vec2;
+  readonly end: Vec2;
+  readonly radius: number;
+}
+
+/**
+ * One hurtbox per bone, on the same planted body the view draws, so a crouch or a lean dodges
+ * exactly what it looks like it dodges.
+ */
+export const hurtboxes = (fighter: FighterState): Hurtbox[] => {
+  const segments = plantedBoneSegments(HUMANOID, fighter.pose, fighter.position, fighter.facing);
+  return HUMANOID.bones.map((bone) => {
+    const { start, end } = segments[bone.id];
+    if (bone.shape === 'capsule') return { bone: bone.id, start, end, radius: bone.radius };
+    const middle = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
+    return { bone: bone.id, start: middle, end: middle, radius: bone.radius };
+  });
+};
+
+const hitsBody = (hitbox: Hitbox, target: FighterState): boolean =>
+  hurtboxes(target).some((box) =>
+    circleIntersectsCapsule(hitbox.center, hitbox.radius, box.start, box.end, box.radius),
+  );
 
 /** Launch speed in units per frame. Grows with the target's damage after the hit. */
 export const knockback = (attack: AttackDef, damageAfterHit: number, weight: number): number =>
@@ -54,7 +75,7 @@ export const resolveCombat = (
       if (target.slot === attacker.slot) continue;
       if (target.action === 'eliminated' || target.invulnerableFrames > 0) continue;
       if (attacker.hitTargets.includes(target.slot)) continue;
-      if (!circleIntersectsRect(hitbox.center, hitbox.radius, hurtbox(target))) continue;
+      if (!hitsBody(hitbox, target)) continue;
 
       const current = next[target.slot] ?? target;
       const damage = current.damage + hitbox.attack.damage;

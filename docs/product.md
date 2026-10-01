@@ -68,7 +68,7 @@ a playable build; it is done when that build works, not on a date.
 - [x] **S1 Menus.** Title screen, main menu, options (screen, controls), Melee-style
       character select with the match rules in its top bar, stage select, results, Back
       buttons. Epic #1.
-- [ ] **S2 Gamepad and body.** Gamepad adapter and menu navigation; fighters with head, torso,
+- [x] **S2 Gamepad and body.** Gamepad adapter and menu navigation; fighters with head, torso,
       arms and legs, basic poses and per-part hurtboxes. Epics #3, #4.
 - [ ] **S3 Move engine.** Move definition format (ADR), jab rebuilt as data, bone-attached
       hitboxes, knockback and hitlag, cancel windows and combos, hitbox debug overlay. Epic #5.

@@ -24,6 +24,10 @@ export interface BoneDef {
   /** Where on the parent it attaches: its start joint or its end joint. Unused on the hip. */
   readonly attach: 'start' | 'end';
   readonly length: number;
+  /** Thickness of the body part around the bone; the hurtbox and the drawn part share it. */
+  readonly radius: number;
+  /** A capsule spans the bone; a ball sits in its middle, like a head. */
+  readonly shape: 'capsule' | 'ball';
 }
 
 export interface SkeletonDef {
@@ -63,16 +67,72 @@ export interface BoneSegment {
 export const HUMANOID: SkeletonDef = {
   hipHeight: 0.8,
   bones: [
-    { id: 'torso', parent: null, attach: 'start', length: 0.5 },
-    { id: 'head', parent: 'torso', attach: 'end', length: 0.3 },
-    { id: 'upperArmFront', parent: 'torso', attach: 'end', length: 0.3 },
-    { id: 'lowerArmFront', parent: 'upperArmFront', attach: 'end', length: 0.3 },
-    { id: 'upperArmBack', parent: 'torso', attach: 'end', length: 0.3 },
-    { id: 'lowerArmBack', parent: 'upperArmBack', attach: 'end', length: 0.3 },
-    { id: 'upperLegFront', parent: null, attach: 'start', length: 0.4 },
-    { id: 'lowerLegFront', parent: 'upperLegFront', attach: 'end', length: 0.4 },
-    { id: 'upperLegBack', parent: null, attach: 'start', length: 0.4 },
-    { id: 'lowerLegBack', parent: 'upperLegBack', attach: 'end', length: 0.4 },
+    { id: 'torso', parent: null, attach: 'start', length: 0.5, radius: 0.2, shape: 'capsule' },
+    { id: 'head', parent: 'torso', attach: 'end', length: 0.3, radius: 0.17, shape: 'ball' },
+    {
+      id: 'upperArmFront',
+      parent: 'torso',
+      attach: 'end',
+      length: 0.3,
+      radius: 0.08,
+      shape: 'capsule',
+    },
+    {
+      id: 'lowerArmFront',
+      parent: 'upperArmFront',
+      attach: 'end',
+      length: 0.3,
+      radius: 0.07,
+      shape: 'capsule',
+    },
+    {
+      id: 'upperArmBack',
+      parent: 'torso',
+      attach: 'end',
+      length: 0.3,
+      radius: 0.08,
+      shape: 'capsule',
+    },
+    {
+      id: 'lowerArmBack',
+      parent: 'upperArmBack',
+      attach: 'end',
+      length: 0.3,
+      radius: 0.07,
+      shape: 'capsule',
+    },
+    {
+      id: 'upperLegFront',
+      parent: null,
+      attach: 'start',
+      length: 0.4,
+      radius: 0.1,
+      shape: 'capsule',
+    },
+    {
+      id: 'lowerLegFront',
+      parent: 'upperLegFront',
+      attach: 'end',
+      length: 0.4,
+      radius: 0.09,
+      shape: 'capsule',
+    },
+    {
+      id: 'upperLegBack',
+      parent: null,
+      attach: 'start',
+      length: 0.4,
+      radius: 0.1,
+      shape: 'capsule',
+    },
+    {
+      id: 'lowerLegBack',
+      parent: 'upperLegBack',
+      attach: 'end',
+      length: 0.4,
+      radius: 0.09,
+      shape: 'capsule',
+    },
   ],
 };
 
