@@ -3,6 +3,7 @@
  * Kept minimal so e2e tests do not compile the app's source.
  */
 interface E2eFighter {
+  stocks: number;
   position: { x: number; y: number };
   grounded: boolean;
   pose: { torso: number; upperLegFront: number };

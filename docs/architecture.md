@@ -137,13 +137,16 @@ keyboard arrows/WASD and gamepad directions select cards through the same menu h
 The menu family uses `menu-art.ts` for original SVG arena orbits, textures and fighter silhouettes
 computed from the core skeleton and poses. `MenuPanel` composes a framed heading, optional data
 panel, and selection panels; each screen supplies its own variant in `app.ts`. Main menu gives
-VS. Mode the largest panel, settings uses offset equipment panels, results pairs the winner with
-the score sheet, and stage select attaches its heading to the centered thumbnail grid.
+VS. Mode the largest panel, settings uses offset equipment panels, results frames a Three.js medal podium with the selected fighter models, and stage select attaches its heading to the centered thumbnail grid.
 `menu-theme.css` also frames character select and the rules overlay while preserving their setup
 layouts. Hover and focus share outline, shadow and position cues. A short confirmation overlay
 runs independently of navigation; reduced motion disables it and menu transitions.
 Browser tests check visibility and overlap across desktop, portrait, compact and short landscape
-viewports, including four-player results.
+viewports, including four-player results. `ResultsScene` renders gold, silver, bronze and fourth-place
+steps with the match skeleton and player colors; first place carries a laurel wreath. The app records
+stock eliminations (including their simulation frame) from existing session events to order the
+podium; timed matches use KOs minus falls, and ties share a place. The static scene renders on resize
+and disposes its observer, geometry, textures and WebGL context when leaving results.
 
 Menus with a way back show a Back button in their top left corner, except results and the
 rules overlay, whose own buttons (Main menu, Done) do that job. Every screen listens on `window`,

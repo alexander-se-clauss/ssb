@@ -33,7 +33,7 @@ export interface MenuOption {
 export interface MenuContent {
   readonly heading: string;
   readonly text?: string;
-  /** Screen-specific content, e.g. the results table. */
+  /** Screen-specific content, e.g. the results podium. */
   readonly body?: Node;
   /** Extra CSS class for the panel, for screens with their own look. */
   readonly variant?: string;
