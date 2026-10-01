@@ -41,7 +41,9 @@ browsers, rendering or networking.
    (`GamepadInputSource` polls the Gamepad API, since gamepad buttons have no events). While a
    match runs, `App` samples each player's device and calls `session.setInput(slot, input)`. On
    character select it samples every device, and on every frame it polls the gamepads for menu
-   commands; see Screens.
+   commands; see Screens. Adapters deliver stick values with the deadzone already removed
+   (`applyDeadzone`); telling a tilt from a smash is a game rule, so it lives in core
+   (`attack-input.ts`: a plain-data `StickTracker` per fighter, which the move engine will read).
 2. `session.update(now)` asks `FixedStepClock` how many 1/60 s ticks are due and runs
    `step()` that many times. Rendering speed never changes game speed.
 3. Each `GameView` renders `session.view()`: previous state, current state and `alpha`, so

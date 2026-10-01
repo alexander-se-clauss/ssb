@@ -1,4 +1,4 @@
-import { NEUTRAL_INPUT, STICK, type PlayerInput } from '../../core';
+import { NEUTRAL_INPUT, STICK, applyDeadzone, type PlayerInput } from '../../core';
 import type { InputSource } from '../../ports';
 
 /** The part of the browser's `Gamepad` this adapter reads, so tests can pass plain objects. */
@@ -37,9 +37,6 @@ export type GamepadReader = () => readonly (GamepadLike | null)[];
 
 const browserGamepads: GamepadReader = () => navigator.getGamepads();
 
-/** Axis value with drift around the centre removed. */
-const deadzoned = (value: number): number => (Math.abs(value) < STICK.deadzone ? 0 : value);
-
 /**
  * One gamepad as a player's input, with Melee's layout: A attacks, B specials, X and Y jump,
  * the triggers shield, Start starts, the left stick or d-pad moves. The browser Gamepad API has no events for
@@ -62,9 +59,9 @@ export class GamepadInputSource implements InputSource {
     const is = (button: number): boolean => pad.buttons[button]?.pressed ?? false;
     const dpadX = (is(BUTTON.right) ? 1 : 0) - (is(BUTTON.left) ? 1 : 0);
     const dpadY = (is(BUTTON.up) ? 1 : 0) - (is(BUTTON.down) ? 1 : 0);
-    const x = dpadX || deadzoned(pad.axes[0] ?? 0);
+    const x = dpadX || applyDeadzone(pad.axes[0] ?? 0);
     // The Gamepad API reports down as positive; the game uses up as positive.
-    const y = dpadY || deadzoned(-(pad.axes[1] ?? 0));
+    const y = dpadY || applyDeadzone(-(pad.axes[1] ?? 0));
     return {
       x,
       y,

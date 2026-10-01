@@ -71,11 +71,17 @@ export const HITSTUN_PER_KNOCKBACK = 40;
 
 /**
  * Analog stick tuning, shared by every device with a stick. Values are stick deflection, 0..1.
- * Input adapters apply these today; smash and tilt detection in core will read them too (#19).
+ * Input adapters apply the deadzone and tap-jump; `attack-input.ts` tells tilts from smashes.
  */
 export const STICK = {
   /** Deflection below this counts as centred, so a worn stick does not drift. */
   deadzone: 0.2,
   /** Pushing up at least this far jumps (tap-jump), like "up" on the keyboard. */
   tapJump: 0.7,
+  /** Deflection that counts as the rim, for smash detection. */
+  smash: 0.8,
+  /** A flick reaches the rim within this many frames of leaving the deadzone. */
+  flickFrames: 3,
+  /** Frames after a flick in which attack still makes a smash, the flick frame included. */
+  smashWindowFrames: 4,
 } as const;
