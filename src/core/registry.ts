@@ -2,7 +2,7 @@
  * Everything that can be picked in a match, as plain data. Menus list these arrays in order;
  * match configs and game state refer to entries only by id, so they stay serializable.
  */
-import { BATTLEFIELD, PLATEAU } from './stages';
+import { BATTLEFIELD, FINAL_DESTINATION } from './stages';
 import type { CharacterDef, StageDef } from './types';
 
 /**
@@ -30,7 +30,7 @@ export const CAPSULE: CharacterDef = {
 
 export const CHARACTERS: readonly CharacterDef[] = [CAPSULE];
 
-export const STAGES: readonly StageDef[] = [BATTLEFIELD, PLATEAU];
+export const STAGES: readonly StageDef[] = [BATTLEFIELD, FINAL_DESTINATION];
 
 export const findCharacter = (id: string): CharacterDef | undefined =>
   CHARACTERS.find((c) => c.id === id);

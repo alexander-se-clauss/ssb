@@ -20,9 +20,9 @@ export const BATTLEFIELD: StageDef = {
 };
 
 /** A Final Destination-style layout: one wide, flat stage with no platforms. */
-export const PLATEAU: StageDef = {
-  id: 'plateau',
-  name: 'Plateau',
+export const FINAL_DESTINATION: StageDef = {
+  id: 'final-destination',
+  name: 'Final Destination',
   platforms: [{ bounds: { left: -9, right: 9, bottom: -2, top: 0 }, passThrough: false }],
   spawnPoints: [
     { x: -4, y: 2 },

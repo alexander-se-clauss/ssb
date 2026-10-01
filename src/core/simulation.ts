@@ -78,6 +78,7 @@ const handleKo = (fighter: FighterState, state: MatchState, events: GameEvent[])
       action: 'eliminated',
       actionFrame: 0,
       moveId: null,
+      hitlagFrames: 0,
       velocity: { x: 0, y: 0 },
     };
   }

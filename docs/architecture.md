@@ -47,7 +47,9 @@ in `fighter.ts`. A fighter in the `attack` action stores only the move's id and 
 (`actionFrame`), and `activeHitboxes` reads the definition to find which hitboxes are on. A
 hitbox sits on a bone of the planted body (the jab on the fist) or relative to the feet. It hits
 each target once per `group`; when several touch one target, the highest `priority` wins
-(`strikingHitbox`), and `hitTargets` records who each group already hit. A
+(`strikingHitbox`), and `hitTargets` records who each group already hit. Each hitbox sets its
+own damage, angle and knockback. A hit freezes attacker and target for `hitlagFrames`, longer for
+harder hits (`HITLAG` in `config.ts`): nothing moves, and the launch is held until it ends. A
 press of attack or special picks a move slot from the situation and the stick (`move-slots.ts`:
 jab, tilts and smashes on the ground, five aerials, four specials), and the character's `moves`
 table fills each slot with a move id or leaves it empty.
@@ -56,6 +58,12 @@ the pose of its movement state, with idle breathing and a running stride (`poses
 view interpolates it between frames like the position. A move has pose keyframes instead: the
 body closes in on the first one and from then on follows them exactly (`movePose`), so a bone
 hitbox reaches the same spot every time. Key poses are data in `pose-data.ts`.
+A stage's look lives in the view, not in `StageDef`: `three-renderer/scenery/` builds each stage's
+platforms, lights and animated backdrop from its platforms, picked by stage id (Battlefield and
+Final Destination; other stages get plain blocks). Textures are painted on a canvas at load time
+and backdrops are sky-dome shaders, so there are no asset files. Backdrops animate on match time
+(`cycles.ts`, pure and tested), so they pause with the game. The rock and keel hanging below a
+stage sit behind the fighters' plane, so they never look solid where fighters can pass.
 
 **Enforced:** ESLint `no-restricted-imports` per folder (`eslint.config.js`) and a separate
 `tsconfig.core.json` without DOM types, so `document` or `window` in core fails typecheck.
