@@ -405,7 +405,7 @@ export class App {
             if (row.field === 'mode') this.changeRule(row.field, 1, index);
           },
           adjust: (delta: 1 | -1) => this.changeRule(row.field, delta, index),
-          cue: row.field === 'mode' ? ('menu-adjust' as const) : null,
+          ...(row.field === 'mode' ? {} : { cue: null }),
           ...(row.field === 'mode' ? { stepLabels: ['‹', '›'] as const } : {}),
         })),
         { label: 'Done', select: done },

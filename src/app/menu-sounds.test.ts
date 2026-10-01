@@ -34,6 +34,17 @@ describe('selectCue', () => {
     expect(cueFor(picked, { type: 'cancel', player: 0 })).toBe('menu-back');
   });
 
+  it('hears a pick even when another player un-picks on the same frame', () => {
+    const twoPlayers = apply(
+      onePlayer,
+      { type: 'join', device: 1 },
+      { type: 'confirm', player: 1 },
+    );
+    expect(cueFor(twoPlayers, { type: 'confirm', player: 0 }, { type: 'cancel', player: 1 })).toBe(
+      'pick',
+    );
+  });
+
   it('plays move when a cursor moves', () => {
     expect(cueFor(onePlayer, { type: 'move', player: 0, dx: 1, dy: 0 })).toBe('menu-move');
   });

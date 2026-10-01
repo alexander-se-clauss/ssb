@@ -18,7 +18,10 @@ export interface MenuOption {
   readonly adjust?: (delta: 1 | -1) => void;
   /** Text on the mouse buttons for Left and Right; − and + by default, ‹ › suit a choice. */
   readonly stepLabels?: readonly [string, string];
-  /** Sound when picked; `menu-confirm` by default, null for a row where picking does nothing. */
+  /**
+   * Sound when picked: by default `menu-adjust` on a setting row, else `menu-confirm`; null for a
+   * row where picking does nothing.
+   */
   readonly cue?: SoundCue | null;
 }
 
@@ -109,7 +112,8 @@ export class MenuPanel {
       button.type = 'button';
       button.textContent = option.label;
       button.addEventListener('click', () => {
-        const cue = option.cue === undefined ? 'menu-confirm' : option.cue;
+        const fallback = option.adjust ? 'menu-adjust' : 'menu-confirm';
+        const cue = option.cue === undefined ? fallback : option.cue;
         if (cue) this.play(cue);
         option.select();
       });
