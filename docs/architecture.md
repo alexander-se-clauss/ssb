@@ -44,17 +44,26 @@ Terms, as in Melee: a **hurtbox** is where a fighter can be hit (one per body pa
 is where an attack hits (`activeHitboxes`). F2 shows both in the running game (yellow and red).
 Attacks are moves (ADR 0006): plain-data `MoveDef`s in `move-data/`, played by one move runner
 in `fighter.ts`. A fighter in the `attack` action stores only the move's id and its frame
-(`actionFrame`), and `activeHitboxes` reads the definition to find which hitboxes are on.
+(`actionFrame`), and `activeHitboxes` reads the definition to find which hitboxes are on. A
+hitbox sits on a bone of the planted body (the jab on the fist) or relative to the feet. It hits
+each target once per `group`; when several touch one target, the highest `priority` wins
+(`strikingHitbox`), and `hitTargets` records who each group already hit. Each hitbox sets its
+own damage, angle and knockback. A hit freezes attacker and target for `hitlagFrames`, longer for
+harder hits (`HITLAG` in `config.ts`): nothing moves, and the launch is held until it ends. A
+press of attack or special picks a move slot from the situation and the stick (`move-slots.ts`:
+jab, tilts and smashes on the ground, five aerials, four specials), and the character's `moves`
+table fills each slot with a move id or leaves it empty.
 Each fighter carries its current `pose` in `FighterState`: `step` eases it a little each frame towards
 the pose of its movement state, with idle breathing and a running stride (`poses.ts`), and the
-view interpolates it between frames like the position.
+view interpolates it between frames like the position. A move has pose keyframes instead: the
+body closes in on the first one and from then on follows them exactly (`movePose`), so a bone
+hitbox reaches the same spot every time. Key poses are data in `pose-data.ts`.
 A stage's look lives in the view, not in `StageDef`: `three-renderer/scenery/` builds each stage's
-platforms, lights and animated backdrop from its platforms, picked by stage id (Battlefield, and
-Final Destination; other stages get plain blocks). Textures are painted on a
-canvas at load time and backdrops are sky-dome shaders, so there are no asset files. Backdrops
-animate on match time (`cycles.ts`, pure and tested), so they pause with the game. The rock and keel
-hanging below a stage sit behind the fighters' plane, so they never look solid where fighters can
-pass.
+platforms, lights and animated backdrop from its platforms, picked by stage id (Battlefield and
+Final Destination; other stages get plain blocks). Textures are painted on a canvas at load time
+and backdrops are sky-dome shaders, so there are no asset files. Backdrops animate on match time
+(`cycles.ts`, pure and tested), so they pause with the game. The rock and keel hanging below a
+stage sit behind the fighters' plane, so they never look solid where fighters can pass.
 
 **Enforced:** ESLint `no-restricted-imports` per folder (`eslint.config.js`) and a separate
 `tsconfig.core.json` without DOM types, so `document` or `window` in core fails typecheck.
@@ -67,7 +76,8 @@ pass.
    character select it samples every device, and on every frame it polls the gamepads for menu
    commands; see Screens. Adapters deliver stick values with the deadzone already removed
    (`applyDeadzone`); telling a tilt from a smash is a game rule, so it lives in core
-   (`attack-input.ts`: a plain-data `StickTracker` per fighter, which the move engine will read).
+   (`attack-input.ts`: a plain-data `StickTracker` in each fighter's state, read when a button
+   is pressed to pick the move slot).
 2. `session.update(now)` asks `FixedStepClock` how many 1/60 s ticks are due and runs
    `step()` that many times. Rendering speed never changes game speed.
 3. Each `GameView` renders `session.view()`: previous state, current state and `alpha`, so

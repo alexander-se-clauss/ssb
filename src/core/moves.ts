@@ -4,11 +4,15 @@
  * serializable.
  */
 import type { Vec2 } from './math';
+import { HUMANOID, type BoneId, type Pose } from './skeleton';
 
 export type MoveId = string;
 
-/** Where a hitbox sits. Relative to the feet, x mirrored by facing; bone anchors come with #29. */
-export type HitboxAnchor = { readonly feet: Vec2 };
+/**
+ * Where a hitbox sits: on a bone of the planted body, from 0 (its start joint) to 1 (its end
+ * joint), or relative to the feet with x mirrored by facing.
+ */
+export type HitboxAnchor = { readonly bone: BoneId; readonly at: number } | { readonly feet: Vec2 };
 
 export interface HitboxDef {
   readonly anchor: HitboxAnchor;
@@ -17,6 +21,9 @@ export interface HitboxDef {
   readonly from: number;
   /** First frame after the active ones. */
   readonly to: number;
+  /** A target is hit once per group; a multi-hit move gives each hit its own. Default 0. */
+  readonly group?: number;
+  /** When several hitboxes touch a target on one frame, the highest wins, then list order. */
   readonly priority: number;
   readonly damage: number;
   /** Launch angle in degrees, 0 = straight forward, 90 = straight up. */
@@ -24,6 +31,13 @@ export interface HitboxDef {
   readonly baseKnockback: number;
   /** Extra knockback per percent of the target's damage. */
   readonly knockbackGrowth: number;
+  /** Multiplies this hit's hitlag (`HITLAG` in config); default 1. */
+  readonly hitlagScale?: number;
+}
+
+export interface PoseKey {
+  readonly frame: number;
+  readonly pose: Pose;
 }
 
 export interface AttackMoveDef {
@@ -32,6 +46,11 @@ export interface AttackMoveDef {
   /** The move runs from frame 0 to `totalFrames - 1`, then the fighter is free again. */
   readonly totalFrames: number;
   readonly hitboxes: readonly HitboxDef[];
+  /**
+   * The body's keyframes. Before the first, the body eases towards it; from the first on, it
+   * follows them exactly, so a bone hitbox reaches the same spot every time.
+   */
+  readonly poses: readonly PoseKey[];
 }
 
 /** Block and counter moves join this union with #6. */
@@ -67,5 +86,30 @@ export const validateMove = (move: MoveDef): void => {
     }
     if (to > move.totalFrames) fail(`hitbox ${index} ends after the move (${to})`);
     if (!(hitbox.radius > 0)) fail(`hitbox ${index} needs a positive radius`);
+    const scale = hitbox.hitlagScale ?? 1;
+    if (!(Number.isFinite(scale) && scale >= 0)) fail(`hitbox ${index} has a bad hitlagScale`);
+    const group = hitbox.group ?? 0;
+    if (!Number.isInteger(group) || group < 0) fail(`hitbox ${index} has a bad group ${group}`);
+    const { anchor } = hitbox;
+    if ('bone' in anchor) {
+      if (!HUMANOID.bones.some((bone) => bone.id === anchor.bone)) {
+        fail(`hitbox ${index} is on an unknown bone "${anchor.bone}"`);
+      }
+      if (!(anchor.at >= 0 && anchor.at <= 1))
+        fail(`hitbox ${index} is off its bone (${anchor.at})`);
+    }
   });
+  const first = move.poses[0];
+  if (!first) fail('needs at least one pose keyframe');
+  move.poses.forEach((key, index) => {
+    const before = move.poses[index - 1];
+    if (!Number.isInteger(key.frame) || key.frame < 0 || key.frame >= move.totalFrames) {
+      fail(`keyframe ${index} is outside the move (${key.frame})`);
+    }
+    if (before && key.frame <= before.frame) fail(`keyframe ${index} is out of order`);
+  });
+  // From the first keyframe on the pose is exact, so a bone hitbox reaches the same spot.
+  if (first && first.frame > moveTiming(move).startupFrames) {
+    fail(`the first keyframe (${first.frame}) comes after the first hitbox`);
+  }
 };

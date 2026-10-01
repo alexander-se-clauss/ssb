@@ -38,7 +38,8 @@ describe('poses for movement states', () => {
     const standing = fighter(settled(), 0);
     expect(poseName(standing)).toBe('idle');
     expect(poseName({ ...standing, action: 'run' })).toBe('run');
-    expect(poseName({ ...standing, action: 'attack', moveId: 'jab' })).toBe('jab');
+    // During a move its keyframes lead instead (moves.test.ts).
+    expect(poseName({ ...standing, action: 'attack', moveId: 'jab' })).toBeNull();
     const air = { ...standing, action: 'airborne' as const, grounded: false };
     expect(poseName({ ...air, velocity: { x: 0, y: 0.2 } })).toBe('jump');
     expect(poseName({ ...air, velocity: { x: 0, y: -0.1 } })).toBe('fall');
@@ -61,11 +62,6 @@ describe('poses for movement states', () => {
       ['run', settled(), Array<PlayerInput>(12).fill(inputOf({ x: 1 }))],
       ['jump', settled(), [inputOf({ jump: true }), ...Array<PlayerInput>(14).fill(NEUTRAL_INPUT)]],
       ['fall', settled(), [inputOf({ jump: true }), ...Array<PlayerInput>(40).fill(NEUTRAL_INPUT)]],
-      [
-        'jab',
-        settled(),
-        [inputOf({ attack: true }), ...Array<PlayerInput>(12).fill(NEUTRAL_INPUT)],
-      ],
       ['hurt', hit(settled(), TUMBLE_HITSTUN - 1), Array<PlayerInput>(12).fill(NEUTRAL_INPUT)],
       ['tumble', hit(settled(), TUMBLE_HITSTUN + 20), Array<PlayerInput>(12).fill(NEUTRAL_INPUT)],
     ];

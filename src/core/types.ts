@@ -3,6 +3,9 @@
  * so it can be cloned, hashed, stored as a replay and sent over the network unchanged.
  */
 import type { Rect, Vec2 } from './math';
+import type { StickTracker } from './attack-input';
+import type { MoveSlot } from './move-slots';
+import type { MoveId } from './moves';
 import type { Pose } from './skeleton';
 
 /** Index of a player in the match, 0-based. */
@@ -23,6 +26,12 @@ export interface PlayerInput {
 }
 
 export type FighterAction = 'idle' | 'run' | 'airborne' | 'attack' | 'hitstun' | 'eliminated';
+
+/** One target hit by one hitbox group of the current move (ADR 0006). */
+export interface HitRecord {
+  readonly slot: PlayerSlot;
+  readonly group: number;
+}
 
 export interface FighterState {
   readonly slot: PlayerSlot;
@@ -51,9 +60,13 @@ export interface FighterState {
   /** Who hit this fighter last since it respawned; gets the KO credit. */
   readonly lastHitBy: PlayerSlot | null;
   readonly hitstunFrames: number;
+  /** Frames left frozen by a hit (ADR 0006): nothing moves, the move and pose stand still. */
+  readonly hitlagFrames: number;
   readonly invulnerableFrames: number;
-  /** Slots already hit by the current attack, so one swing hits each target only once. */
-  readonly hitTargets: readonly PlayerSlot[];
+  /** Who the current move already hit, per hitbox group, so one swing hits each target once. */
+  readonly hitTargets: readonly HitRecord[];
+  /** The stick's recent history, to tell a tilt from a smash when a button is pressed. */
+  readonly stick: StickTracker;
   /** Input of the previous frame, used for press (edge) detection inside the simulation. */
   readonly previousInput: PlayerInput;
   /** Joint angles the body shows this frame, eased towards the state's pose (`poses.ts`). */
@@ -119,6 +132,8 @@ export interface MatchState {
 export interface CharacterDef {
   readonly id: string;
   readonly name: string;
+  /** The move each slot plays (`move-slots.ts`); an empty slot does nothing. */
+  readonly moves: Readonly<Partial<Record<MoveSlot, MoveId>>>;
 }
 
 export interface PlayerConfig {
