@@ -14,6 +14,7 @@ import { OverridableInput } from '../adapters/debug-input/overridable-input';
 import { GAMEPAD_LABELS, GamepadInputSource } from '../adapters/gamepad-input/gamepad-input-source';
 import { LocalGameSession } from '../adapters/local-session/local-game-session';
 import { ThreeView } from '../adapters/three-renderer/three-view';
+import { WebAudioOutput } from '../adapters/web-audio/web-audio-output';
 import { App } from './app';
 import { installDebugHandle } from './debug';
 import './style.css';
@@ -58,6 +59,7 @@ const app = new App(container, {
     { device: 'Right keys', labels: describeKeys(PLAYER_TWO_KEYS) },
     { device: 'Gamepad', labels: GAMEPAD_LABELS },
   ],
+  audio: new WebAudioOutput(),
 });
 
 installDebugHandle(app, [...keyboards, ...gamepads], setShowBoxes);
