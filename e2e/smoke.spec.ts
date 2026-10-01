@@ -3,6 +3,13 @@ import { expect, test, type Page, type TestInfo } from '@playwright/test';
 /** Reads the debug handle installed in src/app/debug.ts. */
 const screen = (page: Page) => page.evaluate(() => window.__SSB__?.screen());
 
+/**
+ * How long to wait for something that takes game frames, such as a fall off the stage or a
+ * match end. With software WebGL, several parallel browsers can drop the game to a few frames
+ * per second, so a fall of under two game seconds can take half a minute.
+ */
+const FRAMES_TIMEOUT = { timeout: 45_000 };
+
 const gameState = (page: Page) =>
   page.evaluate(() => {
     const state = window.__SSB__?.state();
@@ -323,7 +330,7 @@ test('results show the winner podium, and Rematch starts a new match', async ({ 
   await startMatch(page, { onCharacterSelect: true });
 
   await page.keyboard.down('KeyA');
-  await expect.poll(() => screen(page), { timeout: 20_000 }).toBe('results');
+  await expect.poll(() => screen(page), FRAMES_TIMEOUT).toBe('results');
   await page.keyboard.up('KeyA');
 
   await expect(page.getByRole('heading', { name: 'Player 2 wins!' })).toBeVisible();
@@ -413,7 +420,7 @@ test('full flow: title, menus, a match ended through the debug handle, results, 
 
   // End the match: take over player one and walk off the stage.
   await page.evaluate(() => window.__SSB__?.hold(0, { x: -1 }));
-  await expect.poll(() => screen(page), { timeout: 20_000 }).toBe('results');
+  await expect.poll(() => screen(page), FRAMES_TIMEOUT).toBe('results');
   await page.evaluate(() => window.__SSB__?.release(0));
   await expect(page.getByRole('heading', { name: 'Player 2 wins!' })).toBeVisible();
 
@@ -693,7 +700,7 @@ test('the menu family keeps titles and controls visible across desktop, portrait
   page,
 }, testInfo) => {
   // This traverses a four-player match and captures all seven menus at four sizes.
-  test.setTimeout(60_000);
+  test.setTimeout(150_000);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await installPads(page, 2);
   await page.goto('/');
@@ -730,7 +737,7 @@ test('the menu family keeps titles and controls visible across desktop, portrait
   await page.evaluate(() => {
     for (const player of [0, 1, 2]) window.__SSB__?.hold(player, { x: -1 });
   });
-  await expect.poll(() => screen(page), { timeout: 20_000 }).toBe('results');
+  await expect.poll(() => screen(page), FRAMES_TIMEOUT).toBe('results');
   await inspectMenu(page, 'results', testInfo);
   await page.getByRole('button', { name: 'Main menu', exact: true }).click();
   await expect.poll(() => screen(page)).toBe('main-menu');
@@ -935,7 +942,6 @@ for (const count of [2, 3, 4]) {
   test(`results podium renders ${count} participants and releases the scene on Back`, async ({
     page,
   }, testInfo) => {
-    test.setTimeout(60_000);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await installPads(page, 2);
     await toCharacterSelect(page);
@@ -956,10 +962,12 @@ for (const count of [2, 3, 4]) {
     for (let player = 0; player < count - 1; player++) {
       await page.evaluate((slot) => window.__SSB__?.hold(slot, { x: -1 }), player);
       if (player < count - 2) {
-        await expect.poll(async () => (await gameState(page)).fighters[player]?.stocks).toBe(0);
+        await expect
+          .poll(async () => (await gameState(page)).fighters[player]?.stocks, FRAMES_TIMEOUT)
+          .toBe(0);
       }
     }
-    await expect.poll(() => screen(page), { timeout: 20_000 }).toBe('results');
+    await expect.poll(() => screen(page), FRAMES_TIMEOUT).toBe('results');
     const entries = page.locator('.results-placements li');
     await expect(entries).toHaveCount(count);
     for (let index = 0; index < count; index++) {
@@ -979,7 +987,6 @@ for (const count of [2, 3, 4]) {
 test('fighter lobby shows neutral portraits, live colored previews, ownership and readiness', async ({
   page,
 }, testInfo) => {
-  test.setTimeout(60_000);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await installPads(page, 2);
   await toCharacterSelect(page);
