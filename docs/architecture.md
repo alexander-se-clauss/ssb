@@ -33,9 +33,11 @@ browsers, rendering or networking.
 | App      | `src/app`      | everything                         | `main.ts` wiring, screens and menus, debug handle, CSS                   |
 
 Fighter bodies are core data too (`skeleton.ts`): a 2D skeleton of bones with lengths and parents,
-and poses as joint angles. `boneSegments` turns a pose into world joint positions, so hurtboxes
-and hitboxes can follow bones and the view only draws what core computed: `ThreeView` places a
-sphere or capsule on each bone (`body-layout.ts`).
+and poses as joint angles. `boneSegments` turns a pose into world joint positions;
+`plantedBoneSegments` then lowers the body until its feet rest on the fighter's position, so a
+bent-knee stance stands on the ground. That planted body is the one to use: hurtboxes and hitboxes
+follow its bones, and the view only draws what core computed (`ThreeView` places a sphere or
+capsule on each bone, `body-layout.ts`).
 Each fighter carries its current `pose` in `FighterState`: `step` eases it a little each frame towards
 the pose of its movement state, with idle breathing and a running stride (`poses.ts`), and the
 view interpolates it between frames like the position.

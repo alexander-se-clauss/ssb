@@ -24,7 +24,8 @@ each frame towards the pose of the fighter's movement state (`poses.ts`), before
 
 ## Consequences
 
-- Hurtboxes and bone-attached hitboxes use exactly the body that is drawn.
+- Hurtboxes and bone-attached hitboxes use exactly the body that is drawn: the planted one from
+  `plantedBoneSegments`, with the feet on the fighter's position.
 - Snapshots and replays carry ten more numbers per fighter.
 - Hit detection now depends on `Math.sin` and `Math.cos`. ADR 0003 already notes these may differ
   across browsers and CPUs; that question must be answered before peer-to-peer rollback.

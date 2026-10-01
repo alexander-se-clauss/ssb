@@ -4,7 +4,7 @@ import {
   HUMANOID,
   activeHitbox,
   blendPose,
-  boneSegments,
+  plantedBoneSegments,
   vec2,
   type BoneId,
   type FighterState,
@@ -197,8 +197,9 @@ export class ThreeView implements GameView {
     visual.root.scale.x = fighter.facing;
 
     // Core eases the pose each frame; between frames the view interpolates like the position.
+    // Planting keeps the feet on the ground when the stance bends the knees.
     const pose = teleported ? fighter.pose : blendPose(before.pose, fighter.pose, t);
-    for (const part of bodyParts(boneSegments(HUMANOID, pose, vec2(0, 0), 1))) {
+    for (const part of bodyParts(plantedBoneSegments(HUMANOID, pose, vec2(0, 0), 1))) {
       const mesh = visual.parts.get(part.bone);
       mesh?.position.set(part.x, part.y, part.depth);
       mesh?.rotation.set(0, 0, part.angle);
