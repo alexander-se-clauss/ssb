@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { NEUTRAL_INPUT, inputOf, type PlayerInput } from '../core';
-import type { InputSource } from '../ports';
-import { OverridableInput } from './debug-input';
+import { NEUTRAL_INPUT, inputOf, type PlayerInput } from '../../core';
+import type { InputSource } from '../../ports';
+import { OverridableInput } from './overridable-input';
 
 class FakeInput implements InputSource {
   samples = 0;

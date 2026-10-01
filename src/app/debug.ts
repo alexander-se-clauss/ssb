@@ -1,7 +1,6 @@
 import { inputOf, type MatchRules, type MatchState, type PlayerInput } from '../core';
 import type { App } from './app';
 import type { SelectState } from './character-select';
-import type { OverridableInput } from './debug-input';
 import type { Screen } from './screens';
 
 /**
@@ -30,7 +29,12 @@ declare global {
   }
 }
 
-export const installDebugHandle = (app: App, inputs: readonly OverridableInput[]): void => {
+/** A player's input that the debug handle can take over; `main.ts` picks the implementation. */
+export interface ControllableInput {
+  override(input: PlayerInput | null): void;
+}
+
+export const installDebugHandle = (app: App, inputs: readonly ControllableInput[]): void => {
   window.__SSB__ = {
     screen: () => app.currentScreen,
     state: () => app.matchState(),

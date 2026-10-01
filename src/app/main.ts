@@ -10,11 +10,11 @@ import {
   PLAYER_TWO_KEYS,
   describeKeys,
 } from '../adapters/keyboard-input/keyboard-input-source';
+import { OverridableInput } from '../adapters/debug-input/overridable-input';
 import { LocalGameSession } from '../adapters/local-session/local-game-session';
 import { ThreeView } from '../adapters/three-renderer/three-view';
 import { App } from './app';
 import { installDebugHandle } from './debug';
-import { OverridableInput } from './debug-input';
 import './style.css';
 
 const container = document.querySelector<HTMLElement>('#app');

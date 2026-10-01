@@ -1,5 +1,5 @@
-import type { PlayerInput } from '../core';
-import type { InputSource } from '../ports';
+import type { PlayerInput } from '../../core';
+import type { InputSource } from '../../ports';
 
 /**
  * Wraps a player's real input so tests and AI agents can take over that player through the
