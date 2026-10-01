@@ -49,10 +49,15 @@ hitbox sits on a bone of the planted body (the jab on the fist) or relative to t
 each target once per `group`; when several touch one target, the highest `priority` wins
 (`strikingHitbox`), and `hitTargets` records who each group already hit. Each hitbox sets its
 own damage, angle and knockback. A hit freezes attacker and target for `hitlagFrames`, longer for
-harder hits (`HITLAG` in `config.ts`): nothing moves, and the launch is held until it ends. A
+harder hits (`HITLAG` in `config.ts`): nothing moves, and the launch is held until it ends.
+A
 press of attack or special picks a move slot from the situation and the stick (`move-slots.ts`:
 jab, tilts and smashes on the ground, five aerials, four specials), and the character's `moves`
-table fills each slot with a move id or leaves it empty.
+table fills each slot with a move id or leaves it empty. The press goes into
+`FighterState.buffer` as that slot, with the way the move will face, and waits there up to
+`INPUT.bufferFrames` until the fighter can act (presses during hitlag are buffered too, and do not
+age). A move's `cancels` list windows in which a buffered slot starts the next move: the jab
+chains into jab 2 and jab 3.
 Each fighter carries its current `pose` in `FighterState`: `step` eases it a little each frame towards
 the pose of its movement state, with idle breathing and a running stride (`poses.ts`), and the
 view interpolates it between frames like the position. A move has pose keyframes instead: the

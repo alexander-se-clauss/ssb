@@ -79,6 +79,7 @@ const handleKo = (fighter: FighterState, state: MatchState, events: GameEvent[])
       actionFrame: 0,
       moveId: null,
       hitlagFrames: 0,
+      buffer: null,
       velocity: { x: 0, y: 0 },
     };
   }

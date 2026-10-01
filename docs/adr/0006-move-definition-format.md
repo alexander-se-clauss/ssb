@@ -113,6 +113,17 @@ interface AttackMoveDef {
 type MoveDef = AttackMoveDef; // | BlockMoveDef | CounterMoveDef with #6
 ```
 
+### Amendment (2026-10-01, #31)
+
+- The buffer also stores the way the move will face, fixed at the press:
+  `{ action, face, age }`. A ground attack aimed behind turns around (#28), and the fighter may
+  turn between the press and the move's start.
+- A press during hitlag goes into the buffer like any other press. The previous input moves on
+  with each frame, so a button held through the freeze is not a second press.
+- A press for an empty slot is dropped at once, so it does not block a jump on the same frame.
+- Open for S4: an aerial press buffered just before landing still starts the aerial slot's move.
+  Decide then whether it is dropped or re-resolved on landing.
+
 ## Consequences
 
 - New moves are data. Tests, tools and an AI agent can write and check them without new code.

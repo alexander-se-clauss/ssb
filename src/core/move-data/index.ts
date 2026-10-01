@@ -1,11 +1,24 @@
 /** Every move in the game, by id. Characters will map their move slots to these ids (#28). */
 import { validateMove, type MoveDef, type MoveId } from '../moves';
-import { JAB } from './jab';
+import { JAB, JAB2, JAB3 } from './jab';
 
-const ALL: readonly MoveDef[] = [JAB];
+const ALL: readonly MoveDef[] = [JAB, JAB2, JAB3];
+
+/** Checks each move, and that every move a cancel goes into is in the same list. */
+export const validateMoves = (moves: readonly MoveDef[]): void => {
+  const ids = new Set(moves.map((move) => move.id));
+  for (const move of moves) {
+    validateMove(move);
+    for (const cancel of move.cancels) {
+      if (cancel.into !== undefined && !ids.has(cancel.into)) {
+        throw new Error(`Move "${move.id}": cancels into unknown move "${cancel.into}"`);
+      }
+    }
+  }
+};
 
 // Checked once when the game loads, so a broken definition fails at start, not mid-match.
-for (const move of ALL) validateMove(move);
+validateMoves(ALL);
 
 export const MOVES: Readonly<Record<MoveId, MoveDef>> = Object.fromEntries(
   ALL.map((move) => [move.id, move]),

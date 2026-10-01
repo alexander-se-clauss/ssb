@@ -4,6 +4,7 @@
  * serializable.
  */
 import type { Vec2 } from './math';
+import type { MoveSlot } from './move-slots';
 import { HUMANOID, type BoneId, type Pose } from './skeleton';
 
 export type MoveId = string;
@@ -35,6 +36,20 @@ export interface HitboxDef {
   readonly hitlagScale?: number;
 }
 
+/** What a press asks for, kept in the input buffer: a move slot, later also dodge or block (#6). */
+export type BufferedAction = MoveSlot | 'dodge' | 'block';
+
+/**
+ * A window in which the move gives way to a buffered action: on frames `[from, to)`, a buffered
+ * `on` starts `into` (the next combo step), or the character's move for that slot.
+ */
+export interface CancelDef {
+  readonly on: BufferedAction;
+  readonly into?: MoveId;
+  readonly from: number;
+  readonly to: number;
+}
+
 export interface PoseKey {
   readonly frame: number;
   readonly pose: Pose;
@@ -51,6 +66,7 @@ export interface AttackMoveDef {
    * follows them exactly, so a bone hitbox reaches the same spot every time.
    */
   readonly poses: readonly PoseKey[];
+  readonly cancels: readonly CancelDef[];
 }
 
 /** Block and counter moves join this union with #6. */
@@ -107,6 +123,12 @@ export const validateMove = (move: MoveDef): void => {
       fail(`keyframe ${index} is outside the move (${key.frame})`);
     }
     if (before && key.frame <= before.frame) fail(`keyframe ${index} is out of order`);
+  });
+  move.cancels.forEach(({ from, to }, index) => {
+    if (!Number.isInteger(from) || !Number.isInteger(to) || from < 0 || to <= from) {
+      fail(`cancel ${index} has an empty or broken window [${from}, ${to})`);
+    }
+    if (to > move.totalFrames) fail(`cancel ${index} ends after the move (${to})`);
   });
   // From the first keyframe on the pose is exact, so a bone hitbox reaches the same spot.
   if (first && first.frame > moveTiming(move).startupFrames) {
