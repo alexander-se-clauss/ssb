@@ -28,8 +28,8 @@ browsers, rendering or networking.
 | Layer    | Folder         | May import                         | Contains                                                                        |
 | -------- | -------------- | ---------------------------------- | ------------------------------------------------------------------------------- |
 | Core     | `src/core`     | core only                          | Types, physics, combat, moves, rules, stages, registry, skeleton, `step`, clock |
-| Ports    | `src/ports`    | core                               | Interfaces between client and game                                              |
-| Adapters | `src/adapters` | core (via index), ports, libraries | Keyboard, gamepad, local session, Three.js, HUD                                 |
+| Ports    | `src/ports`    | core                               | Interfaces between client and game, and audio                                   |
+| Adapters | `src/adapters` | core (via index), ports, libraries | Keyboard, gamepad, local session, Three.js, HUD, Web Audio                      |
 | App      | `src/app`      | everything                         | `main.ts` wiring, screens and menus, debug handle, CSS                          |
 
 Fighter bodies are core data too (`skeleton.ts`): a 2D skeleton of bones with lengths and parents,
@@ -84,6 +84,15 @@ stage sit behind the fighters' plane, so they never look solid where fighters ca
    visuals interpolate smoothly on 120/144 Hz screens.
 4. Events from `step()` (`hit`, `ko`, `match-end`) go to `session.onEvent` listeners
    (future: sound, particles, rumble).
+
+## Sound
+
+Sound goes through the `AudioOutput` port (ADR 0007): named cues such as `menu-move` or `hit`,
+and music tracks by id, on a music and an effects channel. `main.ts` gives `App` a
+`WebAudioOutput`, which synthesizes every cue from plain data (`cues.ts`: tones and noise bursts
+with a pitch glide and a fade). `RecordingAudioOutput` remembers what played, for tests. Core
+never plays sound. Epic #83 wires the cues in step by step; so far the title screen plays
+`menu-confirm`.
 
 ## Screens
 
@@ -146,3 +155,4 @@ Other logic follows the same pattern: define a port first, implement locally, sw
 - [0004 TypeScript, Vite and Three.js](adr/0004-typescript-vite-threejs.md)
 - [0005 Body pose is part of the game state](adr/0005-body-pose-in-game-state.md)
 - [0006 Moves are plain data run by one move runner](adr/0006-move-definition-format.md)
+- [0007 Sound plays through an audio port, synthesized for now](adr/0007-audio-port.md)

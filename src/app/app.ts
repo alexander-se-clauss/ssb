@@ -10,7 +10,7 @@ import {
   type MatchState,
   type StageDef,
 } from '../core';
-import type { GameSession, GameView, InputSource, Unsubscribe } from '../ports';
+import type { AudioOutput, GameSession, GameView, InputSource, Unsubscribe } from '../ports';
 import {
   allReady,
   canStart,
@@ -72,6 +72,8 @@ export interface AppAdapters {
   readonly createViews: (container: HTMLElement, stage: StageDef) => readonly GameView[];
   /** Button names per kind of device, for the controls screen. */
   readonly controls: readonly ControlColumn[];
+  /** Sound effects and music. */
+  readonly audio: AudioOutput;
 }
 
 /** Everything that exists only while a match is running. */
@@ -225,7 +227,10 @@ export class App {
           heading: GAME_NAME,
           text: 'Press start (Enter or Space)',
           variant: 'menu-title',
-          start: () => this.navigate('main-menu'),
+          start: () => {
+            this.adapters.audio.play('menu-confirm');
+            this.navigate('main-menu');
+          },
         };
       case 'main-menu':
         return {
