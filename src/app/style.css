@@ -5,6 +5,9 @@
   --menu-gold: #f2c14e;
   --menu-panel: linear-gradient(100deg, #24357e, #172457);
   --menu-panel-focus: linear-gradient(100deg, #f7d774, #e59b2f);
+  --app-background:
+    radial-gradient(circle at 25% 15%, rgb(80 110 230 / 35%), transparent 45%),
+    radial-gradient(circle at 80% 90%, rgb(40 60 160 / 40%), transparent 50%), #0e1330;
 }
 
 html,
@@ -14,9 +17,7 @@ body,
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background:
-    radial-gradient(circle at 25% 15%, rgb(80 110 230 / 35%), transparent 45%),
-    radial-gradient(circle at 80% 90%, rgb(40 60 160 / 40%), transparent 50%), #0e1330;
+  background: var(--app-background);
 }
 
 #app {

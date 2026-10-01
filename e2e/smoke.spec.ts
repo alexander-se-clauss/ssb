@@ -130,6 +130,44 @@ test('start opens the main menu, and Escape goes back', async ({ page }) => {
   await expect.poll(() => screen(page)).toBe('title');
 });
 
+/**
+ * Notes on `<body data-screen-at-wipe>` which screen the app reports when the next screen wipe
+ * appears ("none" until then). Observers run after the task, so a wipe that arrives together
+ * with its new screen notes the new screen.
+ */
+const watchNextWipe = (page: Page) =>
+  page.evaluate(() => {
+    const app = document.querySelector('#app');
+    if (!app) throw new Error('Missing #app');
+    document.body.dataset['screenAtWipe'] = 'none';
+    const observer = new MutationObserver((records) => {
+      const added = records.flatMap((record) => [...record.addedNodes]);
+      if (!added.some((node) => node instanceof Element && node.matches('.screen-wipe'))) return;
+      document.body.dataset['screenAtWipe'] = window.__SSB__?.screen();
+      observer.disconnect();
+    });
+    observer.observe(app, { childList: true });
+  });
+
+test('a screen change wipes the old screen away without delaying the new one', async ({ page }) => {
+  const screenAtWipe = page.locator('body');
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'SSB', exact: true })).toBeVisible();
+  await watchNextWipe(page);
+  await page.keyboard.press('Enter');
+  await expect(screenAtWipe).toHaveAttribute('data-screen-at-wipe', 'main-menu');
+  // Its copy of the old screen is hidden from the page: only the real menu is found.
+  await expect(page.getByRole('button')).toHaveText(['◀ Back', 'VS. Mode', 'Options']);
+  await expect(page.locator('.screen-wipe')).toHaveCount(0);
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await watchNextWipe(page);
+  await page.keyboard.press('Escape');
+  await expect.poll(() => screen(page)).toBe('title');
+  await nextFrames(page);
+  await expect(screenAtWipe).toHaveAttribute('data-screen-at-wipe', 'none');
+});
+
 test('VS. Mode leads to character select', async ({ page }) => {
   await page.goto('/');
   await page.keyboard.press('Enter');
