@@ -3,8 +3,10 @@
  * Up/Down (or W/S) move the focus, Enter picks, Left/Right (or A/D) change a setting, Escape or
  * the Back button in the corner goes back. Gamepads drive it through `command()`. A setting row
  * also has − and + buttons for the mouse. A menu without buttons (the title screen) waits for
- * Enter or Space instead.
+ * Enter or Space instead. Each of these plays its sound: a tick on a move, a click on a pick, a
+ * step on a setting change, a lower click on back.
  */
+import type { SoundCue } from '../ports';
 import { markHandled, wasHandled } from './key-events';
 import type { MenuCommand } from './menu-commands';
 import { nearestInDirection } from './spatial-focus';
@@ -16,6 +18,8 @@ export interface MenuOption {
   readonly adjust?: (delta: 1 | -1) => void;
   /** Text on the mouse buttons for Left and Right; − and + by default, ‹ › suit a choice. */
   readonly stepLabels?: readonly [string, string];
+  /** Sound when picked; `menu-confirm` by default, null for a row where picking does nothing. */
+  readonly cue?: SoundCue | null;
 }
 
 export interface MenuContent {
@@ -65,12 +69,13 @@ export class MenuPanel {
     }
     if (event.code === 'Escape' && content.back) {
       markHandled(event);
-      content.back();
+      this.goBack(content.back);
       return;
     }
     if (this.buttons.length === 0) {
       if (START_KEYS.has(event.code) && content.start) {
         markHandled(event);
+        this.play('menu-confirm');
         content.start();
       }
       return;
@@ -80,7 +85,10 @@ export class MenuPanel {
     if (command && this.command(command)) markHandled(event);
   };
 
-  constructor(container: HTMLElement) {
+  constructor(
+    container: HTMLElement,
+    private readonly play: (cue: SoundCue) => void = () => undefined,
+  ) {
     this.root = document.createElement('div');
     this.root.className = 'menu';
     this.root.hidden = true;
@@ -100,7 +108,11 @@ export class MenuPanel {
       const button = document.createElement('button');
       button.type = 'button';
       button.textContent = option.label;
-      button.addEventListener('click', option.select);
+      button.addEventListener('click', () => {
+        const cue = option.cue === undefined ? 'menu-confirm' : option.cue;
+        if (cue) this.play(cue);
+        option.select();
+      });
       const adjust = option.adjust;
       if (!adjust) {
         rows.push(button);
@@ -116,7 +128,7 @@ export class MenuPanel {
         step.setAttribute('aria-label', `${label} ${option.label}`);
         // Keep the focus on the row, so the keyboard still works after a click.
         step.addEventListener('mousedown', (event) => event.preventDefault());
-        step.addEventListener('click', () => adjust(delta));
+        step.addEventListener('click', () => this.adjust(adjust, delta));
         return step;
       };
       const row = document.createElement('div');
@@ -131,7 +143,8 @@ export class MenuPanel {
     back.className = 'menu-back';
     back.textContent = '◀ Back';
     back.hidden = !content.back || content.backButton === false;
-    if (content.back) back.addEventListener('click', content.back);
+    const goBack = content.back;
+    if (goBack) back.addEventListener('click', () => this.goBack(goBack));
     this.backButton = back.hidden ? undefined : back;
     const preview = content.preview;
     const previewBox = document.createElement('div');
@@ -164,12 +177,14 @@ export class MenuPanel {
     const content = this.content;
     if (!content) return false;
     if (command === 'back') {
-      content.back?.();
+      if (content.back) this.goBack(content.back);
       return content.back !== undefined;
     }
     if (this.buttons.length === 0) {
-      if (command === 'confirm') content.start?.();
-      return command === 'confirm' && content.start !== undefined;
+      if (command !== 'confirm' || !content.start) return false;
+      this.play('menu-confirm');
+      content.start();
+      return true;
     }
     const focusable = this.backButton ? [this.backButton, ...this.buttons] : this.buttons;
     const current = focusable.indexOf(document.activeElement as HTMLButtonElement);
@@ -177,6 +192,7 @@ export class MenuPanel {
     if (!focused) {
       // Nothing focused, e.g. after a click elsewhere: the first move only finds the menu.
       this.buttons[0]?.focus();
+      this.play('menu-move');
       return true;
     }
     if (command === 'confirm') {
@@ -185,7 +201,7 @@ export class MenuPanel {
     }
     const adjust = content.options?.[this.buttons.indexOf(focused)]?.adjust;
     if (adjust && (command === 'left' || command === 'right')) {
-      adjust(command === 'left' ? -1 : 1);
+      this.adjust(adjust, command === 'left' ? -1 : 1);
       return true;
     }
     const boxes = focusable.map((element) => element.getBoundingClientRect());
@@ -194,7 +210,18 @@ export class MenuPanel {
     else if (command === 'up') this.buttons.at(-1)?.focus();
     else if (command === 'down') this.buttons[0]?.focus();
     else return false;
+    if (document.activeElement !== focused) this.play('menu-move');
     return true;
+  }
+
+  private goBack(back: () => void): void {
+    this.play('menu-back');
+    back();
+  }
+
+  private adjust(adjust: (delta: 1 | -1) => void, delta: 1 | -1): void {
+    this.play('menu-adjust');
+    adjust(delta);
   }
 
   hide(): void {
