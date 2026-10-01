@@ -1,5 +1,6 @@
-import type { SoundCue } from '../ports';
+import type { MusicTrack, SoundCue } from '../ports';
 import type { SelectState } from './character-select';
+import type { Screen } from './screens';
 
 /** The devices that are in `state` and not in `other`. */
 const missingFrom = (state: SelectState, other: SelectState): boolean =>
@@ -38,4 +39,11 @@ export const selectCue = (before: SelectState, after: SelectState): SoundCue | n
       ([device, cursor]) => cursor !== (before.guestCursors[Number(device)] ?? 0),
     );
   return moved ? 'menu-move' : null;
+};
+
+/** The music for a screen: the stage's own track in a match, a jingle on results, else the menu theme. */
+export const screenMusic = (screen: Screen, stageId: string): MusicTrack => {
+  if (screen === 'match') return stageId;
+  if (screen === 'results') return 'results';
+  return 'menu';
 };

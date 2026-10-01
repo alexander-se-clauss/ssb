@@ -104,7 +104,12 @@ leave, pick, un-pick, rules, cursor move), so a held button stays quiet. Start, 
 banner play their cue in `App` directly. During a match, `App` plays fight cues (`match-sounds.ts`): hits
 (heavier with more damage), KOs and the match end from session events, and a move starting, a
 jump and a landing from the change between the last state it took sounds from and the current
-one, so core needs no sound events. A fighter in hitstun only makes a landing sound.
+one, so core needs no sound events. A fighter in hitstun only makes a landing sound. Each screen
+names its music (`screenMusic`: the stage's own track in a match, a jingle on results, the menu
+theme elsewhere). Songs are plain data in `songs.ts` (voices of notes or drum hits on a grid of
+sixteenth steps, `music.ts`); `WebAudioOutput` plays them with a step sequencer that schedules a
+fraction of a second ahead on the audio clock, and crossfades over one second when the track
+changes.
 
 ## Screens
 

@@ -29,7 +29,7 @@ import {
   type SelectState,
 } from './character-select';
 import { menuCommands } from './menu-commands';
-import { selectCue } from './menu-sounds';
+import { screenMusic, selectCue } from './menu-sounds';
 import { eventCue, stateCues, type FightCue } from './match-sounds';
 import { CharacterSelectView } from './character-select-view';
 import { renderControls, type ControlColumn } from './controls';
@@ -230,6 +230,7 @@ export class App {
   private enter(screen: Screen): void {
     // Lets the CSS apply screen-specific presentation.
     this.container.dataset['screen'] = screen;
+    this.adapters.audio.playMusic(screenMusic(screen, this.stageId));
     if (screen === 'title') this.titleScene = new TitleScene(this.container);
     if (screen === 'match') {
       this.startMatch();
