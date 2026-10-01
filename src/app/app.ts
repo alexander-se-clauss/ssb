@@ -332,6 +332,9 @@ export class App {
   }
 
   private updateCharacterSelect(ignorePresses = false): void {
+    // Leaving the screen waits until every device's presses this frame are in, so whether a
+    // join and a start on the same frame both count does not depend on device order.
+    let leave: 'start' | 'back' | undefined;
     this.adapters.devices.forEach(({ source }, device) => {
       const current = source.sample();
       const previous = this.previousInputs[device] ?? NEUTRAL_INPUT;
@@ -345,17 +348,20 @@ export class App {
         if (pressed(current, previous, 'attack')) {
           this.select = reduceSelect(state, { type: 'join', device }, CHARACTERS, GRID_COLUMNS);
         } else if (pressed(current, previous, 'special')) {
-          this.navigate('main-menu');
+          leave ??= 'back';
         }
         return;
       }
       for (const action of menuActions(player, previous, current)) {
         const now = this.select;
         if (!now) return;
-        if (selectOutcome(now, action) === 'start') return this.confirmCharacters();
-        this.select = reduceSelect(now, action, CHARACTERS, GRID_COLUMNS);
+        if (selectOutcome(now, action) === 'start') leave = 'start';
+        else this.select = reduceSelect(now, action, CHARACTERS, GRID_COLUMNS);
       }
     });
+    // A start still needs everyone ready, after this frame's joins and leaves.
+    if (leave === 'start' && this.select && allReady(this.select)) return this.confirmCharacters();
+    if (leave === 'back') return this.navigate('main-menu');
     if (!this.select) return;
     this.syncRulesPanel();
     this.characterSelect.render(this.select, allReady(this.select), this.rules);

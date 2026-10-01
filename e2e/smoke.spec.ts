@@ -355,24 +355,38 @@ const installPads = (page: Page, count: number) =>
 /** Button indices of the Standard Gamepad layout. */
 const PAD = { a: 0, b: 1 } as const;
 
-const setPad = (
-  page: Page,
-  pad: number,
-  change: { axes?: number[]; button?: number; on?: boolean },
-) =>
-  page.evaluate(
-    ({ pad, change }) => {
-      const pads = (
-        window as unknown as { fakePads: { axes: number[]; buttons: { pressed: boolean }[] }[] }
-      ).fakePads;
+type PadChange = { axes?: number[]; button?: number; on?: boolean };
+
+/** Changes several fake pads at once, so the game sees all changes on the same frame. */
+const setPads = (page: Page, changes: readonly (readonly [number, PadChange])[]) =>
+  page.evaluate((list) => {
+    const pads = (
+      window as unknown as { fakePads: { axes: number[]; buttons: { pressed: boolean }[] }[] }
+    ).fakePads;
+    for (const [pad, change] of list) {
       const target = pads[pad];
       if (!target) throw new Error(`No fake pad ${pad}`);
       if (change.axes) target.axes = change.axes;
       const button = change.button === undefined ? undefined : target.buttons[change.button];
       if (button) button.pressed = change.on ?? false;
-    },
-    { pad, change },
-  );
+    }
+  }, changes);
+
+const setPad = (page: Page, pad: number, change: PadChange) => setPads(page, [[pad, change]]);
+
+/** Presses A on both pads in the same frame, then lets go. */
+const pressBoth = async (page: Page) => {
+  await setPads(page, [
+    [0, { button: PAD.a, on: true }],
+    [1, { button: PAD.a, on: true }],
+  ]);
+  await nextFrames(page);
+  await setPads(page, [
+    [0, { button: PAD.a, on: false }],
+    [1, { button: PAD.a, on: false }],
+  ]);
+  await nextFrames(page);
+};
 
 /** Presses a pad button for a few frames, then lets go. */
 const press = async (page: Page, pad: number, button: number) => {
@@ -396,12 +410,7 @@ test('the whole menu flow works with gamepads only', async ({ page }) => {
   // Let the game sample the pads at rest once, so the first A counts as a press.
   await nextFrames(page);
   // Both pads press A in the same frame: that leaves the title once, not twice.
-  await setPad(page, 0, { button: PAD.a, on: true });
-  await setPad(page, 1, { button: PAD.a, on: true });
-  await nextFrames(page);
-  await setPad(page, 0, { button: PAD.a, on: false });
-  await setPad(page, 1, { button: PAD.a, on: false });
-  await nextFrames(page);
+  await pressBoth(page);
   await expect.poll(() => screen(page)).toBe('main-menu');
 
   // Down to Options, in and back out with B.
@@ -473,4 +482,16 @@ test('B un-picks, then leaves the slot, then backs out of character select', asy
   expect(await screen(page)).toBe('character-select');
   await press(page, 0, PAD.b);
   await expect.poll(() => screen(page)).toBe('main-menu');
+});
+
+test('a join on the same frame as a start keeps everyone on character select', async ({ page }) => {
+  await installPads(page, 2);
+  await toCharacterSelect(page);
+  await press(page, 0, PAD.a);
+  await press(page, 0, PAD.a);
+  await expect.poll(() => picks(page)).toEqual(['capsule', null, null, null]);
+  // Pad 0 confirms again (a start) while pad 1 joins, on one frame.
+  await pressBoth(page);
+  await expect.poll(async () => (await characterSelect(page))?.devices).toEqual([3, 4, null, null]);
+  expect(await screen(page)).toBe('character-select');
 });

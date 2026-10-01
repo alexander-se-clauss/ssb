@@ -10,14 +10,17 @@ npm ci
 npm run dev      # open http://localhost:5173
 ```
 
-| Player | Move  | Jump       | Drop / fast-fall | Attack | Special |
-| ------ | ----- | ---------- | ---------------- | ------ | ------- |
-| P1     | A / D | W or Space | S                | F      | G       |
-| P2     | ← / → | ↑ or Num 0 | ↓                | .      | /       |
+| Device     | Move               | Jump              | Drop / fast-fall | Attack | Special |
+| ---------- | ------------------ | ----------------- | ---------------- | ------ | ------- |
+| Left keys  | A / D              | W or Space        | S                | F      | G       |
+| Right keys | ← / →              | ↑ or Num 0        | ↓                | .      | /       |
+| Gamepad    | Left stick / D-pad | X / Y or stick up | Stick down       | A      | B       |
 
-Menus: Enter or Space to start, arrow keys or W/S to move, Enter to pick. Esc or the Back
-button goes back. On character select each player uses their own controls: move to pick a
-fighter, attack (F / .) to pick, special (G / /) to cancel, then Enter when both are ready. Move
+Menus: Enter or Space to start, arrow keys or W/S to move, Enter to pick; a gamepad moves with
+the stick or d-pad, A picks and B goes back. Esc or the Back button goes back. On character
+select each device joins the first free slot (up to four players) by pressing attack; then its
+cursor picks a fighter with attack, special un-picks, and special again leaves the slot. Start
+with Enter (or attack again) once everyone who joined has picked; one player alone may play. Move
 up onto the rules banner and pick it (or click it) to change the match rules;
 Done applies them; Esc or special discards them. Options holds the
 screen setting and the controls. After a match, the results screen offers a rematch or the main

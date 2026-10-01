@@ -80,8 +80,8 @@ a playable build; it is done when that build works, not on a date.
 - [ ] **S6 Guard and specials.** Block and counter, spawned objects and projectiles, particle
       effects (fire, hit, KO), side and down specials, fighter 2. Epics #6, #7, #9.
 
-Later, not yet planned: screen shake, dash and short hop, charged smashes, rebindable keys, up to
-four players, a CPU opponent, glTF models, and online play (authoritative server
+Later, not yet planned: screen shake, dash and short hop, charged smashes, rebindable keys, a CPU
+opponent, glTF models, and online play (authoritative server
 running `src/core` in Node, WebSocket transport behind `GameSession`, then rollback experiments).
 
 ## Open questions
