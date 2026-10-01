@@ -90,6 +90,7 @@ export const boneSegments = (
   const segments: Partial<Record<BoneId, BoneSegment>> = {};
   const angles: Partial<Record<BoneId, number>> = {};
   for (const bone of skeleton.bones) {
+    if (segments[bone.id]) throw new Error(`Bone ${bone.id} is listed twice`);
     const parent = bone.parent === null ? undefined : segments[bone.parent];
     if (bone.parent !== null && !parent) {
       throw new Error(`Bone ${bone.id} is listed before its parent ${bone.parent}`);

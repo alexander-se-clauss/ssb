@@ -64,11 +64,13 @@ describe('fighter skeleton', () => {
     expectNear(bones.lowerLegBack.end, vec2(-0.4, 0.4));
   });
 
-  it('refuses a skeleton that misses a bone or lists a child before its parent', () => {
+  it('refuses a skeleton that misses a bone, repeats one or lists a child before its parent', () => {
     const missing = { ...HUMANOID, bones: HUMANOID.bones.filter((bone) => bone.id !== 'head') };
     expect(() => boneSegments(missing, REST_POSE, vec2(0, 0), 1)).toThrow(/head/);
     const reversed = { ...HUMANOID, bones: [...HUMANOID.bones].reverse() };
     expect(() => boneSegments(reversed, REST_POSE, vec2(0, 0), 1)).toThrow(/parent/);
+    const twice = { ...HUMANOID, bones: [...HUMANOID.bones, ...HUMANOID.bones.slice(0, 1)] };
+    expect(() => boneSegments(twice, REST_POSE, vec2(0, 0), 1)).toThrow(/twice/);
   });
 
   it('is plain data, so it can live in definitions and match state', () => {
