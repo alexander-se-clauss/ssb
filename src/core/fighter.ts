@@ -1,5 +1,5 @@
 import { CENTRED_STICK, attackInput, trackStick } from './attack-input';
-import { FIGHTER } from './config';
+import { FIGHTER, INPUT } from './config';
 import { NEUTRAL_INPUT, pressed } from './input';
 import { approach } from './math';
 import { findMove } from './move-data';
@@ -7,7 +7,9 @@ import { moveSlot } from './move-slots';
 import { findCharacter } from './registry';
 import { nextPose } from './poses';
 import { REST_POSE } from './skeleton';
+import type { BufferedAction, MoveId } from './moves';
 import type {
+  BufferedInput,
   FighterAction,
   FighterState,
   PlatformDef,
@@ -48,6 +50,7 @@ export const createFighter = (
     hitlagFrames: 0,
     invulnerableFrames: 0,
     hitTargets: [],
+    buffer: null,
     stick: CENTRED_STICK,
     previousInput: NEUTRAL_INPUT,
     pose: REST_POSE,
@@ -74,29 +77,38 @@ export const updateFighter = (
   frame = 0,
 ): FighterState => {
   if (fighter.action === 'eliminated') return { ...fighter, previousInput: input };
-  // Frozen by a hit: everything stands still, and the previous input is kept, so a button still
-  // held when the freeze ends counts as a press then. The stick is still tracked, so a stick
-  // pushed and held through the freeze is not read as a flick (a smash) afterwards.
-  if (fighter.hitlagFrames > 0) {
-    return {
-      ...fighter,
-      hitlagFrames: fighter.hitlagFrames - 1,
-      stick: trackStick(fighter.stick, input),
-    };
-  }
 
   const prev = fighter.previousInput;
-  let { x: px, y: py } = fighter.position;
-  let { x: vx, y: vy } = fighter.velocity;
-  let { facing, grounded, jumpsRemaining, action, actionFrame, moveId, hitstunFrames, hitTargets } =
-    fighter;
-  // A press asks for the move in a slot (#28); an empty slot does nothing.
+  // A press asks for the move in a slot (#28) and waits in the buffer until the fighter can act.
   const stick = trackStick(fighter.stick, input);
   const button = pressed(input, prev, 'attack')
     ? 'attack'
     : pressed(input, prev, 'special')
       ? 'special'
       : null;
+  const press = (grounded: boolean): BufferedInput | null => {
+    if (button === null) return null;
+    const choice = moveSlot({ grounded, button, attack: attackInput(stick, fighter.facing) });
+    const face = choice.turnAround ? (fighter.facing === 1 ? -1 : 1) : fighter.facing;
+    return { action: choice.slot, face, age: 0 };
+  };
+
+  // Frozen by a hit: everything stands still. A press is still buffered, and the buffer does not
+  // age; the stick is still tracked, so a stick held through the freeze is not read as a flick.
+  if (fighter.hitlagFrames > 0) {
+    return {
+      ...fighter,
+      hitlagFrames: fighter.hitlagFrames - 1,
+      buffer: press(fighter.grounded) ?? fighter.buffer,
+      stick,
+      previousInput: input,
+    };
+  }
+
+  let { x: px, y: py } = fighter.position;
+  let { x: vx, y: vy } = fighter.velocity;
+  let { facing, grounded, jumpsRemaining, action, actionFrame, moveId, hitstunFrames, hitTargets } =
+    fighter;
   // Down with a button is a down attack on the platform, not a drop through it.
   const wantsDrop = input.y < DROP_THRESHOLD && button === null;
 
@@ -110,13 +122,24 @@ export const updateFighter = (
 
   actionFrame += 1;
 
-  const choice =
-    button === null ? null : moveSlot({ grounded, button, attack: attackInput(stick, facing) });
-  const startMoveId = choice ? findCharacter(fighter.characterId)?.moves[choice.slot] : undefined;
-  const startable =
-    choice && startMoveId !== undefined
-      ? { moveId: startMoveId, turnAround: choice.turnAround }
-      : null;
+  const kept = fighter.buffer && fighter.buffer.age < INPUT.bufferFrames ? fighter.buffer : null;
+  let buffer = press(grounded) ?? (kept && { ...kept, age: kept.age + 1 });
+  const slotMove = (action: BufferedAction): MoveId | undefined =>
+    action === 'dodge' || action === 'block'
+      ? undefined
+      : findCharacter(fighter.characterId)?.moves[action];
+  /** Starts a move from the buffered press, facing the way the press asked for. */
+  const startMove = (id: MoveId, face: 1 | -1): void => {
+    buffer = null;
+    action = 'attack';
+    actionFrame = 0;
+    moveId = id;
+    facing = face;
+    hitTargets = [];
+  };
+  // An empty slot does nothing: the press is dropped, and a jump on the same frame still counts.
+  const bufferedMove = buffer ? slotMove(buffer.action) : undefined;
+  if (buffer && bufferedMove === undefined && isControllable(action)) buffer = null;
 
   if (action === 'hitstun') {
     hitstunFrames -= 1;
@@ -125,19 +148,26 @@ export const updateFighter = (
       actionFrame = 0;
     }
   } else if (action === 'attack') {
-    // The move runner (ADR 0006): play the move's frames, then hand control back.
-    if (moveId === null || actionFrame >= findMove(moveId).totalFrames) {
+    // The move runner (ADR 0006): play the move's frames, give way in a cancel window, then hand
+    // control back.
+    const move = moveId === null ? undefined : findMove(moveId);
+    const queued = buffer;
+    const cancel =
+      queued &&
+      move?.cancels.find(
+        (c) => c.on === queued.action && actionFrame >= c.from && actionFrame < c.to,
+      );
+    const next = cancel ? (cancel.into ?? slotMove(cancel.on)) : undefined;
+    if (queued && next !== undefined) {
+      startMove(next, queued.face);
+    } else if (!move || actionFrame >= move.totalFrames) {
       action = grounded ? 'idle' : 'airborne';
       actionFrame = 0;
       moveId = null;
       hitTargets = [];
     }
-  } else if (startable) {
-    action = 'attack';
-    actionFrame = 0;
-    moveId = startable.moveId;
-    if (startable.turnAround) facing = facing === 1 ? -1 : 1;
-    hitTargets = [];
+  } else if (buffer && bufferedMove !== undefined) {
+    startMove(bufferedMove, buffer.face);
   } else if (pressed(input, prev, 'jump') && jumpsRemaining > 0) {
     vy = grounded ? FIGHTER.jumpVelocity : FIGHTER.doubleJumpVelocity;
     jumpsRemaining -= 1;
@@ -247,6 +277,7 @@ export const updateFighter = (
     moveId,
     hitstunFrames,
     hitTargets,
+    buffer,
     invulnerableFrames: Math.max(0, fighter.invulnerableFrames - 1),
     stick,
     previousInput: input,

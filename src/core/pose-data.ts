@@ -4,7 +4,8 @@
  */
 import type { Pose } from './skeleton';
 
-export type PoseName = 'idle' | 'run' | 'jump' | 'fall' | 'jab' | 'hurt' | 'tumble';
+export type PoseName =
+  'idle' | 'run' | 'jump' | 'fall' | 'jab' | 'jab2' | 'jab3' | 'hurt' | 'tumble';
 
 /**
  * Melee-style key poses. Angles are relative to the parent bone (0 = straight on, positive turns
@@ -76,6 +77,32 @@ export const POSES: Readonly<Record<PoseName, Pose>> = {
     lowerLegFront: 50,
     upperLegBack: 205,
     lowerLegBack: 20,
+  },
+  // Jab 2: the back fist follows through, the front fist pulls back to guard.
+  jab2: {
+    torso: 32,
+    head: -18,
+    upperArmFront: 140,
+    lowerArmFront: -105,
+    upperArmBack: 62,
+    lowerArmBack: 0,
+    upperLegFront: 140,
+    lowerLegFront: 50,
+    upperLegBack: 205,
+    lowerLegBack: 20,
+  },
+  // Jab 3: a front kick at hip height, leaning back over the standing leg, fists up.
+  jab3: {
+    torso: -10,
+    head: 5,
+    upperArmFront: 120,
+    lowerArmFront: -95,
+    upperArmBack: 160,
+    lowerArmBack: -90,
+    upperLegFront: 85,
+    lowerLegFront: 0,
+    upperLegBack: 185,
+    lowerLegBack: 5,
   },
   // Flinch: head and chest snap back, the arms trail behind the body.
   hurt: {

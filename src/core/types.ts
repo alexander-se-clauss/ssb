@@ -5,7 +5,7 @@
 import type { Rect, Vec2 } from './math';
 import type { StickTracker } from './attack-input';
 import type { MoveSlot } from './move-slots';
-import type { MoveId } from './moves';
+import type { BufferedAction, MoveId } from './moves';
 import type { Pose } from './skeleton';
 
 /** Index of a player in the match, 0-based. */
@@ -26,6 +26,18 @@ export interface PlayerInput {
 }
 
 export type FighterAction = 'idle' | 'run' | 'airborne' | 'attack' | 'hitstun' | 'eliminated';
+
+/** A press waiting until the fighter can act on it (ADR 0006). */
+export interface BufferedInput {
+  readonly action: BufferedAction;
+  /**
+   * The way the move faces when it starts, fixed at the press: a ground attack aimed behind turns
+   * around (#28), even if the fighter turned in between.
+   */
+  readonly face: 1 | -1;
+  /** Frames since the press, not counting hitlag; dropped after `INPUT.bufferFrames`. */
+  readonly age: number;
+}
 
 /** One target hit by one hitbox group of the current move (ADR 0006). */
 export interface HitRecord {
@@ -65,6 +77,8 @@ export interface FighterState {
   readonly invulnerableFrames: number;
   /** Who the current move already hit, per hitbox group, so one swing hits each target once. */
   readonly hitTargets: readonly HitRecord[];
+  /** The latest press the fighter has not acted on yet, if any. */
+  readonly buffer: BufferedInput | null;
   /** The stick's recent history, to tell a tilt from a smash when a button is pressed. */
   readonly stick: StickTracker;
   /** Input of the previous frame, used for press (edge) detection inside the simulation. */

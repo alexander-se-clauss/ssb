@@ -13,8 +13,8 @@ describe('move data', () => {
   it('puts the jab on the front fist, with the arm behind it as a weaker hit', () => {
     expect(moveTiming(JAB)).toEqual({ startupFrames: 3, activeFrames: 3, totalFrames: 18 });
     expect(JAB.hitboxes.map((hitbox) => [hitbox.anchor, hitbox.priority, hitbox.damage])).toEqual([
-      [{ bone: 'lowerArmFront', at: 1 }, 1, 6],
-      [{ bone: 'upperArmFront', at: 1 }, 0, 4],
+      [{ bone: 'lowerArmFront', at: 1 }, 1, 4],
+      [{ bone: 'upperArmFront', at: 1 }, 0, 3],
     ]);
     // The fist is extended before its hitbox turns on.
     expect(JAB.poses[0]?.frame).toBeLessThanOrEqual(moveTiming(JAB).startupFrames);
@@ -144,11 +144,13 @@ describe('move runner', () => {
     const lastStock = withFighter(settled(), 0, {
       action: 'attack',
       moveId: 'jab',
+      buffer: { action: 'jab', face: 1, age: 0 },
       stocks: 1,
       position: { x: 0, y: -100 },
     });
     const out = fighter(run(lastStock, 1), 0);
     expect(out.action).toBe('eliminated');
     expect(out.moveId).toBeNull();
+    expect(out.buffer).toBeNull();
   });
 });

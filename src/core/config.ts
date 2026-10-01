@@ -41,6 +41,9 @@ export const FIGHTER = {
 /** Hitstun frames per unit of launch speed. */
 export const HITSTUN_PER_KNOCKBACK = 40;
 
+/** How long a press waits in the input buffer for the fighter to be able to act on it. */
+export const INPUT = { bufferFrames: 6 } as const;
+
 /**
  * Hitlag (ADR 0006): on a hit, attacker and target both freeze for
  * `floor((baseFrames + damage / damagePerFrame) * hitlagScale)` frames, as in Melee.
