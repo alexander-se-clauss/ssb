@@ -5,121 +5,24 @@
  * so hurtboxes follow it and the view only interpolates and draws it.
  */
 import { HITSTUN_PER_KNOCKBACK, POSE } from './config';
+import { findMove } from './move-data';
+import type { MoveDef } from './moves';
+import { POSES, type PoseName } from './pose-data';
 import { BONE_IDS, type BoneId, type Pose } from './skeleton';
 import type { FighterState } from './types';
 
-export type PoseName = 'idle' | 'run' | 'jump' | 'fall' | 'jab' | 'hurt' | 'tumble';
-
-/**
- * Melee-style key poses. Angles are relative to the parent bone (0 = straight on, positive turns
- * towards the facing direction); for a bone on the hip, 0 points up, 90 forward and 180 down.
- * Knees bend forward, so a shin turns further back than its thigh.
- */
-export const POSES: Readonly<Record<PoseName, Pose>> = {
-  // Fighting stance: low and leaning in, fists up in front, feet apart.
-  idle: {
-    torso: 18,
-    head: -12,
-    upperArmFront: 122,
-    lowerArmFront: -90,
-    upperArmBack: 150,
-    lowerArmBack: -95,
-    upperLegFront: 150,
-    lowerLegFront: 45,
-    upperLegBack: 200,
-    lowerLegBack: 25,
-  },
-  // Dash: leaning hard into the run, arms swept back.
-  run: {
-    torso: 38,
-    head: -28,
-    upperArmFront: 197,
-    lowerArmFront: 40,
-    upperArmBack: 177,
-    lowerArmBack: 30,
-    upperLegFront: 175,
-    lowerLegFront: 35,
-    upperLegBack: 185,
-    lowerLegBack: 35,
-  },
-  // Rising: knees tucked up to the chest, fists pulled in.
-  jump: {
-    torso: 20,
-    head: -10,
-    upperArmFront: 125,
-    lowerArmFront: -105,
-    upperArmBack: 205,
-    lowerArmBack: -70,
-    upperLegFront: 85,
-    lowerLegFront: 120,
-    upperLegBack: 125,
-    lowerLegBack: 110,
-  },
-  // Falling: arms loosely raised for balance, legs apart and ready to land.
-  fall: {
-    torso: 10,
-    head: -5,
-    upperArmFront: 135,
-    lowerArmFront: -45,
-    upperArmBack: 215,
-    lowerArmBack: -35,
-    upperLegFront: 160,
-    lowerLegFront: 35,
-    upperLegBack: 195,
-    lowerLegBack: 30,
-  },
-  // Jab: front fist straight out, back fist guarding, stepping in.
-  jab: {
-    torso: 25,
-    head: -15,
-    upperArmFront: 60,
-    lowerArmFront: 0,
-    upperArmBack: 135,
-    lowerArmBack: -100,
-    upperLegFront: 140,
-    lowerLegFront: 50,
-    upperLegBack: 205,
-    lowerLegBack: 20,
-  },
-  // Flinch: head and chest snap back, the arms trail behind the body.
-  hurt: {
-    torso: -20,
-    head: -25,
-    upperArmFront: 125,
-    lowerArmFront: 35,
-    upperArmBack: 150,
-    lowerArmBack: 30,
-    upperLegFront: 160,
-    lowerLegFront: 40,
-    upperLegBack: 200,
-    lowerLegBack: 30,
-  },
-  // Launched: thrown back, limbs flung wide.
-  tumble: {
-    torso: -80,
-    head: -30,
-    upperArmFront: 110,
-    lowerArmFront: 10,
-    upperArmBack: -80,
-    lowerArmBack: -10,
-    upperLegFront: 120,
-    lowerLegFront: 40,
-    upperLegBack: 240,
-    lowerLegBack: -30,
-  },
-};
+export { POSES, type PoseName };
 
 /** Hitstun of a launch at `POSE.tumbleSpeed`; longer hitstun means a tumble. */
 const TUMBLE_HITSTUN = Math.round(POSE.tumbleSpeed * HITSTUN_PER_KNOCKBACK);
 
-/** The pose for what the fighter is doing right now. */
-export const poseName = (fighter: FighterState): PoseName => {
+/** The pose for what the fighter is doing right now; `null` while a move's keyframes lead. */
+export const poseName = (fighter: FighterState): PoseName | null => {
   switch (fighter.action) {
     case 'run':
       return 'run';
     case 'attack':
-      // Moves bring their own keyframes later (ADR 0006); until then every attack shows the jab.
-      return 'jab';
+      return fighter.moveId === null ? 'idle' : null;
     case 'airborne':
       return fighter.velocity.y > 0 ? 'jump' : 'fall';
     case 'hitstun':
@@ -137,11 +40,16 @@ const wave = (frame: number, cycleFrames: number): number =>
 
 /**
  * The pose the body is heading for: the state's pose plus its motion. `frame` is the match
- * frame; each fighter breathes at its own phase so they do not move in lockstep.
+ * frame; each fighter breathes at its own phase so they do not move in lockstep. During a move it
+ * is the move's keyframe pose (the first one until the body reaches it).
  */
 export const targetPose = (fighter: FighterState, frame: number): Pose => {
   const name = poseName(fighter);
-  const base = POSES[name];
+  if (name === null && fighter.moveId !== null) {
+    const move = findMove(fighter.moveId);
+    return movePose(move, Math.max(fighter.actionFrame, move.poses[0]?.frame ?? 0));
+  }
+  const base = POSES[name ?? 'idle'];
   if (name === 'idle') {
     // A Melee-style bob: the knees flex and the chest rises and falls with each breath.
     const breath = wave(frame + fighter.slot * 37, POSE.idleCycleFrames);
@@ -194,6 +102,36 @@ export const blendPose = (from: Pose, to: Pose, t: number): Pose => {
   return blended as Pose;
 };
 
-/** One frame of easing towards what the fighter is doing. */
-export const nextPose = (fighter: FighterState, frame: number): Pose =>
-  blendPose(fighter.pose, targetPose(fighter, frame), POSE.blend);
+/**
+ * A move's pose on one of its frames (ADR 0006): linear between keyframes, held before the first
+ * and after the last.
+ */
+export const movePose = (move: MoveDef, frame: number): Pose => {
+  let previous = move.poses[0];
+  if (!previous) return POSES.idle;
+  for (const key of move.poses) {
+    if (key.frame >= frame) {
+      if (key.frame === previous.frame) return { ...key.pose };
+      const t = (frame - previous.frame) / (key.frame - previous.frame);
+      return blendPose(previous.pose, key.pose, Math.max(0, t));
+    }
+    previous = key;
+  }
+  return { ...previous.pose };
+};
+
+/**
+ * One frame of easing towards what the fighter is doing. In a move, the body closes the gap to
+ * the first keyframe evenly, arriving exactly on its frame, and then follows the keyframes.
+ */
+export const nextPose = (fighter: FighterState, frame: number): Pose => {
+  if (fighter.action === 'attack' && fighter.moveId !== null) {
+    const move = findMove(fighter.moveId);
+    const first = move.poses[0];
+    if (first && fighter.actionFrame < first.frame) {
+      return blendPose(fighter.pose, first.pose, 1 / (first.frame - fighter.actionFrame + 1));
+    }
+    return movePose(move, fighter.actionFrame);
+  }
+  return blendPose(fighter.pose, targetPose(fighter, frame), POSE.blend);
+};

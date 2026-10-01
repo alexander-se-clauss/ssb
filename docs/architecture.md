@@ -45,12 +45,17 @@ is where an attack hits (`activeHitboxes`). F2 shows both in the running game (y
 Attacks are moves (ADR 0006): plain-data `MoveDef`s in `move-data/`, played by one move runner
 in `fighter.ts`. A fighter in the `attack` action stores only the move's id and its frame
 (`actionFrame`), and `activeHitboxes` reads the definition to find which hitboxes are on. A
+hitbox sits on a bone of the planted body (the jab on the fist) or relative to the feet. It hits
+each target once per `group`; when several touch one target, the highest `priority` wins
+(`strikingHitbox`), and `hitTargets` records who each group already hit. A
 press of attack or special picks a move slot from the situation and the stick (`move-slots.ts`:
 jab, tilts and smashes on the ground, five aerials, four specials), and the character's `moves`
 table fills each slot with a move id or leaves it empty.
 Each fighter carries its current `pose` in `FighterState`: `step` eases it a little each frame towards
 the pose of its movement state, with idle breathing and a running stride (`poses.ts`), and the
-view interpolates it between frames like the position.
+view interpolates it between frames like the position. A move has pose keyframes instead: the
+body closes in on the first one and from then on follows them exactly (`movePose`), so a bone
+hitbox reaches the same spot every time. Key poses are data in `pose-data.ts`.
 
 **Enforced:** ESLint `no-restricted-imports` per folder (`eslint.config.js`) and a separate
 `tsconfig.core.json` without DOM types, so `document` or `window` in core fails typecheck.

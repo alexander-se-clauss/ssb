@@ -15,16 +15,28 @@ export interface Hitbox {
 export const activeHitboxes = (fighter: FighterState): Hitbox[] => {
   if (fighter.action !== 'attack' || fighter.moveId === null) return [];
   const frame = fighter.actionFrame;
-  return findMove(fighter.moveId)
-    .hitboxes.filter((hitbox) => frame >= hitbox.from && frame < hitbox.to)
-    .map((hitbox) => ({
-      center: {
-        x: fighter.position.x + hitbox.anchor.feet.x * fighter.facing,
-        y: fighter.position.y + hitbox.anchor.feet.y,
-      },
-      radius: hitbox.radius,
-      attack: hitbox,
-    }));
+  const on = findMove(fighter.moveId).hitboxes.filter(
+    (hitbox) => frame >= hitbox.from && frame < hitbox.to,
+  );
+  if (on.length === 0) return [];
+  // Bone hitboxes sit on the planted body, the one the view draws and hurtboxes use.
+  const bones = plantedBoneSegments(HUMANOID, fighter.pose, fighter.position, fighter.facing);
+  return on.map((hitbox) => {
+    const { anchor } = hitbox;
+    if ('bone' in anchor) {
+      const { start, end } = bones[anchor.bone];
+      const center = {
+        x: start.x + (end.x - start.x) * anchor.at,
+        y: start.y + (end.y - start.y) * anchor.at,
+      };
+      return { center, radius: hitbox.radius, attack: hitbox };
+    }
+    const center = {
+      x: fighter.position.x + anchor.feet.x * fighter.facing,
+      y: fighter.position.y + anchor.feet.y,
+    };
+    return { center, radius: hitbox.radius, attack: hitbox };
+  });
 };
 
 /**
@@ -64,6 +76,24 @@ const hitsBody = (hitbox: Hitbox, target: FighterState): boolean =>
     circleIntersectsCapsule(hitbox.center, hitbox.radius, box.start, box.end, box.radius),
   );
 
+/**
+ * The hitbox that strikes `target` this frame, if any: of those touching its body whose group has
+ * not hit it yet, the highest priority, then the first in the move's list.
+ */
+export const strikingHitbox = (
+  hitboxes: readonly Hitbox[],
+  target: FighterState,
+  groupsAlreadyHit: readonly number[],
+): Hitbox | undefined => {
+  let best: Hitbox | undefined;
+  for (const hitbox of hitboxes) {
+    if (groupsAlreadyHit.includes(hitbox.attack.group ?? 0)) continue;
+    if (best && hitbox.attack.priority <= best.attack.priority) continue;
+    if (hitsBody(hitbox, target)) best = hitbox;
+  }
+  return best;
+};
+
 /** Launch speed in units per frame. Grows with the target's damage after the hit. */
 export const knockback = (
   attack: Pick<HitboxDef, 'baseKnockback' | 'knockbackGrowth'>,
@@ -88,8 +118,10 @@ export const resolveCombat = (
     for (const target of fighters) {
       if (target.slot === attacker.slot) continue;
       if (target.action === 'eliminated' || target.invulnerableFrames > 0) continue;
-      if (attacker.hitTargets.includes(target.slot)) continue;
-      const hitbox = hitboxes.find((candidate) => hitsBody(candidate, target));
+      const groupsHit = attacker.hitTargets
+        .filter((record) => record.slot === target.slot)
+        .map((record) => record.group);
+      const hitbox = strikingHitbox(hitboxes, target, groupsHit);
       if (!hitbox) continue;
 
       const current = next[target.slot] ?? target;
@@ -112,7 +144,10 @@ export const resolveCombat = (
       const attackerNow = next[attacker.slot] ?? attacker;
       next[attacker.slot] = {
         ...attackerNow,
-        hitTargets: [...attackerNow.hitTargets, target.slot],
+        hitTargets: [
+          ...attackerNow.hitTargets,
+          { slot: target.slot, group: hitbox.attack.group ?? 0 },
+        ],
         damageDealt: attackerNow.damageDealt + hitbox.attack.damage,
       };
       events.push({ type: 'hit', attacker: attacker.slot, target: target.slot, damage });
