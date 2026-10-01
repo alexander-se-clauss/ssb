@@ -5,8 +5,9 @@ import {
   allReady,
   createSelect,
   menuActions,
+  canStart,
   reduceSelect,
-  selectOutcome,
+  requestsStart,
   slotOf,
   type SelectAction,
   type SelectState,
@@ -82,13 +83,16 @@ describe('joining on character select', () => {
     ).toEqual(state);
   });
 
-  it('is ready once every joined player picked, even alone', () => {
+  it('is ready once at least two players joined and every joined player picked', () => {
     const alone = apply(
       createSelect(4),
       { type: 'join', device: 2 },
       { type: 'confirm', player: 0 },
     );
-    expect(allReady(alone)).toBe(true);
+    expect(allReady(alone)).toBe(false);
+    const two = apply(alone, { type: 'join', device: 5 });
+    expect(allReady(two)).toBe(false);
+    expect(allReady(apply(two, { type: 'confirm', player: 1 }))).toBe(true);
   });
 
   it('moves each cursor through the grid, wrapping around', () => {
@@ -195,27 +199,28 @@ describe('rules banner on character select', () => {
 
 describe('starting from a controller', () => {
   const ready = apply(twoPlayers(), { type: 'confirm', player: 0 }, { type: 'confirm', player: 1 });
+  const confirm = (player: 0 | 1 | 2): SelectAction => ({ type: 'confirm', player });
 
-  it('starts once everyone has picked and someone confirms again', () => {
-    expect(selectOutcome(ready, { type: 'confirm', player: 1 })).toBe('start');
-    const half = apply(twoPlayers(), { type: 'confirm', player: 0 });
-    expect(selectOutcome(half, { type: 'confirm', player: 0 })).toBeNull();
+  it('asks to start when a player who already picked confirms again', () => {
+    const half = apply(twoPlayers(), confirm(0));
+    expect(requestsStart(half, confirm(0))).toBe(true);
+    // Their own first pick is a pick, not a start request.
+    expect(requestsStart(half, confirm(1))).toBe(false);
+    expect(requestsStart(ready, { type: 'cancel', player: 0 })).toBe(false);
   });
 
-  it('opens the rules instead of starting when the confirming cursor is on the banner', () => {
+  it('does not ask to start from the banner, an empty slot or while the rules are open', () => {
     const onBanner = apply(ready, { type: 'move', player: 0, dx: 0, dy: -1 });
-    expect(selectOutcome(onBanner, { type: 'confirm', player: 0 })).toBeNull();
+    expect(requestsStart(onBanner, confirm(0))).toBe(false);
+    const third = apply(createSelect(3), { type: 'join', device: 0 }, confirm(0));
+    expect(requestsStart(third, confirm(2))).toBe(false);
+    expect(requestsStart(apply(ready, { type: 'rules', open: true }), confirm(0))).toBe(false);
   });
 
-  it('does not start from an empty slot or while the rules are open', () => {
-    const third = apply(
-      createSelect(3),
-      { type: 'join', device: 0 },
-      { type: 'confirm', player: 0 },
-    );
-    expect(selectOutcome(third, { type: 'confirm', player: 2 })).toBeNull();
-    const open = apply(ready, { type: 'rules', open: true });
-    expect(selectOutcome(open, { type: 'confirm', player: 0 })).toBeNull();
+  it('can start once everyone is ready and the rules are closed', () => {
+    expect(canStart(ready)).toBe(true);
+    expect(canStart(apply(twoPlayers(), confirm(0)))).toBe(false);
+    expect(canStart(apply(ready, { type: 'rules', open: true }))).toBe(false);
   });
 });
 

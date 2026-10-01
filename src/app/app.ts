@@ -13,10 +13,11 @@ import {
 import type { GameSession, GameView, InputSource, Unsubscribe } from '../ports';
 import {
   allReady,
+  canStart,
   createSelect,
   menuActions,
   reduceSelect,
-  selectOutcome,
+  requestsStart,
   slotOf,
   type SelectState,
 } from './character-select';
@@ -332,6 +333,12 @@ export class App {
   }
 
   private updateCharacterSelect(ignorePresses = false): void {
+    // Leaving the screen waits until every device's presses this frame are in, so whether it
+    // starts or goes back does not depend on device order. A back from a device that has not
+    // joined still counts when a start on the same frame is not possible.
+    const rulesWereOpen = this.select?.rulesOpen ?? false;
+    let startRequested = false;
+    let backRequested = false;
     this.adapters.devices.forEach(({ source }, device) => {
       const current = source.sample();
       const previous = this.previousInputs[device] ?? NEUTRAL_INPUT;
@@ -341,21 +348,24 @@ export class App {
       const player = slotOf(state, device);
       if (player < 0) {
         // A device not playing yet: attack joins, special goes back, as Escape does.
-        if (state.rulesOpen) return;
+        if (rulesWereOpen) return;
         if (pressed(current, previous, 'attack')) {
           this.select = reduceSelect(state, { type: 'join', device }, CHARACTERS, GRID_COLUMNS);
         } else if (pressed(current, previous, 'special')) {
-          this.navigate('main-menu');
+          backRequested = true;
         }
         return;
       }
       for (const action of menuActions(player, previous, current)) {
         const now = this.select;
         if (!now) return;
-        if (selectOutcome(now, action) === 'start') return this.confirmCharacters();
+        if (requestsStart(now, action)) startRequested = true;
         this.select = reduceSelect(now, action, CHARACTERS, GRID_COLUMNS);
       }
     });
+    // A start is judged after this frame's joins, picks, leaves and rules banner presses.
+    if (startRequested && this.select && canStart(this.select)) return this.confirmCharacters();
+    if (backRequested && !this.select?.rulesOpen) return this.navigate('main-menu');
     if (!this.select) return;
     this.syncRulesPanel();
     this.characterSelect.render(this.select, allReady(this.select), this.rules);

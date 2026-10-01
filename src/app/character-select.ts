@@ -43,9 +43,12 @@ export const createSelect = (slots: number): SelectState => ({
 export const slotOf = (state: SelectState, device: number): PlayerSlot =>
   state.devices.indexOf(device);
 
-/** Someone joined, and every joined player has picked. One player alone may play. */
+/** A versus match needs at least this many players. */
+export const MIN_PLAYERS = 2;
+
+/** At least `MIN_PLAYERS` joined, and every joined player has picked. */
 export const allReady = (state: SelectState): boolean =>
-  state.devices.some((device) => device !== null) &&
+  state.devices.filter((device) => device !== null).length >= MIN_PLAYERS &&
   state.devices.every((device, slot) => device === null || state.picks[slot] != null);
 
 const wrap = (value: number, size: number): number => ((value % size) + size) % size;
@@ -128,15 +131,19 @@ export const reduceSelect = (
 };
 
 /**
- * Whether an action starts the match, judged on the state before it: a joined player confirming
- * once everyone has picked, like Enter. This lets a gamepad, which has no Enter, get through.
+ * Whether an action asks to start the match: a joined player who already picked confirms again,
+ * like Enter. This lets a gamepad, which has no Enter, get through. It depends only on that
+ * player, so the screen can judge every request after all of a frame's actions (`canStart`).
  */
-export const selectOutcome = (state: SelectState, action: SelectAction): 'start' | null => {
-  if (state.rulesOpen || action.type !== 'confirm') return null;
-  const joined = state.devices[action.player] != null;
-  const onBanner = state.cursors[action.player] === RULES_CURSOR;
-  return joined && allReady(state) && !onBanner ? 'start' : null;
-};
+export const requestsStart = (state: SelectState, action: SelectAction): boolean =>
+  action.type === 'confirm' &&
+  !state.rulesOpen &&
+  state.devices[action.player] != null &&
+  state.picks[action.player] != null &&
+  state.cursors[action.player] !== RULES_CURSOR;
+
+/** Whether the match may start now: everyone is ready and the rules overlay is closed. */
+export const canStart = (state: SelectState): boolean => !state.rulesOpen && allReady(state);
 
 /** Grid steps per stick direction; rows grow downwards. */
 const STEPS: Readonly<Record<Exclude<MenuCommand, 'confirm' | 'back'>, readonly [number, number]>> =

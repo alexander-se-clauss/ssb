@@ -59,17 +59,17 @@ set up: its top bar holds Back and the rules banner, which opens the rules overl
 select a device joins the first of four free player slots by pressing attack, then moves that
 player's cursor; special un-picks, then leaves the slot (later players move up, so slots have no
 gaps), and from a device that has not joined goes back. Attack once everyone joined has picked
-starts (one player alone may play). The match gets the joined players in slot order, each with
-their own device. The controls screen and the in-match hint name devices (left keys, right keys,
-gamepad), not players. Press detection lives in `character-select.ts`. The other menus
-(`MenuPanel`, stage select and the rules overlay included) read the keyboard as DOM keys and the
-gamepads as polled devices: `menu-commands.ts` turns presses into commands for
-`MenuPanel.command()`, which moves the focus to the nearest button in that direction
-(`spatial-focus.ts`), so the Back button is reachable too. Menus with a way back show a Back button
-in their top left corner, except results and the rules overlay, whose own buttons (Main menu, Done)
-do that job. Every screen listens on `window`, so each handler checks and marks the event in
-`key-events.ts`: one key press changes the screen at most once. Entering `match` creates a
-`GameSession` and its views; leaving it disposes them, so every match starts clean.
+starts (two to four players). The match gets the joined players in slot order, each with their own
+device. The controls screen and the in-match hint name devices (left keys, right keys, gamepad),
+not players. Press detection lives in `character-select.ts`. The other menus (`MenuPanel`, stage
+select and the rules overlay included) read the keyboard as DOM keys and the gamepads as polled
+devices: `menu-commands.ts` turns presses into commands for `MenuPanel.command()`, which moves the
+focus to the nearest button in that direction (`spatial-focus.ts`), so the Back button is reachable
+too. Menus with a way back show a Back button in their top left corner, except results and the
+rules overlay, whose own buttons (Main menu, Done) do that job. Every screen listens on `window`,
+so each handler checks and marks the event in `key-events.ts`: one key press changes the screen at
+most once. Entering `match` creates a `GameSession` and its views; leaving it disposes them, so
+every match starts clean.
 
 ## Determinism rules
 
