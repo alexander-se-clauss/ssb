@@ -980,6 +980,8 @@ for (const count of [2, 3, 4]) {
   test(`results podium renders ${count} participants and releases the scene on Back`, async ({
     page,
   }, testInfo) => {
+    // Up to three falls in a row, each with its own frame-bound wait, plus the menus around them.
+    test.setTimeout(30_000 + (count - 1) * FRAMES_TIMEOUT.timeout);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await installPads(page, 2);
     await toCharacterSelect(page);
