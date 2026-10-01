@@ -39,7 +39,7 @@ browsers, rendering or networking.
 
 1. While a match runs, `App` (`src/app/app.ts`) samples every `InputSource` and calls
    `session.setInput(slot, input)`. Each player's source is a `CombinedInput` of a keyboard half
-   and the gamepad with the same index; `GamepadInputSource` polls the Gamepad API right there,
+   and the Nth connected gamepad; `GamepadInputSource` polls the Gamepad API right there,
    since gamepad buttons have no events. Character select samples them too, for menu moves.
 2. `session.update(now)` asks `FixedStepClock` how many 1/60 s ticks are due and runs
    `step()` that many times. Rendering speed never changes game speed.

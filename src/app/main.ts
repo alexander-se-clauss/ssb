@@ -22,7 +22,7 @@ import './style.css';
 const container = document.querySelector<HTMLElement>('#app');
 if (!container) throw new Error('Missing #app container');
 
-// Each player's keyboard half plus the gamepad with the same index, wrapped so the debug handle
+// Each player's keyboard half plus the Nth connected gamepad, wrapped so the debug handle
 // can take a player over in tests.
 const inputs = [PLAYER_ONE_KEYS, PLAYER_TWO_KEYS].map(
   (keys, index) =>

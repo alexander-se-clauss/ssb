@@ -36,13 +36,16 @@ const deadzoned = (value: number): number => (Math.abs(value) < STICK.deadzone ?
  */
 export class GamepadInputSource implements InputSource {
   constructor(
-    /** `Gamepad.index`: which connected pad this player uses. */
+    /**
+     * Which connected pad this player uses, counting connected pads in order. Not
+     * `Gamepad.index`: browsers may give the only pad index 1, which would make it player 2.
+     */
     private readonly index: number,
     private readonly readGamepads: GamepadReader = browserGamepads,
   ) {}
 
   sample(): PlayerInput {
-    const pad = this.readGamepads()[this.index];
+    const pad = this.readGamepads().filter((gamepad) => gamepad !== null)[this.index];
     if (!pad) return NEUTRAL_INPUT;
     const is = (button: number): boolean => pad.buttons[button]?.pressed ?? false;
     const dpadX = (is(BUTTON.right) ? 1 : 0) - (is(BUTTON.left) ? 1 : 0);
