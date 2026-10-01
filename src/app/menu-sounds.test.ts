@@ -6,7 +6,7 @@ import {
   type SelectAction,
   type SelectState,
 } from './character-select';
-import { selectCue } from './menu-sounds';
+import { screenMusic, selectCue } from './menu-sounds';
 
 const ROSTER: CharacterDef[] = [
   { id: 'a', name: 'A', moves: {} },
@@ -91,5 +91,14 @@ describe('selectCue', () => {
   it('stays quiet when nothing changed, like a held button', () => {
     expect(selectCue(onePlayer, onePlayer)).toBeNull();
     expect(cueFor(onePlayer, { type: 'start', player: 0 })).toBeNull();
+  });
+});
+
+describe('screenMusic', () => {
+  it('plays the stage in a match, a jingle on results and the menu theme elsewhere', () => {
+    expect(screenMusic('match', 'final-destination')).toBe('final-destination');
+    expect(screenMusic('results', 'battlefield')).toBe('results');
+    expect(screenMusic('title', 'battlefield')).toBe('menu');
+    expect(screenMusic('stage-select', 'battlefield')).toBe('menu');
   });
 });

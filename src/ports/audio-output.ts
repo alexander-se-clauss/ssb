@@ -34,7 +34,10 @@ export type AudioChannel = 'music' | 'effects';
 export interface AudioOutput {
   /** Plays a cue once. `strength` from 0 to 1 scales cues that vary, like a hit's weight. */
   play(cue: SoundCue, strength?: number): void;
-  /** Switches the looping music to `track`, or fades it out with `null`. Same track: no change. */
+  /**
+   * Switches the music to `track` (most loop, a jingle plays once), or fades it out with `null`.
+   * The same track again changes nothing.
+   */
   playMusic(track: MusicTrack | null): void;
   /** `volume` from 0 (silent) to 1 (full). */
   setVolume(channel: AudioChannel, volume: number): void;
