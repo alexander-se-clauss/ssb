@@ -39,6 +39,20 @@ export interface SkeletonDef {
  */
 export type Pose = Readonly<Record<BoneId, number>>;
 
+/** Every bone id, in a fixed order, for code that walks a whole pose. */
+export const BONE_IDS: readonly BoneId[] = [
+  'torso',
+  'head',
+  'upperArmFront',
+  'lowerArmFront',
+  'upperArmBack',
+  'lowerArmBack',
+  'upperLegFront',
+  'lowerLegFront',
+  'upperLegBack',
+  'lowerLegBack',
+];
+
 /** A bone's two joints in world space. */
 export interface BoneSegment {
   readonly start: Vec2;

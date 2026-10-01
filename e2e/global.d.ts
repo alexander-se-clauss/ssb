@@ -5,6 +5,7 @@
 interface E2eFighter {
   position: { x: number; y: number };
   grounded: boolean;
+  pose: { torso: number; upperLegFront: number };
 }
 
 interface Window {

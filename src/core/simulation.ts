@@ -121,7 +121,7 @@ export const step = (state: MatchState, inputs: readonly PlayerInput[]): MatchSt
   if (state.phase === 'finished') return { ...state, events: [] };
 
   const moved = state.fighters.map((fighter) =>
-    updateFighter(fighter, inputs[fighter.slot] ?? NEUTRAL_INPUT, state.stage),
+    updateFighter(fighter, inputs[fighter.slot] ?? NEUTRAL_INPUT, state.stage, state.frame),
   );
   const combat = resolveCombat(moved);
   const events = [...combat.events];

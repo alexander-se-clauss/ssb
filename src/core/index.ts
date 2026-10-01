@@ -5,6 +5,7 @@ export * from './config';
 export * from './input';
 export * from './attack-input';
 export * from './skeleton';
+export { POSES, blendPose, poseName, targetPose, type PoseName } from './poses';
 export * from './stages';
 export * from './registry';
 export { createMatch, step } from './simulation';

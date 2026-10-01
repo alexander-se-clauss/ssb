@@ -3,6 +3,7 @@
  * so it can be cloned, hashed, stored as a replay and sent over the network unchanged.
  */
 import type { Rect, Vec2 } from './math';
+import type { Pose } from './skeleton';
 
 /** Index of a player in the match, 0-based. */
 export type PlayerSlot = number;
@@ -53,6 +54,8 @@ export interface FighterState {
   readonly hitTargets: readonly PlayerSlot[];
   /** Input of the previous frame, used for press (edge) detection inside the simulation. */
   readonly previousInput: PlayerInput;
+  /** Joint angles the body shows this frame, eased towards the state's pose (`poses.ts`). */
+  readonly pose: Pose;
 }
 
 export interface PlatformDef {
