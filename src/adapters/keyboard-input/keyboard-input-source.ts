@@ -39,6 +39,7 @@ export const PLAYER_TWO_KEYS: KeyMap = {
 export interface KeyLabels {
   readonly move: string;
   readonly jump: string;
+  readonly up: string;
   readonly down: string;
   readonly attack: string;
   readonly special: string;
@@ -68,8 +69,8 @@ const keyName = (code: string): string =>
 
 export const describeKeys = (keys: KeyMap): KeyLabels => ({
   move: `${keyName(keys.left)} / ${keyName(keys.right)}`,
-  // Tap-jump: up jumps too.
-  jump: `${keyName(keys.up)} or ${keyName(keys.jump)}`,
+  jump: keyName(keys.jump),
+  up: keyName(keys.up),
   down: keyName(keys.down),
   attack: keyName(keys.attack),
   special: keyName(keys.special),
@@ -114,8 +115,9 @@ export class KeyboardInputSource implements InputSource {
     const input: PlayerInput = {
       x: (is(k.right) ? 1 : 0) - (is(k.left) ? 1 : 0),
       y: (is(k.up) ? 1 : 0) - (is(k.down) ? 1 : 0),
-      // Tap-jump: "up" also jumps, like the default Smash controls.
-      jump: is(k.jump) || is(k.up),
+      // No tap-jump: keys are always fully pressed, so "up" only aims. Holding it is an up tilt,
+      // tapping it with attack an up smash; the jump key jumps.
+      jump: is(k.jump),
       attack: is(k.attack),
       special: is(k.special),
       shield: is(k.shield),

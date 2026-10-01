@@ -26,6 +26,7 @@ const BUTTON = {
 export const GAMEPAD_LABELS = {
   move: 'Left stick / D-pad',
   jump: 'X / Y or stick up',
+  up: 'Stick up',
   down: 'Stick down',
   attack: 'A',
   special: 'B',

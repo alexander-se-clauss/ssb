@@ -3,7 +3,8 @@ import { controlRows, type ControlLabels } from './controls';
 
 const P1: ControlLabels = {
   move: 'A / D',
-  jump: 'W',
+  jump: 'Space',
+  up: 'W',
   down: 'S',
   attack: 'F',
   special: 'G',
@@ -11,7 +12,8 @@ const P1: ControlLabels = {
 };
 const P2: ControlLabels = {
   move: '← / →',
-  jump: '↑',
+  jump: 'Num 0',
+  up: '↑',
   down: '↓',
   attack: '.',
   special: '/',
@@ -22,7 +24,8 @@ describe('controls screen', () => {
   it('lists each action with every player’s key and what it does in menus', () => {
     expect(controlRows([P1, P2])).toEqual([
       ['Move', 'A / D', '← / →'],
-      ['Jump', 'W', '↑'],
+      ['Jump', 'Space', 'Num 0'],
+      ['Aim up (up tilt, up smash)', 'W', '↑'],
       ['Drop / fast-fall', 'S', '↓'],
       ['Attack · pick in menus', 'F', '.'],
       ['Special · cancel in menus', 'G', '/'],

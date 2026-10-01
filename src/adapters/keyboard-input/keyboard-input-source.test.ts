@@ -18,6 +18,15 @@ describe('KeyboardInputSource', () => {
     expect(source.sample()).toMatchObject({ x: 1, y: 0, attack: true, jump: false });
   });
 
+  it('aims up without jumping, so up tilt and up smash work on the keyboard', () => {
+    const target = new EventTarget();
+    const source = new KeyboardInputSource(PLAYER_TWO_KEYS, target);
+    target.dispatchEvent(key('keydown', 'ArrowUp'));
+    expect(source.sample()).toMatchObject({ y: 1, jump: false });
+    target.dispatchEvent(key('keydown', 'Numpad0'));
+    expect(source.sample()).toMatchObject({ y: 1, jump: true });
+  });
+
   it('keeps a tap that is released before the next sample', () => {
     const target = new EventTarget();
     const source = new KeyboardInputSource(PLAYER_ONE_KEYS, target);
@@ -40,7 +49,8 @@ describe('describeKeys', () => {
   it('names the keys of a key map the way they read on a keyboard', () => {
     expect(describeKeys(PLAYER_ONE_KEYS)).toEqual({
       move: 'A / D',
-      jump: 'W or Space',
+      jump: 'Space',
+      up: 'W',
       down: 'S',
       attack: 'F',
       special: 'G',
@@ -48,7 +58,8 @@ describe('describeKeys', () => {
     });
     expect(describeKeys(PLAYER_TWO_KEYS)).toEqual({
       move: '← / →',
-      jump: '↑ or Num 0',
+      jump: 'Num 0',
+      up: '↑',
       down: '↓',
       attack: '.',
       special: '/',

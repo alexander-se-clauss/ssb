@@ -2,6 +2,7 @@
 export interface ControlLabels {
   readonly move: string;
   readonly jump: string;
+  readonly up: string;
   readonly down: string;
   readonly attack: string;
   readonly special: string;
@@ -11,6 +12,7 @@ export interface ControlLabels {
 const ACTIONS: readonly (readonly [keyof ControlLabels, string])[] = [
   ['move', 'Move'],
   ['jump', 'Jump'],
+  ['up', 'Aim up (up tilt, up smash)'],
   ['down', 'Drop / fast-fall'],
   ['attack', 'Attack · pick in menus'],
   ['special', 'Special · cancel in menus'],
