@@ -1,10 +1,13 @@
 /**
- * A plain HTML menu drawn over the canvas: a heading, a line of text and a column of
- * buttons. Up/Down (or W/S) move the focus, Enter picks, Left/Right (or A/D) change a setting,
- * Escape or the Back button in the corner goes back. A setting row also has − and + buttons
- * for the mouse. A menu without buttons (the title screen) waits for Enter or Space instead.
+ * A plain HTML menu drawn over the canvas: a heading, a line of text and a column of buttons.
+ * Up/Down (or W/S) move the focus, Enter picks, Left/Right (or A/D) change a setting, Escape or
+ * the Back button in the corner goes back. Gamepads drive it through `command()`. A setting row
+ * also has − and + buttons for the mouse. A menu without buttons (the title screen) waits for
+ * Enter or Space instead.
  */
 import { markHandled, wasHandled } from './key-events';
+import type { MenuCommand } from './menu-commands';
+import { nearestInDirection } from './spatial-focus';
 
 export interface MenuOption {
   readonly label: string;
@@ -33,15 +36,23 @@ export interface MenuContent {
   readonly preview?: (optionIndex: number) => Node | null;
 }
 
-const PREVIOUS_KEYS = new Set(['ArrowUp', 'KeyW']);
-const NEXT_KEYS = new Set(['ArrowDown', 'KeyS']);
+/** Keys that move the focus or change a setting, like a gamepad's stick. */
+const KEY_COMMANDS: Readonly<Record<string, MenuCommand>> = {
+  ArrowUp: 'up',
+  KeyW: 'up',
+  ArrowDown: 'down',
+  KeyS: 'down',
+  ArrowLeft: 'left',
+  KeyA: 'left',
+  ArrowRight: 'right',
+  KeyD: 'right',
+};
 const START_KEYS = new Set(['Enter', 'Space']);
-const LEFT_KEYS = new Set(['ArrowLeft', 'KeyA']);
-const RIGHT_KEYS = new Set(['ArrowRight', 'KeyD']);
 
 export class MenuPanel {
   private readonly root: HTMLElement;
   private buttons: HTMLButtonElement[] = [];
+  private backButton: HTMLButtonElement | undefined;
   private content: MenuContent | undefined;
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
@@ -64,19 +75,9 @@ export class MenuPanel {
       }
       return;
     }
-    const index = this.buttons.indexOf(document.activeElement as HTMLButtonElement);
-    const adjust = content.options?.[index]?.adjust;
-    const delta = LEFT_KEYS.has(event.code) ? -1 : RIGHT_KEYS.has(event.code) ? 1 : 0;
-    if (adjust && delta !== 0) {
-      markHandled(event);
-      adjust(delta);
-      return;
-    }
-    const step = PREVIOUS_KEYS.has(event.code) ? -1 : NEXT_KEYS.has(event.code) ? 1 : 0;
-    if (step === 0) return;
-    const next = (index + step + this.buttons.length) % this.buttons.length;
-    this.buttons[next]?.focus();
-    markHandled(event);
+    // Enter on a focused button clicks it natively, so only moves are handled here.
+    const command = KEY_COMMANDS[event.code];
+    if (command && this.command(command)) markHandled(event);
   };
 
   constructor(container: HTMLElement) {
@@ -131,6 +132,7 @@ export class MenuPanel {
     back.textContent = '◀ Back';
     back.hidden = !content.back || content.backButton === false;
     if (content.back) back.addEventListener('click', content.back);
+    this.backButton = back.hidden ? undefined : back;
     const preview = content.preview;
     const previewBox = document.createElement('div');
     previewBox.className = 'menu-preview';
@@ -151,8 +153,51 @@ export class MenuPanel {
     (this.buttons[focus] ?? this.buttons[0])?.focus();
   }
 
+  /**
+   * One step of navigation, from the keyboard or a gamepad. Up and down move the focus to the
+   * nearest button above or below (wrapping around at the ends), left and right change a setting
+   * or move along the row. Returns whether the command did anything.
+   */
+  command(command: MenuCommand): boolean {
+    const content = this.content;
+    if (!content) return false;
+    if (command === 'back') {
+      content.back?.();
+      return content.back !== undefined;
+    }
+    if (this.buttons.length === 0) {
+      if (command === 'confirm') content.start?.();
+      return command === 'confirm' && content.start !== undefined;
+    }
+    const focusable = this.backButton ? [this.backButton, ...this.buttons] : this.buttons;
+    const current = focusable.indexOf(document.activeElement as HTMLButtonElement);
+    const focused = focusable[current];
+    if (!focused) {
+      // Nothing focused, e.g. after a click elsewhere: the first move only finds the menu.
+      this.buttons[0]?.focus();
+      return true;
+    }
+    if (command === 'confirm') {
+      focused.click();
+      return true;
+    }
+    const adjust = content.options?.[this.buttons.indexOf(focused)]?.adjust;
+    if (adjust && (command === 'left' || command === 'right')) {
+      adjust(command === 'left' ? -1 : 1);
+      return true;
+    }
+    const boxes = focusable.map((element) => element.getBoundingClientRect());
+    const next = nearestInDirection(boxes, current, command);
+    if (next >= 0) focusable[next]?.focus();
+    else if (command === 'up') this.buttons.at(-1)?.focus();
+    else if (command === 'down') this.buttons[0]?.focus();
+    else return false;
+    return true;
+  }
+
   hide(): void {
     this.root.hidden = true;
+    this.backButton = undefined;
     this.root.replaceChildren();
     this.buttons = [];
     this.content = undefined;

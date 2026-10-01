@@ -4,7 +4,8 @@
  * Melee: moving up onto it and picking opens the rules. The screen (character-select-view.ts)
  * only draws this state and feeds it actions.
  */
-import { pressed, type CharacterDef, type PlayerInput, type PlayerSlot } from '../core';
+import type { CharacterDef, PlayerInput, PlayerSlot } from '../core';
+import { menuCommands, type MenuCommand } from './menu-commands';
 
 /** Cursor position of a player who is on the rules banner instead of the grid. */
 export const RULES_CURSOR = -1;
@@ -24,9 +25,6 @@ export type SelectAction =
   | { readonly type: 'cancel'; readonly player: PlayerSlot }
   /** Opens or closes the rules overlay, e.g. by mouse or from the overlay itself. */
   | { readonly type: 'rules'; readonly open: boolean };
-
-/** How far the stick must be pushed to count as a menu move. */
-const STICK_THRESHOLD = 0.5;
 
 export const createSelect = (playerCount: number): SelectState => ({
   cursors: Array.from({ length: playerCount }, () => 0),
@@ -91,34 +89,36 @@ export const reduceSelect = (
   }
 };
 
-const direction = (value: number): number =>
-  value > STICK_THRESHOLD ? 1 : value < -STICK_THRESHOLD ? -1 : 0;
-
 /**
- * The one grid step a stick position means: a diagonal counts along its stronger axis only.
- * Stick up is +y, but the grid's row index grows downwards.
+ * Whether an action leaves the screen, judged on the state before it: confirming once everyone
+ * has picked starts (like Enter), and cancelling without a pick goes back (like Escape). This
+ * lets a gamepad, which has no Enter or Escape, get through character select.
  */
-const menuDirection = (input: PlayerInput): { dx: number; dy: number } =>
-  Math.abs(input.x) >= Math.abs(input.y)
-    ? { dx: direction(input.x), dy: 0 }
-    : { dx: 0, dy: -direction(input.y) };
+export const selectOutcome = (
+  state: SelectState,
+  action: SelectAction,
+): 'start' | 'back' | null => {
+  if (state.rulesOpen || action.type === 'move' || action.type === 'rules') return null;
+  if (action.type === 'confirm') {
+    const onBanner = state.cursors[action.player] === RULES_CURSOR;
+    return allReady(state) && !onBanner ? 'start' : null;
+  }
+  return state.picks[action.player] === null ? 'back' : null;
+};
+
+/** Grid steps per stick direction; rows grow downwards. */
+const STEPS: Readonly<Record<Exclude<MenuCommand, 'confirm' | 'back'>, readonly [number, number]>> =
+  { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 
 /** The menu actions one player's controller produced this frame (presses only, not holds). */
 export const menuActions = (
   player: PlayerSlot,
   previous: PlayerInput,
   current: PlayerInput,
-): SelectAction[] => {
-  const actions: SelectAction[] = [];
-  // A move fires whenever the effective direction changes, so rolling from one key or stick
-  // direction to another moves again without passing through neutral.
-  const now = menuDirection(current);
-  const before = menuDirection(previous);
-  const moving = now.dx !== 0 || now.dy !== 0;
-  if (moving && (now.dx !== before.dx || now.dy !== before.dy)) {
-    actions.push({ type: 'move', player, ...now });
-  }
-  if (pressed(current, previous, 'attack')) actions.push({ type: 'confirm', player });
-  if (pressed(current, previous, 'special')) actions.push({ type: 'cancel', player });
-  return actions;
-};
+): SelectAction[] =>
+  menuCommands(previous, current).map((command): SelectAction => {
+    if (command === 'confirm') return { type: 'confirm', player };
+    if (command === 'back') return { type: 'cancel', player };
+    const [dx, dy] = STEPS[command];
+    return { type: 'move', player, dx, dy };
+  });

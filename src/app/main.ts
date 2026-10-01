@@ -33,6 +33,8 @@ const inputs = [PLAYER_ONE_KEYS, PLAYER_TWO_KEYS].map(
 
 const app = new App(container, {
   inputs,
+  // Any of the first four gamepads can drive the menus.
+  menuInputs: [0, 1, 2, 3].map((index) => new GamepadInputSource(index)),
   createSession: (config) => new LocalGameSession(createMatch(config)),
   createViews: (root, stage) => [new ThreeView(root, stage), new DomHud(root)],
   controls: [describeKeys(PLAYER_ONE_KEYS), describeKeys(PLAYER_TWO_KEYS)],
