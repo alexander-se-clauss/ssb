@@ -25,7 +25,8 @@ export interface PlayerInput {
   readonly start: boolean;
 }
 
-export type FighterAction = 'idle' | 'run' | 'airborne' | 'attack' | 'hitstun' | 'eliminated';
+export type FighterAction =
+  'idle' | 'run' | 'jumpsquat' | 'airborne' | 'attack' | 'hitstun' | 'eliminated';
 
 /** A press waiting until the fighter can act on it (ADR 0006). */
 export interface BufferedInput {

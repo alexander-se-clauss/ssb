@@ -1,8 +1,20 @@
-/** Every move in the game, by id. Characters will map their move slots to these ids (#28). */
+/** Every move in the game, by id. Characters map their move slots to these ids (#28). */
 import { validateMove, type MoveDef, type MoveId } from '../moves';
 import { JAB, JAB2, JAB3 } from './jab';
+import { DOWN_SMASH, FORWARD_SMASH, UP_SMASH } from './smashes';
+import { DOWN_TILT, FORWARD_TILT, UP_TILT } from './tilts';
 
-const ALL: readonly MoveDef[] = [JAB, JAB2, JAB3];
+const ALL: readonly MoveDef[] = [
+  JAB,
+  JAB2,
+  JAB3,
+  FORWARD_TILT,
+  UP_TILT,
+  DOWN_TILT,
+  FORWARD_SMASH,
+  UP_SMASH,
+  DOWN_SMASH,
+];
 
 /** Checks each move, and that every move a cancel goes into is in the same list. */
 export const validateMoves = (moves: readonly MoveDef[]): void => {

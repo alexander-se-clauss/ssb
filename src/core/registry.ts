@@ -6,20 +6,20 @@ import { BATTLEFIELD, FINAL_DESTINATION } from './stages';
 import type { CharacterDef, StageDef } from './types';
 
 /**
- * The one fighter so far: the capsule body with the tuning in `FIGHTER`. Until it has more moves
- * (S4), every attack slot plays the jab, so attacking works in any direction; specials are empty.
+ * The one fighter so far: the capsule body with the tuning in `FIGHTER`. It has its ground
+ * attacks; until the aerials come (#34) every aerial slot plays the jab, and specials are empty.
  */
 export const CAPSULE: CharacterDef = {
   id: 'capsule',
   name: 'Capsule',
   moves: {
     jab: 'jab',
-    forwardTilt: 'jab',
-    upTilt: 'jab',
-    downTilt: 'jab',
-    forwardSmash: 'jab',
-    upSmash: 'jab',
-    downSmash: 'jab',
+    forwardTilt: 'forwardTilt',
+    upTilt: 'upTilt',
+    downTilt: 'downTilt',
+    forwardSmash: 'forwardSmash',
+    upSmash: 'upSmash',
+    downSmash: 'downSmash',
     neutralAir: 'jab',
     forwardAir: 'jab',
     backAir: 'jab',

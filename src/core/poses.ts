@@ -21,6 +21,8 @@ export const poseName = (fighter: FighterState): PoseName | null => {
   switch (fighter.action) {
     case 'run':
       return 'run';
+    case 'jumpsquat':
+      return 'crouch';
     case 'attack':
       return fighter.moveId === null ? 'idle' : null;
     case 'airborne':

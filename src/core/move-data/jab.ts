@@ -83,8 +83,8 @@ export const JAB3: MoveDef = {
       priority: 1,
       damage: 8,
       angle: 45,
-      baseKnockback: 0.3,
-      knockbackGrowth: 0.007,
+      baseKnockback: 0.25,
+      knockbackGrowth: 0.0035,
     },
     {
       anchor: { bone: 'lowerLegFront', at: 0 },
@@ -94,8 +94,8 @@ export const JAB3: MoveDef = {
       priority: 0,
       damage: 6,
       angle: 45,
-      baseKnockback: 0.22,
-      knockbackGrowth: 0.006,
+      baseKnockback: 0.2,
+      knockbackGrowth: 0.003,
     },
   ],
   poses: [

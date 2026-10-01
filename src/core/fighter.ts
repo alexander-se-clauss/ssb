@@ -166,16 +166,37 @@ export const updateFighter = (
       moveId = null;
       hitTargets = [];
     }
+  } else if (action === 'jumpsquat') {
+    // Crouched to jump, as in Melee: an attack pressed now is still a ground attack, so a stick
+    // flicked up for an up smash does not lose it to tap-jump.
+    if (buffer && bufferedMove !== undefined) {
+      startMove(bufferedMove, buffer.face);
+    } else if (actionFrame >= FIGHTER.jumpSquatFrames || !grounded) {
+      vy = FIGHTER.jumpVelocity;
+      // This is the ground jump, also when the fighter slid off an edge while crouched, which
+      // has used it up already.
+      jumpsRemaining = Math.min(jumpsRemaining, FIGHTER.totalJumps - 1);
+      grounded = false;
+      action = 'airborne';
+      actionFrame = 0;
+    }
   } else if (buffer && bufferedMove !== undefined) {
     startMove(bufferedMove, buffer.face);
   } else if (pressed(input, prev, 'jump') && jumpsRemaining > 0) {
-    vy = grounded ? FIGHTER.jumpVelocity : FIGHTER.doubleJumpVelocity;
-    jumpsRemaining -= 1;
-    grounded = false;
+    if (grounded) {
+      action = 'jumpsquat';
+      actionFrame = 0;
+    } else {
+      vy = FIGHTER.doubleJumpVelocity;
+      jumpsRemaining -= 1;
+    }
   }
 
-  // Horizontal movement.
-  if (isControllable(action)) {
+  // Horizontal movement. A launch faster than the fighter can drift bleeds off quickly, as
+  // knockback decays in Melee; without it a sideways hit carries on almost undamped.
+  if (!grounded && Math.abs(vx) > FIGHTER.airSpeed) {
+    vx = approach(vx, Math.sign(vx) * FIGHTER.airSpeed, FIGHTER.launchDecay);
+  } else if (isControllable(action)) {
     if (Math.abs(input.x) > FACE_THRESHOLD && grounded) facing = input.x > 0 ? 1 : -1;
     if (grounded) {
       vx = approach(vx, input.x * FIGHTER.walkSpeed, FIGHTER.groundAcceleration);
