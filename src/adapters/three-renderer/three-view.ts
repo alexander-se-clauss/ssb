@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {
   FIGHTER,
   HUMANOID,
+  TICK_RATE,
   activeHitboxes,
   blendPose,
   hurtboxes,
@@ -13,6 +14,7 @@ import {
 } from '../../core';
 import type { GameView, SessionView } from '../../ports';
 import { bodyParts } from './body-layout';
+import { buildScenery, type Scenery } from './scenery';
 
 export const PLAYER_COLORS = [0xe94f4f, 0x4f8fe9, 0x4fd18b, 0xf2c14e] as const;
 
@@ -47,6 +49,7 @@ export class ThreeView implements GameView {
   private readonly camera = new THREE.PerspectiveCamera(40, 16 / 9, 0.1, 200);
   private readonly fighters = new Map<number, FighterVisual>();
   private readonly cameraTarget = new THREE.Vector3(0, 2, 22);
+  private readonly scenery: Scenery;
   private showBoxes = false;
 
   constructor(
@@ -58,17 +61,16 @@ export class ThreeView implements GameView {
     this.renderer.shadowMap.enabled = true;
     container.appendChild(this.renderer.domElement);
 
-    this.scene.background = new THREE.Color(0x1b2140);
-    this.scene.fog = new THREE.Fog(0x1b2140, 30, 80);
     this.camera.position.copy(this.cameraTarget);
-
-    this.addLights();
-    this.addStage(stage);
+    this.scenery = buildScenery(this.scene, stage);
     this.resize(container.clientWidth, container.clientHeight);
   }
 
   render(view: SessionView): void {
     const { previous, current, alpha } = view;
+    // The same in-between moment the fighters are drawn at; stops when the match does.
+    const frame = previous.frame + (current.frame - previous.frame) * alpha;
+    this.scenery.update(frame / TICK_RATE);
     for (const fighter of current.fighters) {
       const before = previous.fighters[fighter.slot] ?? fighter;
       this.updateFighter(fighter, before, alpha, current.frame);
@@ -91,43 +93,25 @@ export class ThreeView implements GameView {
   /** Frees GPU memory and the WebGL context; the app creates a new view for every match. */
   dispose(): void {
     this.scene.traverse((object) => {
-      if (object instanceof THREE.Mesh) {
+      if (
+        object instanceof THREE.Mesh ||
+        object instanceof THREE.LineSegments ||
+        object instanceof THREE.Points
+      ) {
         object.geometry.dispose();
         const materials: THREE.Material[] = [object.material].flat();
-        for (const material of materials) material.dispose();
+        for (const material of materials) {
+          // Generated stage textures hang off the materials.
+          for (const value of Object.values(material)) {
+            if (value instanceof THREE.Texture) value.dispose();
+          }
+          material.dispose();
+        }
       }
     });
     this.renderer.dispose();
     this.renderer.forceContextLoss();
     this.renderer.domElement.remove();
-  }
-
-  private addLights(): void {
-    this.scene.add(new THREE.HemisphereLight(0xbfd4ff, 0x2a2238, 1.2));
-    const sun = new THREE.DirectionalLight(0xffffff, 2);
-    sun.position.set(6, 14, 10);
-    sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -6 });
-    this.scene.add(sun);
-  }
-
-  private addStage(stage: StageDef): void {
-    for (const platform of stage.platforms) {
-      const { left, right, bottom, top } = platform.bounds;
-      const depth = platform.passThrough ? 2 : 4;
-      const mesh = new THREE.Mesh(
-        new THREE.BoxGeometry(right - left, top - bottom, depth),
-        new THREE.MeshStandardMaterial({
-          color: platform.passThrough ? 0x9aa7c7 : 0x5c6b8a,
-          roughness: 0.8,
-        }),
-      );
-      mesh.position.set((left + right) / 2, (top + bottom) / 2, 0);
-      mesh.receiveShadow = true;
-      mesh.castShadow = !platform.passThrough;
-      this.scene.add(mesh);
-    }
   }
 
   private visualFor(slot: number): FighterVisual {
