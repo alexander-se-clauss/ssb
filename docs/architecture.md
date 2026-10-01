@@ -40,6 +40,8 @@ bent-knee stance stands on the ground. That planted body is the one to use: each
 in `combat.ts` turns them into one hurtbox per body part, and hits test against those, so a crouch
 or a lean dodges what it looks like it dodges. The view only draws what core computed: `ThreeView`
 places a sphere or capsule of the same radius on each bone (`body-layout.ts`).
+Terms, as in Melee: a **hurtbox** is where a fighter can be hit (one per body part), a **hitbox**
+is where an attack hits (`activeHitbox`). F2 shows both in the running game (yellow and red).
 Each fighter carries its current `pose` in `FighterState`: `step` eases it a little each frame towards
 the pose of its movement state, with idle breathing and a running stride (`poses.ts`), and the
 view interpolates it between frames like the position.
