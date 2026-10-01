@@ -6,6 +6,7 @@ export const SCREENS = [
   'title',
   'main-menu',
   'options',
+  'sound',
   'controls',
   'character-select',
   'stage-select',
@@ -21,7 +22,8 @@ export const INITIAL_SCREEN: Screen = 'title';
 const TRANSITIONS: Readonly<Record<Screen, readonly Screen[]>> = {
   title: ['main-menu'],
   'main-menu': ['character-select', 'options', 'title'],
-  options: ['controls', 'main-menu'],
+  options: ['sound', 'controls', 'main-menu'],
+  sound: ['options'],
   controls: ['options'],
   'character-select': ['stage-select', 'main-menu'],
   'stage-select': ['match', 'character-select'],

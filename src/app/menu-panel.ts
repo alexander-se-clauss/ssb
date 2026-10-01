@@ -255,8 +255,9 @@ export class MenuPanel {
   }
 
   private adjust(adjust: (delta: 1 | -1) => void, delta: 1 | -1): void {
-    this.play('menu-adjust');
+    // The change first, so a new effects volume is heard on its own step sound.
     adjust(delta);
+    this.play('menu-adjust');
   }
 
   private confirmFeedback(): void {

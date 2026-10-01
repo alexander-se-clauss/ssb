@@ -7,8 +7,11 @@ import { songFor } from './songs';
 const SILENT = 0.0001;
 /** Fade-in at the start of every tone, so it starts without a click. */
 const ATTACK_SECONDS = 0.005;
-/** How fast a volume change settles, in seconds (time constant). */
-const VOLUME_SMOOTHING = 0.03;
+/**
+ * How fast a volume change settles, in seconds (time constant): smooth enough not to click, quick
+ * enough that the step sound played right after a change is heard at the new level.
+ */
+const VOLUME_SMOOTHING = 0.008;
 /** How far ahead music notes are scheduled, and how often the scheduler runs. */
 const LOOKAHEAD_SECONDS = 0.15;
 const SCHEDULE_EVERY_MS = 25;
