@@ -1,6 +1,6 @@
 # 0007 Sound plays through an audio port, synthesized for now
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-01
 
 ## Context
