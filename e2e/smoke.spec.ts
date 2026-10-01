@@ -177,11 +177,11 @@ test('two players pick, change their minds and confirm on character select', asy
   await tap(page, 'Period');
   await expect.poll(() => picks(page)).toEqual(['capsule', null, null, null]);
   // One player alone cannot start a match: a second one joins and picks.
-  await expect(page.getByText('Ready! Press Enter')).toBeHidden();
+  await expect(page.getByText('Ready to Fight', { exact: true })).toBeHidden();
   await tap(page, 'KeyF');
   await tap(page, 'KeyF');
   await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule', null, null]);
-  await expect(page.getByText('Ready! Press Enter')).toBeVisible();
+  await expect(page.getByText('Ready to Fight', { exact: true })).toBeVisible();
 
   await page.keyboard.press('Enter');
   await expect.poll(() => screen(page)).toBe('stage-select');
@@ -974,3 +974,83 @@ for (const count of [2, 3, 4]) {
     await expect(page.locator('.results-scene canvas')).toHaveCount(0);
   });
 }
+
+test('fighter lobby shows neutral portraits, live colored previews, ownership and readiness', async ({
+  page,
+}, testInfo) => {
+  test.setTimeout(60_000);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await installPads(page, 2);
+  await toCharacterSelect(page);
+  const portrait = page.locator('.css-cell .css-portrait');
+  await expect(portrait).toHaveCount(1);
+  await expect
+    .poll(() => portrait.evaluate((image: HTMLImageElement) => image.naturalWidth))
+    .toBeGreaterThan(0);
+  const root = page.locator('.css');
+  const viewport = page.viewportSize();
+  const roster = await page.locator('.css-roster').boundingBox();
+  if (!viewport || !roster) throw new Error('Missing lobby layout');
+  expect(roster.width / viewport.width).toBeGreaterThanOrEqual(0.9);
+  expect(roster.width / viewport.width).toBeLessThanOrEqual(0.95);
+  await expect(page.locator('.css-slot.empty')).toHaveCount(4);
+  await inspectMenu(page, 'lobby-empty', testInfo);
+
+  await tap(page, 'KeyF');
+  await tap(page, 'Period');
+  await expect(page.locator('.css-slot:not(.empty) img')).toHaveCount(2);
+  await expect(page.locator('.css-slot.picked')).toHaveCount(0);
+  await expect(page.locator('.css-slot').nth(0)).toContainText('Choosing');
+  await expect(page.locator('.css-slot').nth(0)).toContainText('Left keys');
+  await expect(page.locator('.css-slot').nth(1)).toContainText('Right keys');
+  await expect(page.locator('.css-badge')).toHaveText(['P1', 'P2']);
+  await inspectMenu(page, 'lobby-browsing', testInfo);
+
+  await tap(page, 'KeyF');
+  await tap(page, 'Period');
+  await expect(page.locator('.css-slot.picked')).toHaveCount(2);
+  await expect(page.getByText('Ready to Fight', { exact: true })).toBeVisible();
+  await inspectMenu(page, 'lobby-ready', testInfo);
+  await tap(page, 'KeyG');
+  await expect(page.locator('.css-slot.picked')).toHaveCount(1);
+  await expect(page.getByText('Ready to Fight', { exact: true })).toBeHidden();
+  await expect(page.locator('.css-slot').nth(0)).toContainText('Choosing');
+  await expect(page.locator('.css-slot').nth(0).locator('img')).toBeVisible();
+
+  for (const pad of [0, 1]) await press(page, pad, PAD.a);
+  await expect(page.locator('.css-slot:not(.empty) img')).toHaveCount(4);
+  await expect(page.locator('.css-badge')).toHaveText(['P1', 'P2', 'P3', 'P4']);
+  const pixels = await page.locator('.css-slot img').evaluateAll(async (images) => {
+    return Promise.all(
+      images.map(async (node) => {
+        const image = node as HTMLImageElement;
+        await image.decode();
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = 480;
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Missing image context');
+        context.drawImage(image, 0, 0);
+        const data = context.getImageData(0, 0, 480, 480).data;
+        const rgb = [0, 0, 0];
+        let count = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          if ((data[i + 3] ?? 0) < 200) continue;
+          rgb[0] = (rgb[0] ?? 0) + (data[i] ?? 0);
+          rgb[1] = (rgb[1] ?? 0) + (data[i + 1] ?? 0);
+          rgb[2] = (rgb[2] ?? 0) + (data[i + 2] ?? 0);
+          count++;
+        }
+        return rgb.map((value) => value / count);
+      }),
+    );
+  });
+  const [red, blue, green, yellow] = pixels;
+  if (!red || !blue || !green || !yellow) throw new Error('Missing player portraits');
+  expect(red[0]).toBeGreaterThan((red[2] ?? 0) * 1.25);
+  expect(blue[2]).toBeGreaterThan((blue[0] ?? 0) * 1.25);
+  expect(green[1]).toBeGreaterThan((green[0] ?? 0) * 1.25);
+  expect(yellow[0]).toBeGreaterThan((yellow[2] ?? 0) * 1.25);
+  expect(yellow[1]).toBeGreaterThan((yellow[2] ?? 0) * 1.25);
+  await inspectMenu(page, 'lobby-four', testInfo);
+  await expect.poll(() => root.evaluate((node) => node.scrollHeight - node.clientHeight)).toBe(0);
+});

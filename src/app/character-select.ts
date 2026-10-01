@@ -234,3 +234,20 @@ export const menuActions = (
     const [dx, dy] = STEPS[command];
     return { type: 'move', player, dx, dy };
   });
+
+/** Confirmed picks remain locked; otherwise preview the hovered fighter, retaining it on headers. */
+export const previewCharacter = (
+  state: SelectState,
+  player: number,
+  roster: readonly CharacterDef[],
+  lastHovered?: string,
+): CharacterDef | undefined => {
+  if (state.devices[player] == null) return undefined;
+  const pick = state.picks[player];
+  if (pick != null) return roster.find((character) => character.id === pick);
+  return (
+    roster[state.cursors[player] ?? 0] ??
+    roster.find((character) => character.id === lastHovered) ??
+    roster[0]
+  );
+};

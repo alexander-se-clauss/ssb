@@ -139,7 +139,13 @@ computed from the core skeleton and poses. `MenuPanel` composes a framed heading
 panel, and selection panels; each screen supplies its own variant in `app.ts`. Main menu gives
 VS. Mode the largest panel, settings uses offset equipment panels, results frames a Three.js medal podium with the selected fighter models, and stage select attaches its heading to the centered thumbnail grid.
 `menu-theme.css` also frames character select and the rules overlay while preserving their setup
-layouts. Hover and focus share outline, shadow and position cues. A short confirmation overlay
+layouts. `fighter-lobby.css` gives character selection a viewport-sized header/roster/player-panel
+composition, with four panels in a row on desktop and a two-by-two grid on portrait screens.
+`fighter-portrait.ts` captures neutral and four player-color images per registry character in one
+temporary WebGL context, caches the PNGs, and releases all GPU resources. `fighter-model.ts` shares
+body geometry, materials and player colors with gameplay and results. Player previews follow the
+roster cursor before confirmation and retain confirmed picks; header navigation retains the last
+browsed fighter. Input labels come from the app’s device metadata. Hover and focus share outline, shadow and position cues. A short confirmation overlay
 runs independently of navigation; reduced motion disables it and menu transitions.
 Browser tests check visibility and overlap across desktop, portrait, compact and short landscape
 viewports, including four-player results. `ResultsScene` renders gold, silver, bronze and fourth-place

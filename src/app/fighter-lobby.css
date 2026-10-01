@@ -1,0 +1,350 @@
+/* A viewport-sized multiplayer lobby in the same cut-metal menu family. */
+.css {
+  position: absolute;
+  inset: 0;
+  color: #fff;
+  display: grid;
+  grid-template-rows: 64px minmax(0, 1fr) minmax(0, 0.9fr) 52px;
+  gap: 14px;
+  padding: 20px 3%;
+  overflow: hidden;
+}
+.css-topbar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: center;
+  padding: 0 14px;
+  border-bottom: 3px solid #efb977;
+  background: linear-gradient(110deg, #283d58, #122033);
+}
+.css-topbar .menu-back {
+  position: relative;
+  inset: auto;
+  padding: 8px 14px;
+  transform: skewX(-5deg);
+  translate: 0 0;
+}
+.css h1 {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: clamp(1.25rem, 2.4vw, 2.5rem);
+  width: auto;
+  line-height: 1;
+}
+.css .css-rules {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 6px 16px;
+  font-size: clamp(0.75rem, 1.2vw, 1rem);
+  gap: 2px;
+}
+.css-mode {
+  color: #efb977;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+}
+.css-rules:is(:hover, :focus) .css-mode {
+  color: inherit;
+}
+.css-topbar button:is(:hover, :focus, :active) {
+  translate: 0 0;
+}
+.css-roster {
+  min-height: 0;
+  display: grid;
+  padding: 14px;
+  border: 1px solid #405570;
+  border-left: 5px solid #efb977;
+  background: rgb(17 30 47 / 65%);
+}
+.css-grid {
+  display: grid;
+  min-height: 0;
+  grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+  grid-auto-rows: minmax(0, 1fr);
+  gap: 14px;
+  width: 100%;
+}
+.css-grid[data-size='1'] {
+  width: min(440px, 65%);
+  justify-self: center;
+}
+.css-grid[data-size='2'] {
+  width: min(880px, 85%);
+  justify-self: center;
+}
+.css-cell {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  border: 2px solid #68809a;
+  background:
+    repeating-linear-gradient(135deg, transparent 0 30px, #ffffff06 30px 32px),
+    radial-gradient(ellipse at 50% 40%, #536e89, #1b2e45 75%);
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto auto;
+}
+.css-portrait {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: contain;
+}
+.css-fighter-name {
+  text-align: center;
+  padding: 6px;
+  background: #0c192c;
+  font-size: clamp(0.8rem, 1.6vw, 1.3rem);
+  font-weight: 950;
+  font-style: italic;
+  text-transform: uppercase;
+}
+.css-cursors {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  min-height: 22px;
+  padding: 4px;
+  background: #0c192c;
+}
+.css-badge {
+  background: var(--player-color);
+  color: #0a1120;
+  font-size: 0.7rem;
+  font-weight: 950;
+  padding: 2px 7px;
+  border: 1px solid transparent;
+}
+.css-badge.locked {
+  border-color: white;
+  box-shadow: inset 0 -2px 0 #ffffffa0;
+}
+.css-cell:has(.css-badge) {
+  outline: 2px solid #fff0ce;
+  outline-offset: 2px;
+}
+.css-slots {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+.css-slot {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--player-color) 65%, #20334a);
+  border-top: 5px solid var(--player-color);
+  background: linear-gradient(
+    140deg,
+    color-mix(in srgb, var(--player-color) 20%, #0e1c30),
+    #101f32 80%
+  );
+}
+.css-player-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+.css-player-number {
+  color: var(--player-color);
+  font-size: clamp(1.1rem, 2vw, 1.8rem);
+  font-style: italic;
+}
+.css-player-status {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #bed0e0;
+}
+.css-player-preview {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.css-player-preview img {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: contain;
+}
+.css-player-name {
+  font-size: clamp(0.9rem, 1.6vw, 1.4rem);
+  font-style: italic;
+  text-transform: uppercase;
+}
+.css-player-device {
+  color: #bdcbdc;
+  font-size: 0.75rem;
+  margin-top: 3px;
+}
+.css-slot.empty {
+  border-style: dashed;
+  border-top-style: solid;
+  background: rgb(17 30 47 / 85%);
+}
+.css-slot.empty .css-player-preview strong {
+  font-size: clamp(0.85rem, 1.8vw, 1.6rem);
+}
+.css-slot.empty .css-player-preview span {
+  color: #a7bdd1;
+  font-size: 0.8rem;
+}
+.css-slot.empty .css-player-name {
+  color: #8ba1b8;
+}
+.css-slot.picked {
+  box-shadow: inset 0 0 0 1px var(--player-color);
+}
+.css-slot.picked .css-player-status {
+  color: #0a1120;
+  background: var(--player-color);
+  padding: 3px 7px;
+}
+.css-footer {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  min-height: 0;
+}
+.css-footer.ready {
+  border-left: 7px solid #ffdc94;
+  border-right: 7px solid #ffdc94;
+  background: linear-gradient(100deg, #8b4324, #352330);
+}
+.css-footer strong {
+  font-size: clamp(1.2rem, 2.6vw, 2rem);
+  font-style: italic;
+  text-transform: uppercase;
+}
+.css-footer span {
+  color: #ffe3b0;
+  font-size: 0.9rem;
+}
+@media (max-width: 700px) {
+  .css {
+    padding: 12px 3%;
+    grid-template-rows: 74px minmax(0, 0.8fr) minmax(0, 1.2fr) 48px;
+    gap: 10px;
+  }
+  .css-topbar {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 5px 12px;
+    padding: 5px 8px;
+  }
+  .css h1 {
+    font-size: clamp(1rem, 3.7vw, 1.45rem);
+  }
+  .css .css-rules {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    padding: 4px 8px;
+    gap: 10px;
+    font-size: 0.7rem;
+  }
+  .css-topbar .menu-back {
+    padding: 4px 8px;
+    font-size: 0.7rem;
+  }
+  .css-roster {
+    padding: 8px;
+  }
+  .css-grid {
+    gap: 8px;
+  }
+  .css-grid[data-size='1'] {
+    width: 80%;
+  }
+  .css-slots {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .css-slot {
+    padding: 6px 8px;
+    border-top-width: 3px;
+  }
+  .css-player-status {
+    font-size: 0.55rem;
+    letter-spacing: 0;
+  }
+  .css-player-device {
+    font-size: 0.6rem;
+    margin-top: 0;
+  }
+  .css-player-name {
+    font-size: 0.8rem;
+  }
+  .css-footer {
+    flex-direction: column;
+    gap: 2px;
+  }
+  .css-footer span {
+    font-size: 0.7rem;
+  }
+}
+@media (max-height: 460px) and (min-width: 701px) {
+  .css {
+    padding: 8px 3%;
+    grid-template-rows: 44px minmax(0, 1fr) minmax(0, 1fr) 34px;
+    gap: 8px;
+  }
+  .css-topbar {
+    gap: 16px;
+  }
+  .css h1 {
+    font-size: 1.4rem;
+  }
+  .css .css-rules {
+    padding: 3px 10px;
+    font-size: 0.7rem;
+  }
+  .css-roster {
+    padding: 6px 12px;
+  }
+  .css-fighter-name {
+    padding: 3px;
+    font-size: 0.8rem;
+  }
+  .css-cursors {
+    padding: 2px;
+    min-height: 16px;
+  }
+  .css-badge {
+    padding: 1px 6px;
+    font-size: 0.6rem;
+  }
+  .css-slot {
+    padding: 4px 8px;
+    border-top-width: 3px;
+  }
+  .css-player-number {
+    font-size: 1rem;
+  }
+  .css-player-name {
+    font-size: 0.8rem;
+  }
+  .css-player-device {
+    font-size: 0.6rem;
+    margin-top: 0;
+  }
+  .css-footer strong {
+    font-size: 1.1rem;
+  }
+  .css-footer span {
+    font-size: 0.75rem;
+  }
+}

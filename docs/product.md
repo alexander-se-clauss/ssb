@@ -46,6 +46,10 @@ timed standings follow score, with ties sharing a place. Rematch and Main menu r
 Character select and rules retain their match-setup layouts within the same visual family.
 Keyboard and controller users can reach rules and Back before or after joining a player slot.
 Before joining, only these header actions can be selected; fighter cursors appear after joining.
+Fighter selection fills the viewport with a compact shared header, rendered neutral roster portraits
+and four player panels. Joined panels preview the hovered fighter in the player’s gameplay color
+until confirmation locks the pick. Each panel identifies its input device and choosing/Ready state;
+a Ready to Fight banner appears when all two to four joined players have confirmed.
 In Options, directions navigate selections; confirming Screen toggles fullscreen.
 Hover and keyboard/gamepad focus use outline, shadow and position cues, with brief feedback that
 does not delay navigation. Layouts adapt to narrow and short viewports and respect reduced motion.
