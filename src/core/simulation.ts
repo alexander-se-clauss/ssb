@@ -82,6 +82,7 @@ const handleKo = (fighter: FighterState, state: MatchState, events: GameEvent[])
     ...respawned,
     kos: fighter.kos,
     falls,
+    damageDealt: fighter.damageDealt,
     invulnerableFrames: FIGHTER.respawnInvulnerabilityFrames,
     previousInput: fighter.previousInput,
   };

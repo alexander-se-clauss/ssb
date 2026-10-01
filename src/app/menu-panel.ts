@@ -15,6 +15,8 @@ export interface MenuOption {
 export interface MenuContent {
   readonly heading: string;
   readonly text?: string;
+  /** Extra content under the text, e.g. the results table. */
+  readonly body?: Node;
   /** Extra CSS class for the panel, for screens with their own look. */
   readonly variant?: string;
   readonly options?: readonly MenuOption[];
@@ -107,7 +109,7 @@ export class MenuPanel {
       );
     }
     this.root.className = content.variant ? `menu ${content.variant}` : 'menu';
-    this.root.replaceChildren(title, body, previewBox, ...this.buttons);
+    this.root.replaceChildren(title, body, previewBox, content.body ?? '', ...this.buttons);
     this.root.hidden = false;
     this.content = content;
     (this.buttons[focus] ?? this.buttons[0])?.focus();

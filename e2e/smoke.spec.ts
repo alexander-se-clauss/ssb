@@ -125,6 +125,36 @@ test('stage select goes back to character select', async ({ page }) => {
   await expect.poll(() => screen(page)).toBe('character-select');
 });
 
+test('results show the winner and stats, and Rematch starts a new match', async ({ page }) => {
+  // One stock, so walking off the stage once ends the match.
+  await page.goto('/');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowLeft');
+  await page.keyboard.press('ArrowLeft');
+  await expect(page.getByRole('button', { name: /Stocks: 1/ })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await startMatch(page, { fromMainMenu: true });
+
+  await page.keyboard.down('KeyA');
+  await expect.poll(() => screen(page), { timeout: 20_000 }).toBe('results');
+  await page.keyboard.up('KeyA');
+
+  await expect(page.getByRole('heading', { name: 'Player 2 wins!' })).toBeVisible();
+  const rows = page.locator('.results-table tbody tr');
+  await expect(rows).toHaveCount(2);
+  await expect(rows.nth(0)).toContainText('P1');
+  await expect(rows.nth(1)).toHaveClass(/winner/);
+  await expect(rows.nth(0).locator('td').nth(3)).toHaveText('1');
+
+  await expect(page.getByRole('button', { name: 'Rematch' })).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('match');
+  expect((await gameState(page)).frame).toBeLessThan(120);
+});
+
 test('rules changed in options apply to the next match', async ({ page }) => {
   await page.goto('/');
   await page.keyboard.press('Enter');

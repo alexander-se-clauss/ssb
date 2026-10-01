@@ -41,6 +41,8 @@ export interface FighterState {
   readonly kos: number;
   /** Times this fighter was knocked out or self-destructed. */
   readonly falls: number;
+  /** Total damage percent this fighter's attacks caused this match. */
+  readonly damageDealt: number;
   /** Who hit this fighter last since it respawned; gets the KO credit. */
   readonly lastHitBy: PlayerSlot | null;
   readonly hitstunFrames: number;
