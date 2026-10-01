@@ -1,4 +1,5 @@
 import { inputOf, type MatchRules, type MatchState, type PlayerInput } from '../core';
+import type { AudioChannel, MusicTrack, SoundCue } from '../ports';
 import type { App } from './app';
 import type { SelectState } from './character-select';
 import type { Screen } from './screens';
@@ -26,6 +27,15 @@ export interface DebugHandle {
   release(player: number): void;
   /** Shows or hides the hurtbox and hitbox overlay, like pressing F2. */
   showBoxes(on: boolean): void;
+  /** What the game asked the audio output for so far: cues, music tracks and volumes. */
+  sounds(): SoundLog;
+}
+
+/** A copy of what was played, oldest first, so tests can check sound without listening. */
+export interface SoundLog {
+  readonly cues: readonly SoundCue[];
+  readonly tracks: readonly (MusicTrack | null)[];
+  readonly volumes: Readonly<Record<AudioChannel, number>>;
 }
 
 declare global {
@@ -44,6 +54,7 @@ export const installDebugHandle = (
   app: App,
   devices: readonly ControllableInput[],
   showBoxes: (on: boolean) => void,
+  sounds: () => SoundLog,
 ): void => {
   const deviceOf = (player: number): ControllableInput | undefined => {
     const device = app.deviceOf(player);
@@ -58,5 +69,6 @@ export const installDebugHandle = (
     hold: (player, input) => deviceOf(player)?.override(inputOf(input)),
     release: (player) => deviceOf(player)?.override(null),
     showBoxes,
+    sounds,
   };
 };
