@@ -43,6 +43,9 @@ describe('move data', () => {
 
   it('refuses an unknown move id', () => {
     expect(() => findMove('teleport-punch')).toThrow(/teleport-punch/);
+    // Names every object inherits are not moves either.
+    expect(() => findMove('toString')).toThrow(/toString/);
+    expect(() => findMove('constructor')).toThrow(/constructor/);
   });
 });
 
