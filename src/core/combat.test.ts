@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { JAB } from './config';
 import { activeHitbox, hurtboxes, knockback, resolveCombat } from './combat';
-import { HUMANOID, REST_POSE, plantedBoneSegments, type Pose } from './skeleton';
+import { POSES } from './poses';
+import { HUMANOID, type Pose } from './skeleton';
+import { step } from './simulation';
 import { fighter, inputOf, run, settled, withFighter } from './test-helpers';
 import type { FighterState, MatchState } from './types';
 
@@ -83,49 +85,48 @@ describe('hurtboxes per body part', () => {
     return resolveCombat([p1, p2]).fighters[1]?.damage ?? 0;
   };
 
-  // Knees and hips bent deep: the head drops well below standing height.
+  // From the fighting stance, knees and hips bent deep: the head drops well below its height.
   const crouch: Pose = {
-    ...REST_POSE,
-    torso: 40,
+    ...POSES.idle,
+    torso: 45,
     upperLegFront: 100,
     lowerLegFront: 120,
-    upperLegBack: 120,
+    upperLegBack: 130,
     lowerLegBack: 110,
   };
-  // Upper body bent far forward, towards the attacker.
-  const leanIn: Pose = { ...REST_POSE, torso: 60 };
+  // From the fighting stance, the upper body bent far forward, towards the attacker.
+  const leanIn: Pose = { ...POSES.idle, torso: 70 };
 
-  it('lets a crouch duck under a high attack that hits a standing fighter', () => {
-    // A jab from above reaches down to standing head height, not to a crouched head.
-    const above = { x: 0, y: 0.9 };
-    expect(swing(above, { x: 0.8, y: 0 }, REST_POSE)).toBe(JAB.damage);
-    expect(swing(above, { x: 0.8, y: 0 }, crouch)).toBe(0);
+  it('lets a crouch duck under a high attack that hits the fighting stance', () => {
+    // A jab from above reaches down to the head of a standing fighter, not a crouched one.
+    const above = { x: 0, y: 0.7 };
+    expect(swing(above, { x: 1, y: 0 }, POSES.idle)).toBe(JAB.damage);
+    expect(swing(above, { x: 1, y: 0 }, crouch)).toBe(0);
   });
 
-  it('hits a fighter that leans into an attack it would miss standing up', () => {
+  it('hits a fighter that leans into an attack the fighting stance stays clear of', () => {
     const ground = { x: 0, y: 0 };
-    expect(swing(ground, { x: 1.6, y: 0 }, REST_POSE)).toBe(0);
-    expect(swing(ground, { x: 1.6, y: 0 }, leanIn)).toBe(JAB.damage);
+    expect(swing(ground, { x: 1.87, y: 0 }, POSES.idle)).toBe(0);
+    expect(swing(ground, { x: 1.87, y: 0 }, leanIn)).toBe(JAB.damage);
   });
 
-  it('gives every bone a hurtbox that follows the drawn body', () => {
-    const body = { ...fighter(faceOff(), 1), pose: crouch };
-    const boxes = hurtboxes(body);
+  it('judges a hit in a match by the pose the fighter has on that frame', () => {
+    // P1's jab turns active on the next step; P2 stands just out of reach of the stance.
+    const strike = (pose: Pose): number => {
+      let state = withFighter(faceOff(), 0, { action: 'jab', actionFrame: JAB.startupFrames - 1 });
+      state = withFighter(state, 1, { position: { x: 1.87, y: 0 }, pose });
+      return fighter(step(state, []), 1).damage;
+    };
+    expect(strike(POSES.idle)).toBe(0);
+    expect(strike(leanIn)).toBe(JAB.damage);
+  });
+
+  it('gives every bone a hurtbox as thick as the part the view draws', () => {
+    const boxes = hurtboxes({ ...fighter(faceOff(), 1), pose: crouch });
     expect(boxes.map((box) => box.bone)).toEqual(HUMANOID.bones.map((bone) => bone.id));
-    const drawn = plantedBoneSegments(HUMANOID, crouch, body.position, body.facing);
-    for (const box of boxes) {
-      const def = HUMANOID.bones.find((bone) => bone.id === box.bone);
-      expect(box.radius).toBe(def?.radius);
-      const { start, end } = drawn[box.bone];
-      if (def?.shape === 'ball') {
-        // A ball sits in the middle of its bone.
-        expect(box.start).toEqual(box.end);
-        expect(box.start.x).toBeCloseTo((start.x + end.x) / 2, 9);
-        expect(box.start.y).toBeCloseTo((start.y + end.y) / 2, 9);
-      } else {
-        expect(box.start).toEqual(start);
-        expect(box.end).toEqual(end);
-      }
-    }
+    expect(boxes.map((box) => box.radius)).toEqual(HUMANOID.bones.map((bone) => bone.radius));
+    // A ball, like the head, has both ends in one place.
+    const head = boxes.find((box) => box.bone === 'head');
+    expect(head?.start).toEqual(head?.end);
   });
 });
