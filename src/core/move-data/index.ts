@@ -13,7 +13,8 @@ export const MOVES: Readonly<Record<MoveId, MoveDef>> = Object.fromEntries(
 
 /** The move with this id. Throws on an unknown id, which would be a bug or a bad snapshot. */
 export const findMove = (id: MoveId): MoveDef => {
-  const move = MOVES[id];
+  // Own keys only, so ids such as "toString" are unknown, not Object.prototype members.
+  const move = Object.hasOwn(MOVES, id) ? MOVES[id] : undefined;
   if (!move) throw new Error(`Unknown move "${id}"`);
   return move;
 };
