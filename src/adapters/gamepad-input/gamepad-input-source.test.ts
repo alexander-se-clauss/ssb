@@ -28,6 +28,7 @@ describe('GamepadInputSource', () => {
       attack: false,
       special: false,
       shield: false,
+      start: false,
     });
   });
 
@@ -40,6 +41,11 @@ describe('GamepadInputSource', () => {
     expect(source.sample().jump).toBe(true);
     set(pad([3]));
     expect(source.sample().jump).toBe(true);
+  });
+
+  it('maps the Start button to start', () => {
+    const { source } = sourceFor(pad([9]));
+    expect(source.sample()).toMatchObject({ start: true, attack: false });
   });
 
   it('maps the triggers to shield', () => {

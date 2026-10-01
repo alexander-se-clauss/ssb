@@ -358,7 +358,7 @@ const installPads = (page: Page, count: number) =>
   }, count);
 
 /** Button indices of the Standard Gamepad layout. */
-const PAD = { a: 0, b: 1 } as const;
+const PAD = { a: 0, b: 1, start: 9 } as const;
 
 type PadChange = { axes?: number[]; button?: number; on?: boolean };
 
@@ -535,3 +535,23 @@ for (const first of [0, 1]) {
     expect(await screen(page)).toBe('character-select');
   });
 }
+
+test('Start leaves the title and starts the match once both players picked', async ({ page }) => {
+  await installPads(page, 2);
+  await page.goto('/');
+  await nextFrames(page);
+  await press(page, 0, PAD.start);
+  await expect.poll(() => screen(page)).toBe('main-menu');
+  await press(page, 0, PAD.a);
+  await expect.poll(() => screen(page)).toBe('character-select');
+
+  for (const pad of [0, 1]) await press(page, pad, PAD.a);
+  await press(page, 0, PAD.a);
+  // Start does nothing while a joined player has not picked yet.
+  await press(page, 0, PAD.start);
+  expect(await screen(page)).toBe('character-select');
+  await press(page, 1, PAD.a);
+  await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule', null, null]);
+  await press(page, 1, PAD.start);
+  await expect.poll(() => screen(page)).toBe('stage-select');
+});

@@ -24,6 +24,11 @@ describe('menuCommands', () => {
     expect(menuCommands(inputOf({ attack: true }), inputOf({ attack: true }))).toEqual([]);
   });
 
+  it('gives start for the Start button, on the press only', () => {
+    expect(menuCommands(NEUTRAL_INPUT, inputOf({ start: true }))).toEqual(['start']);
+    expect(menuCommands(inputOf({ start: true }), inputOf({ start: true }))).toEqual([]);
+  });
+
   it('does not treat tap-jump as a confirm', () => {
     expect(menuCommands(NEUTRAL_INPUT, inputOf({ y: 1, jump: true }))).toEqual(['up']);
   });

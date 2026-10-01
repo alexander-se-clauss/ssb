@@ -158,7 +158,9 @@ export class MenuPanel {
    * nearest button above or below (wrapping around at the ends), left and right change a setting
    * or move along the row. Returns whether the command did anything.
    */
-  command(command: MenuCommand): boolean {
+  command(given: MenuCommand): boolean {
+    // Outside character select, Start does what attack does, as in Melee.
+    const command = given === 'start' ? 'confirm' : given;
     const content = this.content;
     if (!content) return false;
     if (command === 'back') {

@@ -5,6 +5,7 @@ export interface ControlLabels {
   readonly down: string;
   readonly attack: string;
   readonly special: string;
+  readonly start: string;
 }
 
 const ACTIONS: readonly (readonly [keyof ControlLabels, string])[] = [
@@ -13,6 +14,7 @@ const ACTIONS: readonly (readonly [keyof ControlLabels, string])[] = [
   ['down', 'Drop / fast-fall'],
   ['attack', 'Attack · pick in menus'],
   ['special', 'Special · cancel in menus'],
+  ['start', 'Start · start the match'],
 ];
 
 /** One column of the controls table: a device and its button names. */

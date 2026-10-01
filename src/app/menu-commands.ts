@@ -1,10 +1,11 @@
 /**
  * Menu commands from a player's controller, for devices that have no key events (gamepads).
- * The stick or d-pad moves the focus, attack confirms and special goes back, as in Melee.
+ * The stick or d-pad moves the focus, attack confirms, special goes back and Start starts, as
+ * in Melee.
  */
 import { pressed, type PlayerInput } from '../core';
 
-export type MenuCommand = 'up' | 'down' | 'left' | 'right' | 'confirm' | 'back';
+export type MenuCommand = 'up' | 'down' | 'left' | 'right' | 'confirm' | 'back' | 'start';
 
 /** How far the stick must be pushed to count as a menu move. */
 const STICK_THRESHOLD = 0.5;
@@ -39,5 +40,6 @@ export const menuCommands = (previous: PlayerInput, current: PlayerInput): MenuC
   if (move && (now.dx !== before.dx || now.dy !== before.dy)) commands.push(move);
   if (pressed(current, previous, 'attack')) commands.push('confirm');
   if (pressed(current, previous, 'special')) commands.push('back');
+  if (pressed(current, previous, 'start')) commands.push('start');
   return commands;
 };

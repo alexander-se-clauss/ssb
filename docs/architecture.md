@@ -58,8 +58,9 @@ set up: its top bar holds Back and the rules banner, which opens the rules overl
 `MenuPanel`, editing a draft that applies on Done). Options holds game settings only. On character
 select a device joins the first of four free player slots by pressing attack, then moves that
 player's cursor; special un-picks, then leaves the slot (later players move up, so slots have no
-gaps), and from a device that has not joined goes back. Attack once everyone joined has picked
-starts (two to four players). The match gets the joined players in slot order, each with their own
+gaps), and from a device that has not joined goes back. Start, or attack once everyone joined
+has picked, starts (two to four players); `PlayerInput.start` is the pad's Start button, and the
+simulation ignores it. The match gets the joined players in slot order, each with their own
 device. The controls screen and the in-match hint name devices (left keys, right keys, gamepad),
 not players. Press detection lives in `character-select.ts`. The other menus (`MenuPanel`, stage
 select and the rules overlay included) read the keyboard as DOM keys and the gamepads as polled
