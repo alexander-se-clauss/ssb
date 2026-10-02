@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 /** Release generated geometry, materials, textures and light shadow maps. */
-export const disposeScene = (scene: THREE.Scene): void => {
+export const disposeScene = (scene: THREE.Object3D): void => {
   scene.traverse((object) => {
     if (
       object instanceof THREE.Mesh ||

@@ -50,13 +50,14 @@ their content.
 Results show a 3D medal podium for two to four players, with player-colored fighter models,
 numbered steps and a gold laurel wreath for first place. Stock standings follow elimination order;
 timed standings follow score, with ties sharing a place. Rematch and Main menu remain available.
-Character select and rules retain their match-setup layouts within the same visual family.
 Keyboard and controller users can reach rules and Back before or after joining a player slot.
 Before joining, only these header actions can be selected; fighter cursors appear after joining.
-Fighter selection fills the viewport with a compact shared header, rendered neutral roster portraits
-and four player panels. Joined panels preview the hovered fighter in the player’s gameplay color
-until confirmation locks the pick. Each panel identifies its input device and choosing/Ready state;
-a Ready to Fight banner appears when all two to four joined players have confirmed.
+Fighter selection is a firelit set: the roster as a row of diamonds at the top, the rules in the
+top right, and four stone platforms with a nameplate under each. A joined player's platform lights
+up in their gameplay colour with the fighter they hover on it, and the fighter strikes a pose once
+the pick is confirmed; an open slot stays dark and its nameplate says Press Attack. Each nameplate
+names the player, the fighter, the input device and the choosing/Ready state; a Ready to Fight
+banner appears when all two to four joined players have confirmed.
 In Options, directions navigate selections; confirming Screen toggles fullscreen. Sound sets
 the Music and Effects volumes from 0 to 10; the game remembers them for the next visit.
 Hover and keyboard/gamepad focus use outline, shadow and position cues, with brief feedback that

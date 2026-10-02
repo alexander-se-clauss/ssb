@@ -251,3 +251,29 @@ export const previewCharacter = (
     roster[0]
   );
 };
+
+/** What stands on a player's platform: their fighter, or nothing while the slot is open. */
+export interface LobbyStand {
+  readonly characterId: string | null;
+  readonly ready: boolean;
+}
+
+/**
+ * One stand per player slot. `browsing` remembers, per device, the fighter it showed last, so a
+ * player on the header keeps their fighter on the platform.
+ */
+export const lobbyStands = (
+  state: SelectState,
+  roster: readonly CharacterDef[],
+  browsing: ReadonlyMap<number, string>,
+): LobbyStand[] =>
+  state.picks.map((pick, player) => {
+    const device = state.devices[player];
+    const shown = previewCharacter(
+      state,
+      player,
+      roster,
+      device != null ? browsing.get(device) : undefined,
+    );
+    return { characterId: shown?.id ?? null, ready: pick != null };
+  });

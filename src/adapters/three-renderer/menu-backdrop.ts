@@ -3,7 +3,15 @@ import { POSES } from '../../core';
 import { disposeScene } from './dispose-scene';
 import { emberHeight } from './ember-drift';
 import { FrameBudget } from './frame-budget';
-import { fighterModel, poseFighter } from './fighter-model';
+import {
+  DAIS_TOP,
+  addRuins,
+  beamTexture,
+  glowPlane,
+  glowTexture,
+  showcaseFighter,
+  stoneDais,
+} from './firelit-set';
 
 const EMBERS = 420;
 const EMBER_BAND = { bottom: -1, top: 12 } as const;
@@ -46,16 +54,7 @@ export class MenuBackdrop {
     this.scene.fog = new THREE.FogExp2(0x0b0705, 0.045);
     this.scene.add(new THREE.HemisphereLight(0x6f86a8, 0x140a04, 0.35));
 
-    const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(120, 120),
-      new THREE.MeshStandardMaterial({ color: 0x0f0c0a, roughness: 0.95 }),
-    );
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -0.3;
-    ground.receiveShadow = true;
-    this.scene.add(ground);
-
-    this.addHorizon();
+    addRuins(this.scene, this.glow);
     this.addDais();
     this.addFighter();
     this.addLights();
@@ -69,60 +68,17 @@ export class MenuBackdrop {
     this.render(performance.now());
   }
 
-  /** A distant fire and the broken pillars of a ruined hall, dark against its glow. */
-  private addHorizon(): void {
-    const fire = this.glowPlane(0xff5a14, 50, 0.55);
-    fire.position.set(0, 3, -30);
-    this.scene.add(fire);
-    const stone = new THREE.MeshStandardMaterial({ color: 0x0c0907, roughness: 1 });
-    for (let i = 0; i < 9; i++) {
-      const height = 5 + ((i * 37) % 9);
-      const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.85, height, 8), stone);
-      pillar.position.set(-28 + i * 7, height / 2 - 0.3, -22 - (i % 3) * 3);
-      pillar.rotation.z = ((i % 4) - 1.5) * 0.04;
-      this.scene.add(pillar);
-    }
-  }
-
   /** An octagonal stone platform with a glowing rune ring. */
   private addDais(): void {
-    const stone = new THREE.MeshStandardMaterial({
-      color: 0x2a2420,
-      roughness: 0.85,
-      metalness: 0.1,
-      flatShading: true,
-    });
-    const top = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.45, 0.5, 8), stone);
-    top.position.set(DAIS.x, 0.25, DAIS.z);
-    top.castShadow = top.receiveShadow = true;
-    const step = new THREE.Mesh(new THREE.CylinderGeometry(4.15, 4.5, 0.35, 8), stone);
-    step.position.set(DAIS.x, -0.15, DAIS.z);
-    step.receiveShadow = true;
-    const rune = new THREE.Mesh(
-      new THREE.RingGeometry(2.56, 2.69, 8),
-      new THREE.MeshBasicMaterial({ color: 0xff8a2a }),
-    );
-    rune.rotation.set(-Math.PI / 2, 0, Math.PI / 8);
-    rune.position.set(DAIS.x, 0.51, DAIS.z);
-    this.scene.add(top, step, rune);
+    const dais = stoneDais(new THREE.MeshBasicMaterial({ color: 0xff8a2a }));
+    dais.position.copy(DAIS);
+    this.scene.add(dais);
   }
 
   /** The game's own fighter body, held in a forward smash towards the menu. */
   private addFighter(): void {
-    const model = fighterModel('capsule', 0xb8332a);
-    poseFighter(model, POSES.forwardSmash);
-    for (const material of model.materials) {
-      material.roughness = 0.35;
-      material.metalness = 0.55;
-      material.transparent = false;
-    }
-    model.root.traverse((child) => {
-      if (child instanceof THREE.Mesh) child.castShadow = child.receiveShadow = true;
-    });
-    const holder = new THREE.Group();
-    holder.add(model.root);
-    holder.position.set(DAIS.x, 0.5, DAIS.z);
-    holder.scale.set(-2.7, 2.7, 2.7);
+    const { holder } = showcaseFighter('capsule', 0xb8332a, POSES.forwardSmash, 2.7, -1);
+    holder.position.set(DAIS.x, DAIS_TOP, DAIS.z);
     holder.rotation.y = -0.6;
     this.scene.add(holder);
   }
@@ -160,8 +116,8 @@ export class MenuBackdrop {
   /** Low smoke drifting over the ground. */
   private addSmoke(): void {
     for (let i = 0; i < 14; i++) {
-      const puff = this.glowPlane(0x3a2a20, 10 + (i % 4) * 3, 0.18);
-      (puff.material as THREE.MeshBasicMaterial).blending = THREE.NormalBlending;
+      const puff = glowPlane(this.glow, 0x3a2a20, 10 + (i % 4) * 3, 0.18);
+      puff.material.blending = THREE.NormalBlending;
       puff.position.set(-16 + i * 2.4, 0.6 + (i % 3) * 0.4, (i % 5) - 4);
       this.scene.add(puff);
     }
@@ -193,20 +149,6 @@ export class MenuBackdrop {
       }),
     );
     return { points, starts };
-  }
-
-  private glowPlane(color: number, size: number, opacity: number): THREE.Mesh {
-    return new THREE.Mesh(
-      new THREE.PlaneGeometry(size, size),
-      new THREE.MeshBasicMaterial({
-        map: this.glow,
-        color,
-        transparent: true,
-        opacity,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-      }),
-    );
   }
 
   /** Called every frame; draws when the picture changed or the frame budget allows motion. */
@@ -260,38 +202,3 @@ export class MenuBackdrop {
     this.renderer.domElement.remove();
   }
 }
-
-const canvasTexture = (
-  width: number,
-  height: number,
-  paint: (context: CanvasRenderingContext2D) => void,
-): THREE.CanvasTexture => {
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const context = canvas.getContext('2d');
-  if (context) paint(context);
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
-};
-
-const glowTexture = (): THREE.CanvasTexture =>
-  canvasTexture(128, 128, (context) => {
-    const gradient = context.createRadialGradient(64, 64, 0, 64, 64, 64);
-    gradient.addColorStop(0, 'rgba(255,255,255,1)');
-    gradient.addColorStop(0.3, 'rgba(255,255,255,0.35)');
-    gradient.addColorStop(1, 'rgba(255,255,255,0)');
-    context.fillStyle = gradient;
-    context.fillRect(0, 0, 128, 128);
-  });
-
-/** Bright at the lamp, fading to nothing at the floor. */
-const beamTexture = (): THREE.CanvasTexture =>
-  canvasTexture(4, 256, (context) => {
-    const gradient = context.createLinearGradient(0, 0, 0, 256);
-    gradient.addColorStop(0, 'rgba(255,255,255,1)');
-    gradient.addColorStop(1, 'rgba(255,255,255,0)');
-    context.fillStyle = gradient;
-    context.fillRect(0, 0, 4, 256);
-  });

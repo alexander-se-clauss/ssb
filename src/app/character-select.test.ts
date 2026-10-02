@@ -6,6 +6,7 @@ import {
   BACK_CURSOR,
   allReady,
   createSelect,
+  lobbyStands,
   menuActions,
   canStart,
   reduceSelect,
@@ -370,5 +371,35 @@ describe('player panel preview', () => {
     const unpicked = apply(browsingElsewhere, { type: 'cancel', player: 0 });
     expect(previewCharacter(unpicked, 0, ROSTER)?.id).toBe('c');
     expect(previewCharacter(joined, 1, ROSTER)).toBeUndefined();
+  });
+});
+
+describe('lobbyStands', () => {
+  it('puts each joined player on their platform with the fighter they show, ready once picked', () => {
+    const state = apply(
+      createSelect(4),
+      { type: 'join', device: 0 },
+      { type: 'join', device: 1 },
+      { type: 'move', player: 1, dx: 1, dy: 0 },
+      { type: 'confirm', player: 0 },
+    );
+    expect(lobbyStands(state, ROSTER, new Map())).toEqual([
+      { characterId: 'a', ready: true },
+      { characterId: 'b', ready: false },
+      { characterId: null, ready: false },
+      { characterId: null, ready: false },
+    ]);
+  });
+
+  it('keeps showing the fighter a device last browsed while its player sits on a header', () => {
+    const state = apply(
+      createSelect(4),
+      { type: 'join', device: 3 },
+      { type: 'move', player: 0, dx: 0, dy: -1 },
+    );
+    expect(lobbyStands(state, ROSTER, new Map([[3, 'c']]))[0]).toEqual({
+      characterId: 'c',
+      ready: false,
+    });
   });
 });

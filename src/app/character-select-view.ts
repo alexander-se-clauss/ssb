@@ -1,14 +1,20 @@
 import { markHandled, wasHandled } from './key-events';
 import type { CharacterDef, MatchRules } from '../core';
-import { BACK_CURSOR, RULES_CURSOR, previewCharacter, type SelectState } from './character-select';
+import {
+  BACK_CURSOR,
+  RULES_CURSOR,
+  lobbyStands,
+  type LobbyStand,
+  type SelectState,
+} from './character-select';
 import { ruleSummary } from './rules-menu';
-import { menuAtmosphere } from './menu-art';
 
 /** Same order as the HUD's player colours. */
 const PLAYER_COLORS = ['#e94f4f', '#4f8fe9', '#4fd18b', '#f2c14e'];
+const PLAYER_NAMES = ['Player one', 'Player two', 'Player three', 'Player four'];
 
 export interface CharacterSelectCallbacks {
-  readonly portrait: (character: CharacterDef, player?: number) => string;
+  readonly portrait: (character: CharacterDef) => string;
   readonly deviceName: (device: number) => string;
   /** Enter once everyone has picked. */
   readonly start: () => void;
@@ -16,15 +22,20 @@ export interface CharacterSelectCallbacks {
   readonly back: () => void;
   /** A click on the rules banner. */
   readonly openRules: () => void;
+  /** What stands on each player's platform, after every change. */
+  readonly stands: (stands: readonly LobbyStand[]) => void;
 }
 
 /**
- * Draws the Melee-style match setup: a top bar with Back and the rules banner, the grid with one
- * cell per character and the players' cursors on it, and one slot per player showing their pick.
+ * Draws the Melee-style match setup: a top bar with Back and the rules banner, the roster with one
+ * cell per character and the players' cursors on it, and one nameplate per player under their
+ * platform. The platforms themselves are a 3D scene the app puts into `stage`.
  * Only Enter, Escape and clicks are read here; picking goes through each player's own controls
  * (see `menuActions`). The rules overlay itself is a `MenuPanel` owned by the app.
  */
 export class CharacterSelectView {
+  /** Holds the 3D platforms, behind everything else. */
+  readonly stage: HTMLElement;
   private readonly root: HTMLElement;
   private readonly grid: HTMLElement;
   private readonly slots: HTMLElement;
@@ -103,7 +114,9 @@ export class CharacterSelectView {
     const rosterFrame = document.createElement('section');
     rosterFrame.className = 'css-roster';
     rosterFrame.append(this.grid);
-    this.root.append(menuAtmosphere(), topBar, rosterFrame, this.slots, this.footer);
+    this.stage = document.createElement('div');
+    this.stage.className = 'css-stage';
+    this.root.append(this.stage, topBar, rosterFrame, this.slots, this.footer);
     container.append(this.root);
     window.addEventListener('keydown', this.onKeyDown);
   }
@@ -135,60 +148,39 @@ export class CharacterSelectView {
         return cell;
       }),
     );
+    state.devices.forEach((device, player) => {
+      const hovered = this.roster[state.cursors[player] ?? -1];
+      if (device != null && hovered) this.browsing.set(device, hovered.id);
+    });
+    const stands = lobbyStands(state, this.roster, this.browsing);
     this.slots.replaceChildren(
-      ...state.picks.map((pick, player) => {
-        const slot = document.createElement('div');
-        const joined = state.devices[player] != null;
-        slot.className = !joined ? 'css-slot empty' : pick ? 'css-slot picked' : 'css-slot';
-        slot.dataset['player'] = String(player + 1);
-        slot.style.setProperty('--player-color', PLAYER_COLORS[player % 4] ?? '#fff');
-        const who = document.createElement('strong');
-        who.textContent = `P${player + 1}`;
-        who.className = 'css-player-number';
+      ...stands.map((stand, player) => {
         const device = state.devices[player];
-        const cursor = state.cursors[player] ?? 0;
-        const hovered = this.roster[cursor];
-        if (device != null && hovered) this.browsing.set(device, hovered.id);
-        const character = previewCharacter(
-          state,
-          player,
-          this.roster,
-          device != null ? this.browsing.get(device) : undefined,
-        );
-        const status = document.createElement('strong');
-        status.className = 'css-player-status';
-        status.textContent = !joined ? 'Join the fight' : pick ? '✓ Ready' : 'Choosing';
-        const identity = document.createElement('div');
-        identity.className = 'css-player-header';
-        identity.append(who, status);
-        const preview = document.createElement('div');
-        preview.className = 'css-player-preview';
-        if (joined && character) {
-          const image = document.createElement('img');
-          image.src = this.callbacks.portrait(character, player);
-          image.alt = `P${player + 1} ${character.name} fighter preview`;
-          image.dataset['character'] = character.id;
-          image.dataset['color'] = PLAYER_COLORS[player % 4] ?? '#fff';
-          preview.append(image);
-        } else {
-          const invitation = document.createElement('strong');
-          invitation.textContent = 'Press Attack';
-          const instruction = document.createElement('span');
-          instruction.textContent = 'to join';
-          preview.append(invitation, instruction);
-        }
+        const joined = device != null;
+        const character = this.roster.find((c) => c.id === stand.characterId);
+        const slot = document.createElement('div');
+        slot.className = !joined ? 'css-slot empty' : stand.ready ? 'css-slot picked' : 'css-slot';
+        slot.dataset['player'] = String(player + 1);
+        if (character) slot.dataset['character'] = character.id;
+        slot.style.setProperty('--player-color', PLAYER_COLORS[player % 4] ?? '#fff');
+        const label = document.createElement('span');
+        label.className = 'css-player-label';
+        label.textContent = PLAYER_NAMES[player] ?? `Player ${player + 1}`;
         const name = document.createElement('strong');
         name.className = 'css-player-name';
-        name.textContent = joined ? (character?.name ?? 'Choose a fighter') : 'Open slot';
-        const input = document.createElement('small');
-        input.className = 'css-player-device';
-        input.textContent =
-          device != null ? this.callbacks.deviceName(device) : 'Keyboard / Gamepad';
-        slot.setAttribute('aria-label', `Player ${player + 1}: ${status.textContent}`);
-        slot.append(identity, preview, name, input);
+        name.textContent = joined ? (character?.name ?? '') : 'Press Attack';
+        const status = !joined ? 'Join' : stand.ready ? 'Ready' : 'Choosing';
+        const detail = document.createElement('small');
+        detail.className = 'css-player-device';
+        detail.textContent = joined
+          ? `${this.callbacks.deviceName(device)} · ${status}`
+          : 'Keyboard / Gamepad';
+        slot.setAttribute('aria-label', `Player ${player + 1}: ${status}`);
+        slot.append(label, name, detail);
         return slot;
       }),
     );
+    this.callbacks.stands(stands);
     this.footer.replaceChildren();
     if (ready) {
       const title = document.createElement('strong');

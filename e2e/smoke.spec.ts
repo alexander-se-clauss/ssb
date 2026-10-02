@@ -730,10 +730,10 @@ const inspectMenu = async (page: Page, name: string, testInfo: TestInfo) => {
     await nextFrames(page);
     const menus = page.locator('.menu:visible');
     const root = (await menus.count()) ? menus.last() : page.locator('.css:visible');
-    // Menu screens stand in front of the 3D backdrop; character select keeps its SVG atmosphere.
+    // Menu screens stand in front of the 3D backdrop, character select in front of its platforms.
     const menuScreen = !['character-select', 'results'].includes((await screen(page)) ?? '');
     if (menuScreen) await expect(page.locator('canvas.menu-backdrop')).toBeVisible();
-    else if (!(await menus.count())) await expect(root.locator('.menu-atmosphere')).toBeVisible();
+    else if (!(await menus.count())) await expect(root.locator('canvas.lobby-scene')).toBeVisible();
     const boxes = await root.evaluate((element) =>
       Array.from(element.querySelectorAll('h1, button, table, .css-slot, .css-cell'))
         .filter((node) => node.getClientRects().length > 0)
@@ -1102,7 +1102,34 @@ for (const count of [2, 3, 4]) {
   });
 }
 
-test('fighter lobby shows neutral portraits, live colored previews, ownership and readiness', async ({
+/** The average colour of the lobby scene above each player's nameplate, as [r, g, b] per slot. */
+const platformColors = (page: Page) =>
+  page.locator('canvas.lobby-scene').evaluate((source: HTMLCanvasElement) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = source.width;
+    canvas.height = source.height;
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('Missing canvas context');
+    context.drawImage(source, 0, 0);
+    const column = canvas.width / 4;
+    return [0, 1, 2, 3].map((slot) => {
+      const data = context.getImageData(
+        slot * column,
+        canvas.height * 0.45,
+        column,
+        canvas.height * 0.3,
+      ).data;
+      const rgb = [0, 0, 0];
+      for (let i = 0; i < data.length; i += 4) {
+        rgb[0] = (rgb[0] ?? 0) + (data[i] ?? 0);
+        rgb[1] = (rgb[1] ?? 0) + (data[i + 1] ?? 0);
+        rgb[2] = (rgb[2] ?? 0) + (data[i + 2] ?? 0);
+      }
+      return rgb.map((value) => value / (data.length / 4));
+    });
+  });
+
+test('character select stands each player on a platform in their colour above a nameplate', async ({
   page,
 }, testInfo) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -1117,68 +1144,74 @@ test('fighter lobby shows neutral portraits, live colored previews, ownership an
   const viewport = page.viewportSize();
   const roster = await page.locator('.css-roster').boundingBox();
   if (!viewport || !roster) throw new Error('Missing lobby layout');
-  expect(roster.width / viewport.width).toBeGreaterThanOrEqual(0.9);
-  expect(roster.width / viewport.width).toBeLessThanOrEqual(0.95);
+  // The roster sits at the top, leaving the middle of the screen to the platforms.
+  expect(roster.y + roster.height).toBeLessThan(viewport.height * 0.35);
+  await expect(page.locator('canvas.lobby-scene')).toBeVisible();
   await expect(page.locator('.css-slot.empty')).toHaveCount(4);
+  await expect(page.locator('.css-slot').first()).toContainText('Press Attack');
   await inspectMenu(page, 'lobby-empty', testInfo);
 
   await tap(page, 'KeyF');
   await tap(page, 'Period');
-  await expect(page.locator('.css-slot:not(.empty) img')).toHaveCount(2);
+  await expect(page.locator('.css-slot:not(.empty)')).toHaveCount(2);
   await expect(page.locator('.css-slot.picked')).toHaveCount(0);
   await expect(page.locator('.css-slot').nth(0)).toContainText('Choosing');
   await expect(page.locator('.css-slot').nth(0)).toContainText('Left keys');
   await expect(page.locator('.css-slot').nth(1)).toContainText('Right keys');
+  await expect(page.locator('.css-slot').nth(0)).toHaveAttribute('data-character', 'capsule');
   await expect(page.locator('.css-badge')).toHaveText(['P1', 'P2']);
+  // Two platforms light up in red and blue; the open ones stay dark.
+  await expect
+    .poll(async () => {
+      const [red, blue, dark] = await platformColors(page);
+      return (
+        !!red &&
+        !!blue &&
+        !!dark &&
+        (red[0] ?? 0) > (red[2] ?? 0) * 1.5 &&
+        (blue[2] ?? 0) > (blue[0] ?? 0) * 1.25 &&
+        (dark[0] ?? 0) * 2 < (red[0] ?? 0)
+      );
+    })
+    .toBe(true);
   await inspectMenu(page, 'lobby-browsing', testInfo);
 
   await tap(page, 'KeyF');
   await tap(page, 'Period');
   await expect(page.locator('.css-slot.picked')).toHaveCount(2);
+  await expect(page.locator('.css-slot').nth(0)).toContainText('Ready');
   await expect(page.getByText('Ready to Fight', { exact: true })).toBeVisible();
   await inspectMenu(page, 'lobby-ready', testInfo);
   await tap(page, 'KeyG');
   await expect(page.locator('.css-slot.picked')).toHaveCount(1);
   await expect(page.getByText('Ready to Fight', { exact: true })).toBeHidden();
   await expect(page.locator('.css-slot').nth(0)).toContainText('Choosing');
-  await expect(page.locator('.css-slot').nth(0).locator('img')).toBeVisible();
 
   for (const pad of [0, 1]) await press(page, pad, PAD.a);
-  await expect(page.locator('.css-slot:not(.empty) img')).toHaveCount(4);
+  await expect(page.locator('.css-slot:not(.empty)')).toHaveCount(4);
   await expect(page.locator('.css-badge')).toHaveText(['P1', 'P2', 'P3', 'P4']);
-  const pixels = await page.locator('.css-slot img').evaluateAll(async (images) => {
-    return Promise.all(
-      images.map(async (node) => {
-        const image = node as HTMLImageElement;
-        await image.decode();
-        const canvas = document.createElement('canvas');
-        canvas.width = canvas.height = 480;
-        const context = canvas.getContext('2d');
-        if (!context) throw new Error('Missing image context');
-        context.drawImage(image, 0, 0);
-        const data = context.getImageData(0, 0, 480, 480).data;
-        const rgb = [0, 0, 0];
-        let count = 0;
-        for (let i = 0; i < data.length; i += 4) {
-          if ((data[i + 3] ?? 0) < 200) continue;
-          rgb[0] = (rgb[0] ?? 0) + (data[i] ?? 0);
-          rgb[1] = (rgb[1] ?? 0) + (data[i + 1] ?? 0);
-          rgb[2] = (rgb[2] ?? 0) + (data[i + 2] ?? 0);
-          count++;
-        }
-        return rgb.map((value) => value / count);
-      }),
-    );
-  });
-  const [red, blue, green, yellow] = pixels;
-  if (!red || !blue || !green || !yellow) throw new Error('Missing player portraits');
-  expect(red[0]).toBeGreaterThan((red[2] ?? 0) * 1.25);
-  expect(blue[2]).toBeGreaterThan((blue[0] ?? 0) * 1.25);
-  expect(green[1]).toBeGreaterThan((green[0] ?? 0) * 1.25);
-  expect(yellow[0]).toBeGreaterThan((yellow[2] ?? 0) * 1.25);
-  expect(yellow[1]).toBeGreaterThan((yellow[2] ?? 0) * 1.25);
+  await expect
+    .poll(async () => {
+      const [red, blue, green, yellow] = await platformColors(page);
+      if (!red || !blue || !green || !yellow) return false;
+      const [r, g, b] = [0, 1, 2];
+      const above = (color: number[], high: number, low: number) =>
+        (color[high] ?? 0) > (color[low] ?? 0) * 1.25;
+      return (
+        above(red, r, b) &&
+        above(blue, b, r) &&
+        above(green, g, r) &&
+        above(yellow, r, b) &&
+        above(yellow, g, b)
+      );
+    })
+    .toBe(true);
   await inspectMenu(page, 'lobby-four', testInfo);
   await expect.poll(() => root.evaluate((node) => node.scrollHeight - node.clientHeight)).toBe(0);
+  // Leaving character select releases the platforms.
+  await page.keyboard.press('Escape');
+  await expect.poll(() => screen(page)).toBe('main-menu');
+  await expect(page.locator('canvas.lobby-scene')).toHaveCount(0);
 });
 
 /** What the game played so far, from the debug handle. */
