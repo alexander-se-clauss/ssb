@@ -10,7 +10,7 @@ import type { SoundCue } from '../ports';
 import { markHandled, wasHandled } from './key-events';
 import type { MenuCommand } from './menu-commands';
 import { nearestInDirection } from './spatial-focus';
-import { menuArtwork, menuAtmosphere, type MenuArtwork } from './menu-art';
+import { menuArtwork, type MenuArtwork } from './menu-art';
 import { LastDevice, menuPrompts, renderPrompts } from './button-prompts';
 
 export interface MenuOption {
@@ -203,7 +203,7 @@ export class MenuPanel {
       details.hidden = !content.body;
       if (content.body) details.append(content.body);
       composition.append(heading, details, options);
-      this.root.replaceChildren(menuAtmosphere(), back, composition, this.prompts);
+      this.root.replaceChildren(back, composition, this.prompts);
     }
     this.root.hidden = false;
     this.content = content;

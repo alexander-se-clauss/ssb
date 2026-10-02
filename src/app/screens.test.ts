@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { INITIAL_SCREEN, MAIN_MENU, SCREENS, canGo, go, nextScreens } from './screens';
+import {
+  INITIAL_SCREEN,
+  MAIN_MENU,
+  SCREENS,
+  canGo,
+  go,
+  hasMenuBackdrop,
+  nextScreens,
+} from './screens';
 
 describe('screen state machine', () => {
   it('boots into the title screen', () => {
@@ -74,5 +82,37 @@ describe('main menu', () => {
   it('leads to character select and options', () => {
     expect(MAIN_MENU.map((entry) => entry.to)).toEqual(['character-select', 'options']);
     for (const entry of MAIN_MENU) expect(canGo('main-menu', entry.to)).toBe(true);
+  });
+});
+
+describe('menu backdrop', () => {
+  it('stands behind the title and the menu screens', () => {
+    for (const screen of [
+      'title',
+      'main-menu',
+      'options',
+      'sound',
+      'controls',
+      'stage-select',
+    ] as const) {
+      expect(hasMenuBackdrop(screen)).toBe(true);
+    }
+  });
+
+  it('gives way to the screens with their own scene', () => {
+    for (const screen of ['character-select', 'match', 'results'] as const) {
+      expect(hasMenuBackdrop(screen)).toBe(false);
+    }
+  });
+
+  it('leaves no screen undecided, so a new one is classified on purpose', () => {
+    expect(SCREENS.filter(hasMenuBackdrop)).toEqual([
+      'title',
+      'main-menu',
+      'options',
+      'sound',
+      'controls',
+      'stage-select',
+    ]);
   });
 });

@@ -44,7 +44,8 @@ Menus use the Kombat look (epic #121), after Mortal Kombat 1 and Tekken: firelit
 serif headings (Cinzel), spaced labels (Oswald) and a quiet list whose focused entry carries a
 gold diamond and an ember glow. A button bar at the bottom of every menu but character select names what each button
 does there (Enter / Esc on the keyboard, A / B on a gamepad, after the device used last). Every
-screen supports up to four players. Stage selection and results keep compositions suited to
+screen supports up to four players. Behind the title and the menus stands a 3D set: a fighter
+on a firelit stone platform in a spotlight, with fog, rising embers and ruined pillars. Stage selection and results keep compositions suited to
 their content.
 Results show a 3D medal podium for two to four players, with player-colored fighter models,
 numbered steps and a gold laurel wreath for first place. Stock standings follow elimination order;

@@ -49,10 +49,17 @@ import {
 } from './audio-settings';
 import { stageThumbnail } from '../adapters/three-renderer/stage-thumbnail';
 import { fighterPortrait } from '../adapters/three-renderer/fighter-portrait';
-import { TitleScene } from '../adapters/three-renderer/title-scene';
+import { MenuBackdrop } from '../adapters/three-renderer/menu-backdrop';
 import { titleScreenBody } from './title-screen';
 import { ScreenTransition } from './screen-transition';
-import { INITIAL_SCREEN, MAIN_MENU, go, nextScreens, type Screen } from './screens';
+import {
+  INITIAL_SCREEN,
+  MAIN_MENU,
+  go,
+  hasMenuBackdrop,
+  nextScreens,
+  type Screen,
+} from './screens';
 
 /** Player slots on character select, as in Melee. */
 const MAX_PLAYERS = 4;
@@ -144,7 +151,8 @@ export class App {
   private readonly characterSelect: CharacterSelectView;
   /** The blade wipe that plays over every screen change. */
   private readonly transition: ScreenTransition;
-  private titleScene: TitleScene | undefined;
+  /** The 3D set behind the title and the menus; kept while moving between them. */
+  private menuBackdrop: MenuBackdrop | undefined;
   private resultsScene: ResultsScene | undefined;
   private eliminations: Elimination[] = [];
   /** The Music and Effects volumes from Options. */
@@ -213,6 +221,10 @@ export class App {
     const next = go(this.screen, to);
     this.transition.play(() => this.renderScenes());
     this.leave(this.screen);
+    if (!hasMenuBackdrop(next)) {
+      this.menuBackdrop?.dispose();
+      this.menuBackdrop = undefined;
+    }
     this.screen = next;
     this.enter(next);
   }
@@ -227,7 +239,7 @@ export class App {
   frame(now: number): void {
     const rulesWereOpen = this.rulesShown;
     this.updateMenus();
-    this.titleScene?.render(now);
+    this.menuBackdrop?.render(now);
     // A gamepad press that just closed the rules overlay (Done) must not also reach the grid
     // below, where it would open the rules again from the banner.
     const rulesJustClosed = rulesWereOpen && !this.rulesShown;
@@ -250,7 +262,7 @@ export class App {
    * their image: a WebGL canvas can only be read right after it was drawn.
    */
   private renderScenes(): void {
-    this.titleScene?.render(performance.now());
+    this.menuBackdrop?.render(performance.now());
     this.resultsScene?.render();
     if (this.match) for (const view of this.match.views) view.render(this.match.session.view());
   }
@@ -258,7 +270,7 @@ export class App {
   resize(): void {
     this.transition.resize();
     this.resultsScene?.resize();
-    this.titleScene?.resize(this.container.clientWidth, this.container.clientHeight);
+    this.menuBackdrop?.resize(this.container.clientWidth, this.container.clientHeight);
     for (const view of this.match?.views ?? []) {
       view.resize(this.container.clientWidth, this.container.clientHeight);
     }
@@ -268,7 +280,7 @@ export class App {
     // Lets the CSS apply screen-specific presentation.
     this.container.dataset['screen'] = screen;
     this.adapters.audio.playMusic(screenMusic(screen, this.stageId));
-    if (screen === 'title') this.titleScene = new TitleScene(this.container);
+    if (hasMenuBackdrop(screen)) this.menuBackdrop ??= new MenuBackdrop(this.container);
     if (screen === 'match') {
       this.startMatch();
       return;
@@ -409,10 +421,6 @@ export class App {
     if (screen === 'results') {
       this.resultsScene?.dispose();
       this.resultsScene = undefined;
-    }
-    if (screen === 'title') {
-      this.titleScene?.dispose();
-      this.titleScene = undefined;
     }
     if (screen === 'match') this.stopMatch();
     else if (screen === 'character-select') this.leaveCharacterSelect();

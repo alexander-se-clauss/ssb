@@ -94,12 +94,12 @@ test('the game boots into the title screen', async ({ page }) => {
   expect(await screen(page)).toBe('title');
 });
 
-test('title illustration supports resizing, reduced motion and mouse start, and is disposed on exit', async ({
+test('the menu backdrop supports resizing, reduced motion and mouse start, stays across menus and is disposed outside them', async ({
   page,
 }, testInfo) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
-  const canvas = page.locator('canvas.title-scene');
+  const canvas = page.locator('canvas.menu-backdrop');
   await expect(canvas).toBeVisible();
   await nextFrames(page);
   expect(await page.evaluate(() => window.__SSB__?.state())).toBeUndefined();
@@ -110,15 +110,17 @@ test('title illustration supports resizing, reduced motion and mouse start, and 
   const start = page.getByRole('button', { name: 'Press start', exact: true });
   await expect(start).toBeInViewport();
   await page.screenshot({ path: testInfo.outputPath('title-narrow.png') });
+  // The same scene stays behind every menu screen rather than being rebuilt.
+  await canvas.evaluate((element) => element.setAttribute('data-kept', ''));
   await start.click();
   await expect.poll(() => screen(page)).toBe('main-menu');
+  await expect(canvas).toHaveAttribute('data-kept', '');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('character-select');
   await expect(canvas).toHaveCount(0);
   await page.keyboard.press('Escape');
-  await expect.poll(() => screen(page)).toBe('title');
-  await expect(canvas).toHaveCount(1);
-  await page.keyboard.press('Enter');
   await expect.poll(() => screen(page)).toBe('main-menu');
-  await expect(canvas).toHaveCount(0);
+  await expect(canvas).toHaveCount(1);
 });
 
 test('start opens the main menu, and Escape goes back', async ({ page }) => {
@@ -728,7 +730,10 @@ const inspectMenu = async (page: Page, name: string, testInfo: TestInfo) => {
     await nextFrames(page);
     const menus = page.locator('.menu:visible');
     const root = (await menus.count()) ? menus.last() : page.locator('.css:visible');
-    await expect(root.locator('.menu-atmosphere')).toBeVisible();
+    // Menu screens stand in front of the 3D backdrop; character select keeps its SVG atmosphere.
+    const menuScreen = !['character-select', 'results'].includes((await screen(page)) ?? '');
+    if (menuScreen) await expect(page.locator('canvas.menu-backdrop')).toBeVisible();
+    else if (!(await menus.count())) await expect(root.locator('.menu-atmosphere')).toBeVisible();
     const boxes = await root.evaluate((element) =>
       Array.from(element.querySelectorAll('h1, button, table, .css-slot, .css-cell'))
         .filter((node) => node.getClientRects().length > 0)
