@@ -56,7 +56,7 @@ describe('sidestep', () => {
   });
 
   it('steps towards the camera with the stick down', () => {
-    for (const stick of [{ y: -1 }, { x: -0.7, y: -0.7 }]) {
+    for (const stick of [{ y: -1 }, { x: -0.7, y: -0.7 }, { y: -0.3 }]) {
       const state = dodge(standing(), stick);
       expect(fighter(state, 0)).toMatchObject({ action: 'sidestepOut', actionFrame: 0, facing: 1 });
     }

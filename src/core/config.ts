@@ -71,8 +71,9 @@ export const FIGHTER = {
  */
 export const DODGE = {
   /**
-   * Stick deflection that picks a ground dodge's direction: sideways (and more than up or down)
-   * rolls, down sidesteps towards the camera, anything else sidesteps into the background.
+   * Sideways stick deflection (and more than up or down) that makes a ground dodge a roll.
+   * Otherwise it sidesteps: towards the camera with the stick down past the deadzone, else into
+   * the background.
    */
   rollStick: 0.5,
   /**

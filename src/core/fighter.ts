@@ -1,5 +1,5 @@
 import { CENTRED_STICK, attackInput, trackStick } from './attack-input';
-import { DODGE, FIGHTER, INPUT } from './config';
+import { DODGE, FIGHTER, INPUT, STICK } from './config';
 import { NEUTRAL_INPUT, pressed } from './input';
 import { approach } from './math';
 import { findMove } from './move-data';
@@ -101,16 +101,17 @@ export const updateFighter = (
       : null;
   const dodgePress = pressed(input, prev, 'shield');
   const press = (grounded: boolean): BufferedInput | null => {
+    // A jump waits in the buffer like any press, so it is not lost while an aerial or a dodge
+    // plays out. Not with no jump left, and not in hitstun: jumping out of it needs a fresh
+    // press, as in Melee.
+    const jumpPress = (): BufferedInput | null =>
+      pressed(input, prev, 'jump') &&
+      (grounded || fighter.jumpsRemaining > 0) &&
+      fighter.action !== 'hitstun'
+        ? { action: 'jump', face: fighter.facing, age: 0 }
+        : null;
     if (button === null) {
-      // A jump waits in the buffer like any press, so it is not lost while an aerial or a dodge
-      // plays out. Not with no jump left, and not in hitstun: jumping out of it needs a fresh
-      // press, as in Melee.
-      if (!dodgePress) {
-        const canJump = grounded || fighter.jumpsRemaining > 0;
-        return pressed(input, prev, 'jump') && canJump && fighter.action !== 'hitstun'
-          ? { action: 'jump', face: fighter.facing, age: 0 }
-          : null;
-      }
+      if (!dodgePress) return jumpPress();
       // The dodge button dodges on the ground (#35), and in the air once per airtime (#36). On
       // the ground the stick sideways rolls along the stage plane; up, down or centred sidesteps
       // out of it. An air dodge reads its direction from the stick when it starts; one pressed in
@@ -119,12 +120,17 @@ export const updateFighter = (
         return fighter.airDodgeUsed ? null : { action: 'airDodge', face: fighter.facing, age: 0 };
       }
       if (Math.abs(input.x) < DODGE.rollStick || Math.abs(input.x) <= Math.abs(input.y)) {
-        const side = input.y <= -DODGE.rollStick ? 'sidestepOut' : 'sidestepIn';
+        const side = input.y <= -STICK.deadzone ? 'sidestepOut' : 'sidestepIn';
         return { action: side, face: fighter.facing, age: 0 };
       }
       return { action: 'roll', face: input.x > 0 ? 1 : -1, age: 0 };
     }
     const choice = moveSlot({ grounded, button, attack: attackInput(stick, fighter.facing) });
+    // A press for an empty slot does nothing, so a jump pressed with it is buffered instead.
+    if (findCharacter(fighter.characterId)?.moves[choice.slot] === undefined) {
+      const jump = jumpPress();
+      if (jump) return jump;
+    }
     const face = choice.turnAround ? (fighter.facing === 1 ? -1 : 1) : fighter.facing;
     return { action: choice.slot, face, age: 0 };
   };

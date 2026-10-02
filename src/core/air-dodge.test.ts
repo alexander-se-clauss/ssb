@@ -257,6 +257,15 @@ describe('second jump after air actions', () => {
     expect(fighter(state, 0).velocity.y).toBeGreaterThan(0);
   });
 
+  it('jumps again after an aerial when jump came with a press for an empty special', () => {
+    let state = step(inTheAir({ position: { x: 6, y: 10 } }), [inputOf({ attack: true })]);
+    state = run(state, findMove('neutralAir').totalFrames - 3, [NONE]);
+    state = step(state, [inputOf({ jump: true, special: true })]);
+    state = run(state, 3, [NONE]);
+    expect(fighter(state, 0).jumpsRemaining).toBe(FIGHTER.totalJumps - 2);
+    expect(fighter(state, 0).velocity.y).toBeGreaterThan(0);
+  });
+
   it('does not use the second jump at take-off for a jump pressed twice in the jump squat', () => {
     let state = withFighter(inTheAir(), 0, {
       position: { x: 3, y: 0 },
