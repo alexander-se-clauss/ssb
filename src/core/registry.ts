@@ -31,7 +31,10 @@ export const CAPSULE: CharacterDef = {
 /** A handyman on the shared skeleton; he borrows the capsule's moves for now (epic #7). */
 export const RIVET: CharacterDef = { id: 'rivet', name: 'Rivet', moves: CAPSULE.moves };
 
-export const CHARACTERS: readonly CharacterDef[] = [CAPSULE, RIVET];
+/** A bounty hunter in power armour; she borrows the capsule's moves for now (epic #7). */
+export const VELA: CharacterDef = { id: 'vela', name: 'Vela', moves: CAPSULE.moves };
+
+export const CHARACTERS: readonly CharacterDef[] = [CAPSULE, RIVET, VELA];
 
 export const STAGES: readonly StageDef[] = [BATTLEFIELD, FINAL_DESTINATION];
 

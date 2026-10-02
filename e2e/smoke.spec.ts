@@ -196,7 +196,7 @@ test('Options holds game settings and shows the controls', async ({ page }) => {
 
 test('two players pick, change their minds and confirm on character select', async ({ page }) => {
   await toCharacterSelect(page);
-  await expect(page.locator('.css-cell')).toHaveCount(2);
+  await expect(page.locator('.css-cell')).toHaveCount(3);
 
   await expect(page.locator('.css-slot.empty')).toHaveCount(4);
   await tap(page, 'KeyF');
@@ -1104,7 +1104,7 @@ test('fighter lobby shows neutral portraits, live colored previews, ownership an
   await installPads(page, 2);
   await toCharacterSelect(page);
   const portrait = page.locator('.css-cell .css-portrait');
-  await expect(portrait).toHaveCount(2);
+  await expect(portrait).toHaveCount(3);
   await expect
     .poll(() => portrait.first().evaluate((image: HTMLImageElement) => image.naturalWidth))
     .toBeGreaterThan(0);

@@ -112,8 +112,9 @@ a playable build; it is done when that build works, not on a date.
       top. Epic #121.
 - [ ] **S4 Moves and dodges.** Tilts, standard smashes, aerials and landing lag; spot dodge,
       roll and air dodge. Epics #5, #6.
-- [x] **Second fighter look** (beside S4). Rivet, a handyman built from primitives on the shared
-      skeleton, playable with the capsule moveset until he gets his own; his overalls take the
+- [x] **Fighter looks** (beside S4). Rivet, a handyman, and Vela, a bounty hunter in power armour
+      with an arm cannon, built from primitives on the shared skeleton and playable with the
+      capsule moveset until they get their own; their overalls and armour plates take the
       player's colour. Character definitions and own movesets stay in S5 and S6.
 - [ ] **S5 Off-stage play.** Ledge grab and getups, larger blast zones in stage data, a camera
       that follows fighters off-stage, helpless state; character definitions, per-character air

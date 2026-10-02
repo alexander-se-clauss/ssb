@@ -6,6 +6,7 @@
  */
 import * as THREE from 'three';
 import type { PartBuilder } from '../fighter-model';
+import { ball, capsule, type Material } from './shapes';
 
 const ORANGE = 0xe8822a;
 /** The overalls; they take the player's colour in a match (see `fighter-model.ts`). */
@@ -20,31 +21,8 @@ const STEEL = 0xb8bec6;
 const BELT = 0x5a3a22;
 const EYE = 0x3d8a4a;
 
-type Material = (color: number) => THREE.MeshStandardMaterial;
-
-const ball = (
-  material: THREE.Material,
-  radius: number,
-  [x, y, z]: readonly [number, number, number],
-  [sx, sy, sz]: readonly [number, number, number] = [1, 1, 1],
-): THREE.Mesh => {
-  const mesh = new THREE.Mesh(new THREE.SphereGeometry(radius, 18, 14), material);
-  mesh.position.set(x, y, z);
-  mesh.scale.set(sx, sy, sz);
-  return mesh;
-};
-
-const capsule = (material: THREE.Material, radius: number, length: number, y = 0): THREE.Mesh => {
-  const mesh = new THREE.Mesh(
-    new THREE.CapsuleGeometry(radius, Math.max(length - radius * 2, 0.01), 6, 14),
-    material,
-  );
-  mesh.position.y = y;
-  return mesh;
-};
-
 const torso = (m: Material): THREE.Object3D[] => [
-  // Red shirt over the chest and shoulders.
+  // Orange shirt over the chest and shoulders.
   ball(m(ORANGE), 0.2, [0, 0.12, 0], [0.95, 0.85, 1.15]),
   // Overalls: a round belly that bulges forward, and the seat behind.
   ball(m(OVERALLS), 0.22, [0.02, -0.07, 0], [1, 1, 1.05]),
