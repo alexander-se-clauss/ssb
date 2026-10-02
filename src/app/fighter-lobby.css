@@ -88,18 +88,20 @@
   justify-content: center;
 }
 
+/* As many columns as cursor navigation uses, so the rows on screen are the rows a cursor moves
+   through; the cells shrink on narrow screens instead of wrapping. */
 .css-grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(var(--columns), minmax(0, 92px));
   justify-content: center;
-  gap: 4px 18px;
+  gap: 4px clamp(6px, 2vw, 18px);
 }
 
 .css-cell {
   position: relative;
   display: grid;
   justify-items: center;
-  width: 92px;
+  min-width: 0;
   padding-top: 10px;
 }
 
@@ -124,15 +126,18 @@
 }
 
 .css-portrait {
-  width: 74px;
-  height: 74px;
+  width: min(74px, 100%);
+  aspect-ratio: 1;
   margin-top: -11px;
   object-fit: contain;
   clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
 }
 
 .css-fighter-name {
+  max-width: 100%;
   margin-top: 2px;
+  overflow: hidden;
+  text-overflow: clip;
   color: var(--k-muted);
   font-family: var(--font-label);
   font-size: 0.75rem;
@@ -301,6 +306,9 @@
   .css-player-label {
     letter-spacing: 0.1em;
   }
+  .css-fighter-name {
+    letter-spacing: 0.1em;
+  }
   .css-player-device {
     letter-spacing: 0.05em;
   }
@@ -325,8 +333,10 @@
   .css .css-rules {
     padding: 3px 12px;
   }
+  .css-grid {
+    grid-template-columns: repeat(var(--columns), minmax(0, 76px));
+  }
   .css-cell {
-    width: 76px;
     padding-top: 6px;
   }
   .css-cell::before {
@@ -335,8 +345,7 @@
     height: 38px;
   }
   .css-portrait {
-    width: 54px;
-    height: 54px;
+    width: min(54px, 100%);
     margin-top: -8px;
   }
   .css-fighter-name {

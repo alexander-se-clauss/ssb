@@ -1150,6 +1150,14 @@ test('character select stands each player on a platform in their colour above a 
   await expect(page.locator('.css-slot.empty')).toHaveCount(4);
   await expect(page.locator('.css-slot').first()).toContainText('Press Attack');
   await inspectMenu(page, 'lobby-empty', testInfo);
+  // The roster wraps exactly where cursor navigation does, even on the narrowest phone.
+  await page.setViewportSize({ width: 320, height: 568 });
+  await nextFrames(page);
+  const tops = await page
+    .locator('.css-cell')
+    .evaluateAll((cells) => cells.map((cell) => Math.round(cell.getBoundingClientRect().top)));
+  expect(new Set(tops).size).toBe(1);
+  await page.setViewportSize({ width: 1280, height: 720 });
 
   await tap(page, 'KeyF');
   await tap(page, 'Period');
