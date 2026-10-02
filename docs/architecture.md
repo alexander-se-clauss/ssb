@@ -136,10 +136,15 @@ saving may fail (blocked storage); the defaults or the current values then simpl
 
 `src/app/screens.ts` lists the screens (title, main menu, options, sound, controls, character select,
 stage select, match, results) and the allowed moves between them, as plain data with a unit test.
-`App` shows menu screens as HTML over the canvas. The title screen owns a decorative Three.js
-arena illustration with posed fighters, colored lighting and gently drifting sparks. It uses the
-core skeleton and poses without running a match, respects reduced-motion preferences, and releases
-its WebGL resources on leaving the title. The HTML start button also accepts keyboard and gamepad input. As in Melee, character select is where a match is
+`App` shows menu screens as HTML over the canvas. Behind the title and the menus stands one
+decorative Three.js scene, the menu backdrop (`menu-backdrop.ts`): a fighter in a forward smash
+on a stone platform in a spotlight, fog, rising embers (`ember-drift.ts`) and broken pillars
+against a distant fire. It uses the core skeleton and poses without running a match, stays alive
+while the player moves between menus, stands still under reduced motion, draws only as often as
+its measured cost allows (`frame-budget.ts`: every frame on a real GPU, a new picture every few
+seconds on CI's software renderer), and releases its WebGL
+resources when a screen with its own scene opens (`hasMenuBackdrop` in `screens.ts`: character
+select, match and results). The HTML start button also accepts keyboard and gamepad input. As in Melee, character select is where a match is
 set up: its top bar holds Back and the rules banner, which opens the rules overlay (a second
 `MenuPanel`, editing a draft that applies on Done). Options holds game settings only: directions
 navigate between its panels (Screen, Sound, Controls), and confirming Screen toggles fullscreen. On character
@@ -163,7 +168,8 @@ keyboard arrows/WASD and gamepad directions select cards through the same menu h
 The menus use the Kombat look (`menu-theme.css`, colour and font tokens in `style.css`): a gold
 serif heading and a list of entries, the focused one marked by a diamond and an ember glow. The
 two fonts ship as woff2 files in `src/app/fonts/` (`fonts.css`, SIL Open Font License), so there
-is no runtime font dependency. `menu-art.ts` still draws a faint SVG atmosphere behind the menus.
+is no runtime font dependency. `menu-art.ts` still draws a faint SVG atmosphere behind character
+select.
 `MenuPanel` composes the heading, optional data panel and options; each screen supplies its own
 variant in `app.ts`. Results frames a Three.js medal podium, and stage select centres its
 thumbnail grid. At the bottom of each menu, `MenuPanel` shows the button bar (`button-prompts.ts`:

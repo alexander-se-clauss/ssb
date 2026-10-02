@@ -52,3 +52,9 @@ export const MAIN_MENU: readonly MenuEntry[] = [
   { label: 'VS. Mode', to: 'character-select' },
   { label: 'Options', to: 'options' },
 ];
+
+/** Screens that have their own 3D scene; the others share the menu backdrop. */
+const OWN_SCENE: readonly Screen[] = ['character-select', 'match', 'results'];
+
+/** Whether the firelit menu backdrop stands behind this screen. */
+export const hasMenuBackdrop = (screen: Screen): boolean => !OWN_SCENE.includes(screen);

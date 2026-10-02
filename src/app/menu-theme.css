@@ -12,7 +12,9 @@
   background: var(--app-background);
 }
 
+/* Menu screens let the 3D backdrop show through, shaded on the left where the list sits. */
 .menu:not(.menu-title) {
+  background: linear-gradient(90deg, rgb(7 5 4 / 80%), rgb(7 5 4 / 35%) 55%, transparent 80%);
   align-items: flex-start;
 }
 
@@ -541,6 +543,7 @@
 /* Results: the podium fills the composition; the two choices sit side by side beneath it. */
 .menu.menu-results {
   align-items: center;
+  background: var(--app-background);
   padding: 24px 40px 80px;
 }
 .menu-results .menu-details {
