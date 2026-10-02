@@ -55,41 +55,6 @@ canvas {
   display: none !important;
 }
 
-.hud {
-  position: absolute;
-  inset: auto 0 24px 0;
-  display: flex;
-  justify-content: center;
-  gap: 48px;
-  pointer-events: none;
-}
-
-.hud-card {
-  min-width: 96px;
-  padding: 8px 16px;
-  border-radius: 12px;
-  background: rgb(0 0 0 / 45%);
-  border-bottom: 4px solid var(--player-color);
-  color: #fff;
-  text-align: center;
-}
-
-.hud-name {
-  font-weight: 700;
-  color: var(--player-color);
-}
-
-.hud-damage {
-  font-size: 2.2rem;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-}
-
-.hud-stocks {
-  color: var(--player-color);
-  letter-spacing: 4px;
-}
-
 .menu {
   position: absolute;
   inset: 0;
@@ -314,19 +279,6 @@ canvas {
   50% {
     opacity: 0.35;
   }
-}
-
-.hud-clock {
-  position: absolute;
-  top: 16px;
-  width: 100%;
-  text-align: center;
-  font-size: 2rem;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  color: #fff;
-  text-shadow: 0 2px 8px rgb(0 0 0 / 60%);
-  pointer-events: none;
 }
 
 .menu-options {

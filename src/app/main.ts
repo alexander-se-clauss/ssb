@@ -2,7 +2,7 @@
  * Composition root: the only place that knows which concrete adapters are used.
  * Swapping keyboard for gamepad, or the local session for a network one, happens here.
  */
-import { createMatch } from '../core';
+import { createMatch, findCharacter } from '../core';
 import { DomHud } from '../adapters/dom-hud/dom-hud';
 import {
   KeyboardInputSource,
@@ -14,6 +14,7 @@ import { OverridableInput } from '../adapters/debug-input/overridable-input';
 import { GAMEPAD_LABELS, GamepadInputSource } from '../adapters/gamepad-input/gamepad-input-source';
 import { LocalGameSession } from '../adapters/local-session/local-game-session';
 import { ThreeView } from '../adapters/three-renderer/three-view';
+import { fighterPortrait } from '../adapters/three-renderer/fighter-portrait';
 import { WebAudioOutput } from '../adapters/web-audio/web-audio-output';
 import { RecordingAudioOutput } from '../adapters/recording-audio/recording-audio-output';
 import { App } from './app';
@@ -24,6 +25,7 @@ import './menu-theme.css';
 import './fighter-lobby.css';
 import './screen-transition.css';
 import './match-banner.css';
+import './match-hud.css';
 
 const container = document.querySelector<HTMLElement>('#app');
 if (!container) throw new Error('Missing #app container');
@@ -69,7 +71,16 @@ const app = new App(container, {
   createViews: (root, stage) => {
     view = new ThreeView(root, stage);
     view.setShowBoxes(showBoxes);
-    return [view, new DomHud(root)];
+    const portrait = (id: string) => {
+      const character = findCharacter(id);
+      // A portrait needs a spare WebGL context; without one the plate keeps an empty diamond.
+      try {
+        return character && fighterPortrait(character);
+      } catch {
+        return undefined;
+      }
+    };
+    return [view, new DomHud(root, { portrait })];
   },
   controls: [
     { device: 'Left keys', labels: describeKeys(PLAYER_ONE_KEYS) },
