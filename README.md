@@ -18,7 +18,8 @@ npm run dev      # open http://localhost:5173
 
 A direction held while pressing attack gives a tilt; pressing the direction and attack together
 (or flicking the stick) gives a smash. Dodge on its own spot dodges; with left or right held it
-rolls that way. There is no shield: dodging is the defence.
+rolls that way. In the air, dodge is an air dodge the way the stick points (once until you land or
+are hit). There is no shield: dodging is the defence.
 
 Menus: Enter or Space to start, arrow keys or W/S to move, Enter to pick; a gamepad moves with
 the stick or d-pad, Start or A picks and B goes back. Esc or the Back button goes back. On character

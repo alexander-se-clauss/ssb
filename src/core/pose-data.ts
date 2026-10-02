@@ -39,6 +39,7 @@ export type PoseName =
   | 'downAir'
   | 'spotDodge'
   | 'roll'
+  | 'airDodge'
   | 'hurt'
   | 'tumble';
 
@@ -484,6 +485,19 @@ export const POSES: Readonly<Record<PoseName, Pose>> = {
     lowerLegFront: 135,
     upperLegBack: 135,
     lowerLegBack: 130,
+  },
+  // Air dodge: curled up in mid-air, knees drawn in and arms hugging the chest.
+  airDodge: {
+    torso: 25,
+    head: -20,
+    upperArmFront: 150,
+    lowerArmFront: -120,
+    upperArmBack: 165,
+    lowerArmBack: -115,
+    upperLegFront: 110,
+    lowerLegFront: 120,
+    upperLegBack: 150,
+    lowerLegBack: 110,
   },
   // Flinch: head and chest snap back, the arms trail behind the body.
   hurt: {

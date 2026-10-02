@@ -143,6 +143,8 @@ export const resolveCombat = (
         grounded: false,
         action: 'hitstun',
         actionFrame: 0,
+        // A hit gives the air dodge back, as in Ultimate.
+        airDodgeUsed: false,
         moveId: null,
         hitstunFrames: Math.round(speed * HITSTUN_PER_KNOCKBACK),
         // The launch is set now but held until the freeze ends.

@@ -29,6 +29,8 @@ export const poseName = (fighter: FighterState): PoseName | null => {
       return 'spotDodge';
     case 'roll':
       return 'roll';
+    case 'airDodge':
+      return 'airDodge';
     case 'attack':
       return fighter.moveId === null ? 'idle' : null;
     case 'airborne':

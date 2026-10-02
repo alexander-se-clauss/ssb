@@ -111,7 +111,7 @@ a playable build; it is done when that build works, not on a date.
 - [ ] **Kombat UI** (beside S4). Menus in the Kombat look with a button bar; a 3D menu
       backdrop; a four-player character select on stone platforms; a four-player HUD across the
       top. Epic #121.
-- [ ] **S4 Moves and dodges.** Tilts, standard smashes, aerials and landing lag; spot dodge,
+- [x] **S4 Moves and dodges.** Tilts, standard smashes, aerials and landing lag; spot dodge,
       roll and air dodge. Epics #5, #6.
 - [x] **Fighter looks** (beside S4). Rivet, a handyman, and Vela, a bounty hunter in power armour
       with an arm cannon, built from primitives on the shared skeleton and playable with the

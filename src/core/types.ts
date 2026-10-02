@@ -35,6 +35,7 @@ export type FighterAction =
   | 'attack'
   | 'spotDodge'
   | 'roll'
+  | 'airDodge'
   | 'hitstun'
   | 'eliminated';
 
@@ -65,6 +66,8 @@ export interface FighterState {
   readonly facing: 1 | -1;
   readonly grounded: boolean;
   readonly jumpsRemaining: number;
+  /** The air dodge is used up until the fighter lands or is hit (#36). */
+  readonly airDodgeUsed: boolean;
   readonly action: FighterAction;
   /** Frames spent in the current action; during an attack, the frame of the move. */
   readonly actionFrame: number;
