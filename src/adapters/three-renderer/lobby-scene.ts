@@ -51,7 +51,10 @@ export class LobbyScene {
   private readonly platforms: Platform[] = [];
   private readonly budget = new FrameBudget();
   private readonly probe = new Uint8Array(4);
-  private changed = true;
+  /** A stand changed: worth a new picture as soon as the frame budget allows. */
+  private standsChanged = true;
+  /** The canvas was resized, which clears it: draw at once. */
+  private resized = false;
 
   constructor(container: HTMLElement) {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -91,8 +94,6 @@ export class LobbyScene {
       this.scene.add(dais, light, light.target, pool);
       this.platforms.push({ rune, light, pool, fighter: undefined, shown: undefined });
     }
-
-    this.resize(container.clientWidth, container.clientHeight);
   }
 
   /** Puts each player's stand on their platform; unchanged stands keep their fighter. */
@@ -102,7 +103,7 @@ export class LobbyScene {
       const before = platform.shown;
       if (before?.characterId === stand.characterId && before.ready === stand.ready) return;
       platform.shown = stand;
-      this.changed = true;
+      this.standsChanged = true;
       if (platform.fighter) {
         this.scene.remove(platform.fighter);
         disposeScene(platform.fighter);
@@ -116,7 +117,7 @@ export class LobbyScene {
       if (stand.characterId === null) return;
       // The left pair faces right and the right pair left, all turned a little to the camera.
       const facing = slot < 2 ? 1 : -1;
-      const { holder } = showcaseFighter(
+      const holder = showcaseFighter(
         stand.characterId,
         color,
         stand.ready ? POSES.forwardSmash : POSES.idle,
@@ -132,8 +133,12 @@ export class LobbyScene {
 
   /** Called every frame; draws when a stand changed, as often as the frame budget allows. */
   render(now: number): void {
-    if (!this.budget.shouldDraw(now, { animated: this.changed, changed: false })) return;
-    this.changed = false;
+    const draw = this.budget.shouldDraw(now, {
+      animated: this.standsChanged,
+      changed: this.resized,
+    });
+    if (!draw) return;
+    this.standsChanged = this.resized = false;
     if (!this.budget.measuring) {
       this.renderer.render(this.scene, this.camera);
       this.budget.drew(now);
@@ -147,7 +152,9 @@ export class LobbyScene {
     this.budget.drew(now, performance.now() - start);
   }
 
+  /** Fits the row to the screen; the app calls it once the view is shown, and on every resize. */
   resize(width: number, height: number): void {
+    if (width === 0 || height === 0) return;
     this.camera.aspect = width / Math.max(height, 1);
     const distance = rowCameraDistance(FOV, this.camera.aspect);
     // Put the platform tops just above the nameplates: about 65% of the way down, or 80% on a
@@ -161,7 +168,7 @@ export class LobbyScene {
     this.camera.lookAt(0, lookY, 0);
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
-    this.changed = true;
+    this.resized = true;
   }
 
   dispose(): void {

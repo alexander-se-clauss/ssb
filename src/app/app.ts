@@ -264,8 +264,8 @@ export class App {
 
   /**
    * Draws the 3D scenes once more, so the transition's snapshot (taken in the same task) holds
-   * their image: a WebGL canvas can only be read right after it was drawn. The menu backdrop keeps
-   * its drawing buffer instead, so it needs no extra drawing here.
+   * their image: a WebGL canvas can only be read right after it was drawn. The menu backdrop and
+   * the lobby scene keep their drawing buffers instead, so they need no extra drawing here.
    */
   private renderScenes(): void {
     this.resultsScene?.render();

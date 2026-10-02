@@ -6,6 +6,7 @@
  * attack can join. Confirming a header action opens rules or leaves the screen. The screen (character-select-view.ts) only draws this state and feeds it actions.
  */
 import type { CharacterDef, PlayerInput, PlayerSlot } from '../core';
+import type { PlatformStand } from '../adapters/three-renderer/lobby-scene';
 import { menuCommands, type MenuCommand } from './menu-commands';
 
 /** Cursor position of a player who is on the rules banner instead of the grid. */
@@ -253,10 +254,7 @@ export const previewCharacter = (
 };
 
 /** What stands on a player's platform: their fighter, or nothing while the slot is open. */
-export interface LobbyStand {
-  readonly characterId: string | null;
-  readonly ready: boolean;
-}
+export type LobbyStand = PlatformStand;
 
 /**
  * One stand per player slot. `browsing` remembers, per device, the fighter it showed last, so a

@@ -18,8 +18,6 @@ export interface FighterModel {
   readonly parts: ReadonlyMap<BoneId, THREE.Object3D>;
   /** Every material, so the view can flash and tint the whole body. */
   readonly materials: readonly THREE.MeshStandardMaterial[];
-  /** Paints the player's colour (or `NEUTRAL_COLOR` for the character's own) onto the model. */
-  readonly tint: (color: number) => void;
 }
 
 /** Builds the meshes of one bone in its local space; `material` makes shared, flashable materials. */
@@ -94,14 +92,12 @@ export const fighterModel = (characterId: string, color: number): FighterModel =
     parts.set(bone.id, group);
     root.add(group);
   }
-  const tint = (next: number) => {
-    const target = next === NEUTRAL_COLOR ? look.playerColor : next;
-    for (const { material, shade } of playerMaterials) {
-      material.color.setHex(target).multiplyScalar(shade);
-    }
-  };
-  tint(color);
-  return { root, parts, materials, tint };
+  // The player's colour, or the character's own for `NEUTRAL_COLOR`.
+  const target = color === NEUTRAL_COLOR ? look.playerColor : color;
+  for (const { material, shade } of playerMaterials) {
+    material.color.setHex(target).multiplyScalar(shade);
+  }
+  return { root, parts, materials };
 };
 
 export const poseFighter = (model: FighterModel, pose: Pose): void => {

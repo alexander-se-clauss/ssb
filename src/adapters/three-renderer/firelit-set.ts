@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { Pose } from '../../core';
-import { fighterModel, poseFighter, type FighterModel } from './fighter-model';
+import { fighterModel, poseFighter } from './fighter-model';
 
 /**
  * Pieces of the firelit Kombat set shared by the menu backdrop and character select: stone
@@ -125,7 +125,7 @@ export const showcaseFighter = (
   pose: Pose,
   scale: number,
   facing: 1 | -1,
-): { readonly holder: THREE.Group; readonly model: FighterModel } => {
+): THREE.Group => {
   const model = fighterModel(characterId, color);
   poseFighter(model, pose);
   for (const material of model.materials) {
@@ -139,5 +139,5 @@ export const showcaseFighter = (
   const holder = new THREE.Group();
   holder.add(model.root);
   holder.scale.set(scale * facing, scale, scale);
-  return { holder, model };
+  return holder;
 };

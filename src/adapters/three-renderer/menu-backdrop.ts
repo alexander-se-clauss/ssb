@@ -77,7 +77,7 @@ export class MenuBackdrop {
 
   /** The game's own fighter body, held in a forward smash towards the menu. */
   private addFighter(): void {
-    const { holder } = showcaseFighter('capsule', 0xb8332a, POSES.forwardSmash, 2.7, -1);
+    const holder = showcaseFighter('capsule', 0xb8332a, POSES.forwardSmash, 2.7, -1);
     holder.position.set(DAIS.x, DAIS_TOP, DAIS.z);
     holder.rotation.y = -0.6;
     this.scene.add(holder);
