@@ -181,9 +181,10 @@ locators. Reduced motion skips it.
 
 A match starts in the `countdown` phase (`COUNTDOWN` in `config.ts`): `step` lets the fighters
 settle with neutral input until `goFrame`, then plays; `timeLeftFrames` counts from GO
-(`playedFrames`). `DomHud` reads that phase to show the READY and GO! banner, in the blade style
-of the wipe (`match-banner.css`). Scenario tests skip the countdown (`countdownFrames: 0` in
-`newMatch`).
+(`playedFrames`). `DomHud` reads the phase to show READY, GO! and, once the match is finished,
+GAME! (`bannerKind` in `dom-hud/match-banner.ts`, tested), in the blade style of the wipe
+(`match-banner.css`). The winner is named only on the results screen. Scenario tests skip the
+countdown (`countdownFrames: 0` in `newMatch`).
 
 Menus with a way back show a Back button in their top left corner, except results and the
 rules overlay, whose own buttons (Main menu, Done) do that job. Every screen listens on `window`,

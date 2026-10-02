@@ -26,7 +26,8 @@ knock each other off a floating stage. No install, instant play, readable and fu
 - Leaving the blast zone is a KO; respawn with brief invulnerability.
 - Who wins depends on the match rules below (stock or time).
 - A match opens with READY: fighters stand still and ignore input until GO!, as in Melee. The
-  match clock starts at GO.
+  match clock starts at GO. When it ends, the action freezes under a GAME! banner, then the
+  results screen names the winner.
 
 ## Match rules
 
@@ -101,7 +102,7 @@ a playable build; it is done when that build works, not on a date.
 - [x] **Sound** (beside S3). Menu sounds, attack, hit and KO sounds, music for the menus and
       each stage, music and effects volume in Options. Synthesized in the browser, original.
       Epic #83.
-- [ ] **Polish** (beside S4). Blade wipe between screens, READY / GO! at match start and a
+- [x] **Polish** (beside S4). Blade wipe between screens, READY / GO! at match start and a
       GAME! banner at match end, all in one style. Epic #108.
 - [ ] **S4 Moves and dodges.** Tilts, standard smashes, aerials and landing lag; spot dodge,
       roll and air dodge. Epics #5, #6.

@@ -78,17 +78,6 @@ canvas {
   letter-spacing: 4px;
 }
 
-.hud-banner {
-  position: absolute;
-  top: 35%;
-  width: 100%;
-  text-align: center;
-  font-size: 3rem;
-  font-weight: 900;
-  color: #fff;
-  text-shadow: 0 4px 16px rgb(0 0 0 / 60%);
-}
-
 .menu {
   position: absolute;
   inset: 0;

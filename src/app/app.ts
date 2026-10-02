@@ -62,7 +62,7 @@ const GRID_COLUMNS = 4;
 /** Working title, shown on the title screen. */
 const GAME_NAME = 'SSB';
 
-/** How long the winner banner stays up before the results screen. */
+/** How long the GAME! banner holds before the results screen. */
 const RESULTS_DELAY_MS = 1500;
 
 const LABELS: Readonly<Record<Screen, string>> = {

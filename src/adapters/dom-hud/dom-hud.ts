@@ -1,33 +1,8 @@
-import {
-  COUNTDOWN,
-  TICK_RATE,
-  playedFrames,
-  score,
-  timeLeftFrames,
-  type FighterState,
-  type MatchState,
-} from '../../core';
+import { TICK_RATE, score, timeLeftFrames, type FighterState, type MatchState } from '../../core';
 import type { GameView, SessionView } from '../../ports';
+import { BANNER_TEXT, bannerKind, type BannerKind } from './match-banner';
 
 const MAX_STOCK_DOTS = 5;
-
-/** The big blade banner across the middle of the screen. */
-type BannerKind = 'ready' | 'go';
-
-const BANNER_TEXT: Readonly<Record<BannerKind, string>> = { ready: 'Ready', go: 'Go!' };
-
-/** READY during the countdown, then GO! for a moment. */
-const bannerKind = (match: MatchState): BannerKind | null => {
-  if (match.phase === 'countdown') return 'ready';
-  if (
-    match.phase === 'playing' &&
-    match.goFrame > 0 &&
-    playedFrames(match) < COUNTDOWN.goBannerFrames
-  ) {
-    return 'go';
-  }
-  return null;
-};
 
 const PLAYER_CSS_COLORS = ['#e94f4f', '#4f8fe9', '#4fd18b', '#f2c14e'];
 
@@ -43,7 +18,6 @@ const formatClock = (frames: number): string => {
  */
 export class DomHud implements GameView {
   private readonly root: HTMLElement;
-  private readonly banner: HTMLElement;
   private readonly clock: HTMLElement;
   private readonly matchBanner: HTMLElement;
   private readonly matchBannerText: HTMLElement;
@@ -52,9 +26,6 @@ export class DomHud implements GameView {
   constructor(container: HTMLElement) {
     this.root = document.createElement('div');
     this.root.className = 'hud';
-    this.banner = document.createElement('div');
-    this.banner.className = 'hud-banner';
-    this.banner.hidden = true;
     this.clock = document.createElement('div');
     this.clock.className = 'hud-clock';
     this.clock.hidden = true;
@@ -67,7 +38,7 @@ export class DomHud implements GameView {
     this.matchBannerText = document.createElement('span');
     this.matchBannerText.className = 'match-banner-text';
     this.matchBanner.append(band, this.matchBannerText);
-    container.append(this.root, this.banner, this.clock, this.matchBanner);
+    container.append(this.root, this.clock, this.matchBanner);
   }
 
   render({ current }: SessionView): void {
@@ -75,21 +46,14 @@ export class DomHud implements GameView {
     const framesLeft = timeLeftFrames(current);
     this.clock.hidden = framesLeft === null;
     if (framesLeft !== null) this.clock.textContent = formatClock(framesLeft);
+    // Who won is told on the results screen, as in Melee; the match only says it is over.
     this.showBanner(bannerKind(current));
-    if (current.phase === 'finished') {
-      this.banner.hidden = false;
-      this.banner.textContent =
-        current.winner === null ? 'Draw!' : `Player ${current.winner + 1} wins!`;
-    } else {
-      this.banner.hidden = true;
-    }
   }
 
   resize(): void {}
 
   dispose(): void {
     this.root.remove();
-    this.banner.remove();
     this.clock.remove();
     this.matchBanner.remove();
   }

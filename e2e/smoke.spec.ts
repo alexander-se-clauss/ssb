@@ -368,6 +368,8 @@ test('results show the winner podium, and Rematch starts a new match', async ({ 
   await startMatch(page, { onCharacterSelect: true });
 
   await page.keyboard.down('KeyA');
+  // The match says GAME! before the results screen names the winner.
+  await expect(page.getByRole('status')).toHaveText('Game!', FRAMES_TIMEOUT);
   await expect.poll(() => screen(page), FRAMES_TIMEOUT).toBe('results');
   await page.keyboard.up('KeyA');
 
