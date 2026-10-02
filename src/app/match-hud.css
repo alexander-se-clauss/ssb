@@ -1,0 +1,288 @@
+/*
+ * The match HUD in the Kombat look: plates across the top, half of them on each side of the clock.
+ * Each plate has a portrait diamond on its outer edge, the name, a slanted damage meter that heats
+ * from gold to red (--heat, 0 to 1), the damage in gold and the lives as diamonds. Plates on the
+ * right are mirrored.
+ */
+.hud {
+  position: absolute;
+  inset: 0 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+  padding: 14px 2.5%;
+  color: var(--k-text);
+  pointer-events: none;
+}
+
+.hud-side {
+  grid-column: 1;
+  display: flex;
+  gap: 14px;
+  min-width: 0;
+}
+
+.hud-side.right {
+  grid-column: 3;
+  justify-content: flex-end;
+}
+
+.hud-plate {
+  --portrait: 76px;
+  display: flex;
+  align-items: center;
+  flex: 0 1 460px;
+  min-width: 0;
+}
+
+.hud.compact .hud-plate {
+  --portrait: 60px;
+  flex-basis: 270px;
+}
+
+.hud-plate.right {
+  flex-direction: row-reverse;
+}
+
+/* The portrait: a diamond in the player's colour, the fighter's upper body inside. */
+.hud-portrait {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  width: var(--portrait);
+  aspect-ratio: 1;
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  background: var(--player-color);
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--player-color) 55%, transparent));
+}
+
+.hud-portrait-frame {
+  position: absolute;
+  inset: 3px;
+  overflow: hidden;
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  background: radial-gradient(circle at 50% 40%, #3a2a1c, #120c08 75%);
+}
+
+/* The portrait shows the whole body; zoomed in, the diamond holds the head and shoulders. */
+.hud-portrait img {
+  position: absolute;
+  left: -35%;
+  top: 2%;
+  width: 170%;
+}
+
+.hud-plate.right .hud-portrait img {
+  scale: -1 1;
+}
+
+/* A size container: the name and the damage fit themselves to the plate's width. */
+.hud-body {
+  container-type: inline-size;
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  margin-left: calc(var(--portrait) * -0.3);
+  padding: 6px 22px 6px calc(var(--portrait) * 0.3 + 10px);
+  border-top: 2px solid var(--player-color);
+  background: linear-gradient(90deg, rgb(10 6 4 / 90%), rgb(10 6 4 / 60%));
+  clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+}
+
+.hud-plate.right .hud-body {
+  margin: 0 calc(var(--portrait) * -0.3) 0 0;
+  padding: 6px calc(var(--portrait) * 0.3 + 10px) 6px 22px;
+  background: linear-gradient(270deg, rgb(10 6 4 / 90%), rgb(10 6 4 / 60%));
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 14px 100%);
+  text-align: right;
+}
+
+.hud-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.hud-plate.right .hud-head {
+  flex-direction: row-reverse;
+}
+
+.hud-player {
+  color: var(--player-color);
+  font-family: var(--font-label);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+}
+
+.hud-name {
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(0.65rem, 9cqi, 0.95rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--k-text);
+}
+
+/* The damage meter: a slanted bar that fills with heat. */
+.hud-meter {
+  display: flex;
+  height: 8px;
+  border: 1px solid var(--k-line);
+  background: rgb(255 255 255 / 6%);
+  overflow: hidden;
+  transform: skewX(-24deg);
+}
+
+.hud-plate.right .hud-meter {
+  justify-content: flex-end;
+  transform: skewX(24deg);
+}
+
+.hud-meter-fill {
+  width: calc(var(--heat, 0) * 100%);
+  background: linear-gradient(90deg, #f0c46a, #ff8a2a 45%, #d8261a);
+  background-size: calc(100% / max(var(--heat, 0), 0.01)) 100%;
+  box-shadow: 0 0 10px var(--k-ember-glow);
+  transition: width 120ms ease-out;
+}
+
+.hud-plate.right .hud-meter-fill {
+  background-image: linear-gradient(270deg, #f0c46a, #ff8a2a 45%, #d8261a);
+  background-position: right;
+}
+
+.hud-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.hud-plate.right .hud-foot {
+  flex-direction: row-reverse;
+}
+
+/* The damage in gold, glowing hotter as the meter fills. */
+.hud-damage {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(1rem, 18cqi, 2.4rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  background: var(--k-gold-text);
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 calc(var(--heat, 0) * 10px) rgb(255 70 20 / 90%));
+}
+
+.hud-stocks {
+  display: flex;
+  gap: 6px;
+  color: var(--k-gold);
+  font-family: var(--font-label);
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+}
+
+.hud-plate.right .hud-stocks {
+  flex-direction: row-reverse;
+}
+
+.hud-stock {
+  width: 9px;
+  height: 9px;
+  rotate: 45deg;
+  border: 1px solid var(--player-color);
+  background: var(--player-color);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--player-color) 60%, transparent);
+}
+
+.hud-stock.lost {
+  border-color: var(--k-dim);
+  background: transparent;
+  box-shadow: none;
+}
+
+.hud-plate.out {
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+
+/* The clock between the two sides. */
+.hud-clock {
+  grid-column: 2;
+  padding: 4px 20px;
+  border-block: 1px solid var(--k-gold);
+  background: linear-gradient(90deg, transparent, rgb(30 16 8 / 90%), transparent);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(1.3rem, 2.6vw, 2rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  color: var(--k-gold);
+}
+
+/* Narrow plates drop the name, then stack the lives under the damage. */
+@container (max-width: 100px) {
+  .hud-name {
+    display: none;
+  }
+}
+
+@container (max-width: 80px) {
+  .hud-foot,
+  .hud-plate.right .hud-foot {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    gap: 3px;
+  }
+  .hud-plate.right .hud-foot {
+    align-items: flex-end;
+  }
+}
+
+@media (max-width: 700px) {
+  .hud {
+    gap: 6px;
+    padding: 8px;
+  }
+  .hud-side {
+    gap: 6px;
+  }
+  .hud-plate,
+  .hud.compact .hud-plate {
+    --portrait: 44px;
+  }
+  .hud-body {
+    padding-right: 14px;
+  }
+  .hud-plate.right .hud-body {
+    padding-left: 14px;
+  }
+  .hud-stocks {
+    gap: 4px;
+  }
+  .hud-stock {
+    width: 7px;
+    height: 7px;
+  }
+  .hud-clock {
+    padding: 2px 8px;
+  }
+}
+
+/* On a phone held upright, each side stacks its two plates, so they keep a readable width. */
+@media (max-width: 600px) {
+  .hud.compact .hud-side {
+    flex-direction: column;
+  }
+  .hud.compact .hud-plate {
+    flex-basis: auto;
+  }
+}

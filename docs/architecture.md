@@ -196,7 +196,7 @@ ready); an open one stays dark. `CharacterSelectView` hands the scene one stand 
 (`lobbyStands` in `character-select.ts`), and the scene redraws only when a stand changes, within
 the same frame budget as the backdrop. `fighter-lobby.css` lays out the top bar (Back, title,
 rules), the roster as a row of diamonds and the nameplates. `fighter-portrait.ts` captures each
-roster portrait once in a temporary WebGL context, caches the PNG, and releases all GPU resources.
+roster and HUD portrait once in a temporary WebGL context, caches the PNG, and releases all GPU resources.
 `fighter-model.ts` shares
 body geometry, materials and player colors with gameplay and results. Each character's look is a
 `PartBuilder` (`models/`): rigid primitives per bone of the shared core skeleton, so poses,
@@ -225,6 +225,11 @@ settle with neutral input until `goFrame`, then plays; `timeLeftFrames` counts f
 GAME! (`bannerKind` in `dom-hud/match-banner.ts`, tested), in the blade style of the wipe
 (`match-banner.css`). The winner is named only on the results screen. Scenario tests skip the
 countdown (`countdownFrames: 0` in `newMatch`).
+
+Above the match, `DomHud` lays one plate per player across the top, half on each side of the
+clock (`plateLayout` in `dom-hud/hud-plates.ts`, tested, with `heat` and `stockMarks`). The plate's
+portrait comes from the composition root (`DomHudOptions.portrait`), so the HUD itself needs no
+WebGL; the styles are in `match-hud.css`.
 
 Menus with a way back show a Back button in their top left corner, except results and the
 rules overlay, whose own buttons (Main menu, Done) do that job. Every screen listens on `window`,

@@ -397,10 +397,90 @@ test('a match starts from the menus, renders and simulates', async ({ page }) =>
 
   await startMatch(page);
   await expect(page.locator('canvas')).toBeVisible();
-  await expect(page.locator('.hud-card')).toHaveCount(2);
+  // Two players get long bars, one on each side of the clock.
+  await expect(page.locator('.hud-side.left .hud-plate')).toHaveCount(1);
+  await expect(page.locator('.hud-side.right .hud-plate')).toHaveCount(1);
+  await expect(page.locator('.hud')).not.toHaveClass(/compact/);
 
   await expect.poll(async () => (await gameState(page)).frame).toBeGreaterThan(60);
   expect(errors).toEqual([]);
+});
+
+test('four players get compact plates across the top, two on each side of the clock', async ({
+  page,
+}, testInfo) => {
+  await installPads(page, 2);
+  await toCharacterSelect(page);
+  await bothPick(page);
+  for (const pad of [0, 1]) {
+    await press(page, pad, PAD.a);
+    await press(page, pad, PAD.a);
+  }
+  await expect.poll(() => picks(page)).toEqual(['capsule', 'capsule', 'capsule', 'capsule']);
+  for (const next of ['stage-select', 'match']) {
+    await page.keyboard.press('Enter');
+    await expect.poll(() => screen(page)).toBe(next);
+  }
+
+  const hud = page.locator('.hud');
+  await expect(hud).toHaveClass(/compact/);
+  await expect(hud.locator('.hud-side.left .hud-plate')).toHaveCount(2);
+  await expect(hud.locator('.hud-side.right .hud-plate')).toHaveCount(2);
+  await expect(hud.locator('.hud-player')).toHaveText(['P1', 'P2', 'P3', 'P4']);
+  await expect(hud.locator('.hud-damage')).toHaveText(['0%', '0%', '0%', '0%']);
+  const stocks = (await page.evaluate(() => window.__SSB__?.rules()))?.stocks ?? 0;
+  await expect(hud.locator('.hud-plate').first().locator('.hud-stock:not(.lost)')).toHaveCount(
+    stocks,
+  );
+  await expect
+    .poll(() =>
+      hud
+        .locator('.hud-portrait img')
+        .first()
+        .evaluate((image: HTMLImageElement) => image.naturalWidth),
+    )
+    .toBeGreaterThan(0);
+
+  for (const viewport of [
+    { width: 1280, height: 720 },
+    { width: 844, height: 390 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await nextFrames(page);
+    const boxes = await hud
+      .locator('.hud-plate')
+      .evaluateAll((plates) => plates.map((plate) => plate.getBoundingClientRect().toJSON()));
+    const where = `${viewport.width}x${viewport.height}`;
+    // The damage is never cut off by its plate.
+    const clipped = await hud.locator('.hud-damage').evaluateAll(
+      (numbers) =>
+        numbers.filter((number) => {
+          const own = number.getBoundingClientRect();
+          const body = number.closest('.hud-body')?.getBoundingClientRect();
+          return !body || own.left < body.left || own.right > body.right;
+        }).length,
+    );
+    expect(clipped, where).toBe(0);
+    for (const box of boxes as DOMRect[]) {
+      // Plates stay on screen, along the top edge.
+      expect(box.left, where).toBeGreaterThanOrEqual(0);
+      expect(box.right, where).toBeLessThanOrEqual(viewport.width);
+      expect(box.bottom, where).toBeLessThan(viewport.height * 0.25);
+    }
+    // Never on top of each other.
+    for (let i = 0; i < boxes.length; i++) {
+      for (const other of boxes.slice(i + 1)) {
+        const box = boxes[i];
+        if (!box) continue;
+        const overlap =
+          Math.min(box.right, other.right) - Math.max(box.left, other.left) > 1 &&
+          Math.min(box.bottom, other.bottom) - Math.max(box.top, other.top) > 1;
+        expect(overlap, `${where}: plates ${i} and ${boxes.indexOf(other)}`).toBe(false);
+      }
+    }
+    await page.screenshot({ path: testInfo.outputPath(`hud-four-${viewport.width}.png`) });
+  }
 });
 
 test('player one moves right when D is held', async ({ page }) => {

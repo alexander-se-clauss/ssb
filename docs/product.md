@@ -109,7 +109,7 @@ a playable build; it is done when that build works, not on a date.
       Epic #83.
 - [x] **Polish** (beside S4). Blade wipe between screens, READY / GO! at match start and a
       GAME! banner at match end, all in one style. Epic #108.
-- [ ] **Kombat UI** (beside S4). Menus in the Kombat look with a button bar; a 3D menu
+- [x] **Kombat UI** (beside S4). Menus in the Kombat look with a button bar; a 3D menu
       backdrop; a four-player character select on stone platforms; a four-player HUD across the
       top. Epic #121.
 - [x] **S4 Moves and dodges.** Tilts, standard smashes, aerials and landing lag; spot dodge,
