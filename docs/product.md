@@ -106,6 +106,9 @@ a playable build; it is done when that build works, not on a date.
       GAME! banner at match end, all in one style. Epic #108.
 - [ ] **S4 Moves and dodges.** Tilts, standard smashes, aerials and landing lag; spot dodge,
       roll and air dodge. Epics #5, #6.
+- [x] **Second fighter look** (beside S4). Rivet, a handyman built from primitives on the shared
+      skeleton, playable with the capsule moveset until he gets his own; his overalls take the
+      player's colour. Character definitions and own movesets stay in S5 and S6.
 - [ ] **S5 Off-stage play.** Ledge grab and getups, larger blast zones in stage data, a camera
       that follows fighters off-stage, helpless state; character definitions, per-character air
       jumps, fighter 1. Epics #7, #8.

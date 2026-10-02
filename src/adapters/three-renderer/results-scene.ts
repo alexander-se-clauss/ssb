@@ -64,7 +64,7 @@ export class ResultsScene {
       group.add(cap);
       this.number(group, fighter.place, height);
       if (fighter.place === 1) this.laurel(group, height);
-      const model = this.fighter(fighter.slot);
+      const model = this.fighter(fighter.slot, fighter.characterId);
       model.position.y = height + 0.12;
       model.rotation.y = -0.25;
       model.userData['characterId'] = fighter.characterId;
@@ -135,8 +135,8 @@ export class ResultsScene {
     }
   }
 
-  private fighter(slot: number): THREE.Group {
-    const model = fighterModel(PLAYER_COLORS[slot % PLAYER_COLORS.length] ?? 0xffffff);
+  private fighter(slot: number, characterId: string): THREE.Group {
+    const model = fighterModel(characterId, PLAYER_COLORS[slot % PLAYER_COLORS.length] ?? 0xffffff);
     poseFighter(model, POSES.idle);
     model.root.scale.setScalar(1.15);
     return model.root;

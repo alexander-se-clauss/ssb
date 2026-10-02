@@ -39,7 +39,8 @@ bent-knee stance stands on the ground. That planted body is the one to use: each
 `radius` and a `shape` (capsule along the bone, or a ball in its middle for the head), `hurtboxes`
 in `combat.ts` turns them into one hurtbox per body part, and hits test against those, so a crouch
 or a lean dodges what it looks like it dodges. The view only draws what core computed: `ThreeView`
-places a sphere or capsule of the same radius on each bone (`body-layout.ts`).
+places each character's parts on the bones (`body-layout.ts`), kept within the bone radii so the
+look matches the hurtboxes.
 Terms, as in Melee: a **hurtbox** is where a fighter can be hit (one per body part), a **hitbox**
 is where an attack hits (`activeHitboxes`). F2 shows both in the running game: yellow hurtboxes,
 blue while invulnerable, red hitboxes (`debug-colors.ts`).
@@ -161,7 +162,10 @@ layouts. `fighter-lobby.css` gives character selection a viewport-sized header/r
 composition, with four panels in a row on desktop and a two-by-two grid on portrait screens.
 `fighter-portrait.ts` captures neutral and four player-color images per registry character in one
 temporary WebGL context, caches the PNGs, and releases all GPU resources. `fighter-model.ts` shares
-body geometry, materials and player colors with gameplay and results. Player previews follow the
+body geometry, materials and player colors with gameplay and results. Each character's look is a
+`PartBuilder` (`models/`): rigid primitives per bone of the shared core skeleton, so poses,
+hurtboxes and moves never depend on the model. Each look names the one colour that becomes the
+player's colour (the whole capsule, Rivet's overalls), so mirror matches stay readable. Player previews follow the
 roster cursor before confirmation and retain confirmed picks; header navigation retains the last
 browsed fighter. Input labels come from the app’s device metadata. Hover and focus share outline, shadow and position cues. A short confirmation overlay
 runs independently of navigation; reduced motion disables it and menu transitions.

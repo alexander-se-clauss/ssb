@@ -6,7 +6,7 @@ import { BATTLEFIELD, FINAL_DESTINATION } from './stages';
 import type { CharacterDef, StageDef } from './types';
 
 /**
- * The one fighter so far: the capsule body with the tuning in `FIGHTER`. It has its ground
+ * The first fighter: the capsule body with the tuning in `FIGHTER`. It has its ground
  * attacks and aerials; specials are empty until S6.
  */
 export const CAPSULE: CharacterDef = {
@@ -28,7 +28,10 @@ export const CAPSULE: CharacterDef = {
   },
 };
 
-export const CHARACTERS: readonly CharacterDef[] = [CAPSULE];
+/** A handyman on the shared skeleton; he borrows the capsule's moves for now (epic #7). */
+export const RIVET: CharacterDef = { id: 'rivet', name: 'Rivet', moves: CAPSULE.moves };
+
+export const CHARACTERS: readonly CharacterDef[] = [CAPSULE, RIVET];
 
 export const STAGES: readonly StageDef[] = [BATTLEFIELD, FINAL_DESTINATION];
 
