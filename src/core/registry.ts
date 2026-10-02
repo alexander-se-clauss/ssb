@@ -7,7 +7,7 @@ import type { CharacterDef, StageDef } from './types';
 
 /**
  * The one fighter so far: the capsule body with the tuning in `FIGHTER`. It has its ground
- * attacks; until the aerials come (#34) every aerial slot plays the jab, and specials are empty.
+ * attacks and aerials; specials are empty until S6.
  */
 export const CAPSULE: CharacterDef = {
   id: 'capsule',
@@ -20,11 +20,11 @@ export const CAPSULE: CharacterDef = {
     forwardSmash: 'forwardSmash',
     upSmash: 'upSmash',
     downSmash: 'downSmash',
-    neutralAir: 'jab',
-    forwardAir: 'jab',
-    backAir: 'jab',
-    upAir: 'jab',
-    downAir: 'jab',
+    neutralAir: 'neutralAir',
+    forwardAir: 'forwardAir',
+    backAir: 'backAir',
+    upAir: 'upAir',
+    downAir: 'downAir',
   },
 };
 

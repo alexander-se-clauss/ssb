@@ -3,7 +3,7 @@ import { FIGHTER, INPUT } from './config';
 import { NEUTRAL_INPUT, pressed } from './input';
 import { approach } from './math';
 import { findMove } from './move-data';
-import { moveSlot } from './move-slots';
+import { isAerialSlot, moveSlot } from './move-slots';
 import { findCharacter } from './registry';
 import { nextPose } from './poses';
 import { REST_POSE } from './skeleton';
@@ -47,6 +47,7 @@ export const createFighter = (
     damageDealt: 0,
     lastHitBy: null,
     hitstunFrames: 0,
+    landingLagFrames: 0,
     hitlagFrames: 0,
     invulnerableFrames: 0,
     hitTargets: [],
@@ -107,8 +108,17 @@ export const updateFighter = (
 
   let { x: px, y: py } = fighter.position;
   let { x: vx, y: vy } = fighter.velocity;
-  let { facing, grounded, jumpsRemaining, action, actionFrame, moveId, hitstunFrames, hitTargets } =
-    fighter;
+  let {
+    facing,
+    grounded,
+    jumpsRemaining,
+    action,
+    actionFrame,
+    moveId,
+    hitstunFrames,
+    landingLagFrames,
+    hitTargets,
+  } = fighter;
   // Down with a button is a down attack on the platform, not a drop through it.
   const wantsDrop = input.y < DROP_THRESHOLD && button === null;
 
@@ -118,6 +128,12 @@ export const updateFighter = (
     grounded = false;
     jumpsRemaining = Math.min(jumpsRemaining, FIGHTER.totalJumps - 1);
     if (support) py -= 0.05; // drop through the platform
+    // Sliding off an edge during landing lag ends it: the fighter falls under control.
+    if (action === 'landing') {
+      action = 'airborne';
+      actionFrame = 0;
+      landingLagFrames = 0;
+    }
   }
 
   actionFrame += 1;
@@ -166,6 +182,13 @@ export const updateFighter = (
       moveId = null;
       hitTargets = [];
     }
+  } else if (action === 'landing') {
+    // Stuck for the landing lag; a press waits in the buffer.
+    landingLagFrames -= 1;
+    if (landingLagFrames <= 0) {
+      action = grounded ? 'idle' : 'airborne';
+      actionFrame = 0;
+    }
   } else if (action === 'jumpsquat') {
     // Crouched to jump, as in Melee: an attack pressed now is still a ground attack, so a stick
     // flicked up for an up smash does not lose it to tap-jump.
@@ -192,11 +215,19 @@ export const updateFighter = (
     }
   }
 
+  // An aerial drifts and fast-falls like a fighter in the air without an attack, as in Melee.
+  // Only aerials: a ground move that slides off an edge keeps its locked movement.
+  const inAerial =
+    action === 'attack' &&
+    !grounded &&
+    moveId !== null &&
+    findMove(moveId).landingLag !== undefined;
+
   // Horizontal movement. A launch faster than the fighter can drift bleeds off quickly, as
   // knockback decays in Melee; without it a sideways hit carries on almost undamped.
   if (!grounded && Math.abs(vx) > FIGHTER.airSpeed) {
     vx = approach(vx, Math.sign(vx) * FIGHTER.airSpeed, FIGHTER.launchDecay);
-  } else if (isControllable(action)) {
+  } else if (isControllable(action) || inAerial) {
     if (Math.abs(input.x) > FACE_THRESHOLD && grounded) facing = input.x > 0 ? 1 : -1;
     if (grounded) {
       vx = approach(vx, input.x * FIGHTER.walkSpeed, FIGHTER.groundAcceleration);
@@ -211,7 +242,7 @@ export const updateFighter = (
 
   // Gravity. Holding down while falling fast-falls.
   if (!grounded) {
-    const fastFalling = isControllable(action) && wantsDrop && vy < 0;
+    const fastFalling = (isControllable(action) || inAerial) && wantsDrop && vy < 0;
     vy = Math.max(
       vy - FIGHTER.gravity,
       -(fastFalling ? FIGHTER.fastFallSpeed : FIGHTER.maxFallSpeed),
@@ -237,6 +268,18 @@ export const updateFighter = (
       vy = 0;
       grounded = true;
       jumpsRemaining = FIGHTER.totalJumps;
+      // An aerial press still waiting in the buffer is dropped: no aerial plays on the ground.
+      if (buffer && isAerialSlot(buffer.action)) buffer = null;
+      // An aerial ends on landing, with its own landing lag; a plain landing has a short one.
+      // A launched fighter in hitstun lands without lag.
+      const aerialLag = moveId === null ? undefined : findMove(moveId).landingLag;
+      if (action === 'airborne' || (action === 'attack' && aerialLag !== undefined)) {
+        landingLagFrames = aerialLag ?? FIGHTER.landingLagFrames;
+        action = 'landing';
+        actionFrame = 0;
+        moveId = null;
+        hitTargets = [];
+      }
     } else {
       px = nextX;
       py = nextY;
@@ -297,6 +340,7 @@ export const updateFighter = (
     actionFrame,
     moveId,
     hitstunFrames,
+    landingLagFrames,
     hitTargets,
     buffer,
     invulnerableFrames: Math.max(0, fighter.invulnerableFrames - 1),

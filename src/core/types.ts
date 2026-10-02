@@ -26,7 +26,7 @@ export interface PlayerInput {
 }
 
 export type FighterAction =
-  'idle' | 'run' | 'jumpsquat' | 'airborne' | 'attack' | 'hitstun' | 'eliminated';
+  'idle' | 'run' | 'jumpsquat' | 'airborne' | 'landing' | 'attack' | 'hitstun' | 'eliminated';
 
 /** A press waiting until the fighter can act on it (ADR 0006). */
 export interface BufferedInput {
@@ -73,6 +73,8 @@ export interface FighterState {
   /** Who hit this fighter last since it respawned; gets the KO credit. */
   readonly lastHitBy: PlayerSlot | null;
   readonly hitstunFrames: number;
+  /** Frames left in the `landing` action: an aerial's landing lag, or the normal one. */
+  readonly landingLagFrames: number;
   /** Frames left frozen by a hit (ADR 0006): nothing moves, the move and pose stand still. */
   readonly hitlagFrames: number;
   readonly invulnerableFrames: number;

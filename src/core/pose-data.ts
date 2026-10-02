@@ -26,6 +26,17 @@ export type PoseName =
   | 'upSmashEnd'
   | 'downSmashWindup'
   | 'downSmash'
+  | 'land'
+  | 'neutralAir'
+  | 'forwardAirWindup'
+  | 'forwardAir'
+  | 'backAirWindup'
+  | 'backAir'
+  | 'upAirStart'
+  | 'upAir'
+  | 'upAirEnd'
+  | 'downAirWindup'
+  | 'downAir'
   | 'hurt'
   | 'tumble';
 
@@ -303,6 +314,147 @@ export const POSES: Readonly<Record<PoseName, Pose>> = {
     upperLegFront: 95,
     lowerLegFront: 0,
     upperLegBack: 265,
+    lowerLegBack: 0,
+  },
+  // Landing: knees bent to soak up the fall, chest forward.
+  land: {
+    torso: 25,
+    head: -15,
+    upperArmFront: 122,
+    lowerArmFront: -90,
+    upperArmBack: 150,
+    lowerArmBack: -95,
+    upperLegFront: 120,
+    lowerLegFront: 90,
+    upperLegBack: 210,
+    lowerLegBack: 70,
+  },
+  // Neutral aerial: a sex kick, the front leg straight out and the back knee tucked.
+  neutralAir: {
+    torso: -10,
+    head: 5,
+    upperArmFront: 140,
+    lowerArmFront: -80,
+    upperArmBack: 200,
+    lowerArmBack: -60,
+    upperLegFront: 95,
+    lowerLegFront: -5,
+    upperLegBack: 160,
+    lowerLegBack: 90,
+  },
+  // Forward aerial wind-up: both fists raised high behind the head, knees tucked.
+  forwardAirWindup: {
+    torso: 15,
+    head: -5,
+    upperArmFront: -45,
+    lowerArmFront: -20,
+    upperArmBack: -40,
+    lowerArmBack: -20,
+    upperLegFront: 120,
+    lowerLegFront: 90,
+    upperLegBack: 170,
+    lowerLegBack: 80,
+  },
+  // Forward aerial: a double-fist hammer swung down in front.
+  forwardAir: {
+    torso: 30,
+    head: -20,
+    upperArmFront: 85,
+    lowerArmFront: 10,
+    upperArmBack: 80,
+    lowerArmBack: 10,
+    upperLegFront: 140,
+    lowerLegFront: 70,
+    upperLegBack: 190,
+    lowerLegBack: 60,
+  },
+  // Back aerial wind-up: the back knee chambered, looking over the shoulder.
+  backAirWindup: {
+    torso: 25,
+    head: -20,
+    upperArmFront: 120,
+    lowerArmFront: -90,
+    upperArmBack: 150,
+    lowerArmBack: -90,
+    upperLegFront: 130,
+    lowerLegFront: 90,
+    upperLegBack: 200,
+    lowerLegBack: 100,
+  },
+  // Back aerial: a mule kick straight behind, leaning forward over it.
+  backAir: {
+    torso: 35,
+    head: -25,
+    upperArmFront: 120,
+    lowerArmFront: -90,
+    upperArmBack: 150,
+    lowerArmBack: -90,
+    upperLegFront: 130,
+    lowerLegFront: 90,
+    upperLegBack: 265,
+    lowerLegBack: -5,
+  },
+  // Up aerial, three keys: a flip kick, the front leg swinging up in front and over the head.
+  upAirStart: {
+    torso: -10,
+    head: 5,
+    upperArmFront: 160,
+    lowerArmFront: -40,
+    upperArmBack: 200,
+    lowerArmBack: -30,
+    upperLegFront: 110,
+    lowerLegFront: 30,
+    upperLegBack: 170,
+    lowerLegBack: 60,
+  },
+  upAir: {
+    torso: -30,
+    head: 25,
+    upperArmFront: 210,
+    lowerArmFront: -20,
+    upperArmBack: 230,
+    lowerArmBack: -20,
+    upperLegFront: 10,
+    lowerLegFront: 0,
+    upperLegBack: 170,
+    lowerLegBack: 60,
+  },
+  upAirEnd: {
+    torso: -40,
+    head: 30,
+    upperArmFront: 210,
+    lowerArmFront: -20,
+    upperArmBack: 230,
+    lowerArmBack: -20,
+    upperLegFront: -40,
+    lowerLegFront: 10,
+    upperLegBack: 170,
+    lowerLegBack: 60,
+  },
+  // Down aerial wind-up: both knees pulled up to the chest.
+  downAirWindup: {
+    torso: 5,
+    head: -10,
+    upperArmFront: 90,
+    lowerArmFront: -40,
+    upperArmBack: -70,
+    lowerArmBack: 40,
+    upperLegFront: 100,
+    lowerLegFront: 120,
+    upperLegBack: 120,
+    lowerLegBack: 110,
+  },
+  // Down aerial: a stomp, both legs driven straight down, arms thrown up for balance.
+  downAir: {
+    torso: 0,
+    head: -10,
+    upperArmFront: 60,
+    lowerArmFront: -30,
+    upperArmBack: -60,
+    lowerArmBack: 30,
+    upperLegFront: 175,
+    lowerLegFront: 0,
+    upperLegBack: 185,
     lowerLegBack: 0,
   },
   // Flinch: head and chest snap back, the arms trail behind the body.

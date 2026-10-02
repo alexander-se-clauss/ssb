@@ -1,5 +1,6 @@
 /** Every move in the game, by id. Characters map their move slots to these ids (#28). */
 import { validateMove, type MoveDef, type MoveId } from '../moves';
+import { BACK_AIR, DOWN_AIR, FORWARD_AIR, NEUTRAL_AIR, UP_AIR } from './aerials';
 import { JAB, JAB2, JAB3 } from './jab';
 import { DOWN_SMASH, FORWARD_SMASH, UP_SMASH } from './smashes';
 import { DOWN_TILT, FORWARD_TILT, UP_TILT } from './tilts';
@@ -14,6 +15,11 @@ const ALL: readonly MoveDef[] = [
   FORWARD_SMASH,
   UP_SMASH,
   DOWN_SMASH,
+  NEUTRAL_AIR,
+  FORWARD_AIR,
+  BACK_AIR,
+  UP_AIR,
+  DOWN_AIR,
 ];
 
 /** Checks each move, and that every move a cancel goes into is in the same list. */

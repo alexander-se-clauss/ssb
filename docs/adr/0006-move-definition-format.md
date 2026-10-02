@@ -55,8 +55,8 @@ A move is a `MoveDef` of plain data, and one generic move runner in core plays a
     between them.
   - Validation requires the first keyframe at or before the first hitbox frame, so a bone
     hitbox's reach on its active frames is fixed per move.
-- **Landing.** An aerial ends when the fighter lands, and the fighter goes to idle. Landing lag
-  comes in S4.
+- **Landing.** An aerial ends when the fighter lands, and the fighter goes into its landing lag
+  (see the #34 amendment below).
 - **Kinds.** `kind` is `'attack'` for now. `'block'` and `'counter'` will be added as further
   variants of the union, each with its own fields (#6), so the runner switches on `kind`.
 - **Where.**
@@ -121,8 +121,20 @@ type MoveDef = AttackMoveDef; // | BlockMoveDef | CounterMoveDef with #6
 - A press during hitlag goes into the buffer like any other press. The previous input moves on
   with each frame, so a button held through the freeze is not a second press.
 - A press for an empty slot is dropped at once, so it does not block a jump on the same frame.
-- Open for S4: an aerial press buffered just before landing still starts the aerial slot's move.
-  Decide then whether it is dropped or re-resolved on landing.
+- An aerial press still in the buffer when the fighter lands is dropped (decided in #34).
+
+### Amendment (2026-10-01, #34)
+
+- **Landing lag.** An `AttackMoveDef` may set `landingLag` (at least one frame). Such a move is
+  an aerial: landing while it runs ends it, and the fighter enters the `landing` action for that
+  many frames, counted down in `FighterState.landingLagFrames`. A move without `landingLag`
+  keeps running on landing.
+- Landing from `airborne` costs `FIGHTER.landingLagFrames`; a fighter in hitstun lands without
+  lag. Presses during the lag wait in the buffer as usual. Sliding off an edge during the lag
+  ends it, and the fighter falls under control.
+- An aerial started on the frame before landing still costs its full landing lag, as in Melee.
+- An aerial press still in the buffer on landing is dropped, so no aerial plays on the ground.
+- During an aerial the fighter drifts with the stick and can fast-fall, like `airborne`.
 
 ## Consequences
 
@@ -140,7 +152,7 @@ type MoveDef = AttackMoveDef; // | BlockMoveDef | CounterMoveDef with #6
 - More state per fighter, all plain data: the move, hit targets per group, hitlag and the buffer.
 - Once moves land, the "Terms" paragraph in `docs/architecture.md` must be updated:
   `activeHitbox` becomes a list of bone hitboxes, and `'jab'` leaves `FighterAction`.
-- Not covered yet: movement during a move (lunges), landing lag, armour, clashes and projectiles.
+- Not covered yet: movement during a move (lunges), armour, clashes and projectiles.
   They come as optional fields or new kinds when a move needs them.
 
 ## Alternatives considered
