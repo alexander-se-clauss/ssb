@@ -183,7 +183,7 @@ temporary WebGL context, caches the PNGs, and releases all GPU resources. `fight
 body geometry, materials and player colors with gameplay and results. Each character's look is a
 `PartBuilder` (`models/`): rigid primitives per bone of the shared core skeleton, so poses,
 hurtboxes and moves never depend on the model. Each look names the one colour that becomes the
-player's colour (the whole capsule, Rivet's overalls), so mirror matches stay readable. Player previews follow the
+player's colour (the whole capsule, Rivet's overalls, Vela's armour plates), so mirror matches stay readable. Player previews follow the
 roster cursor before confirmation and retain confirmed picks; header navigation retains the last
 browsed fighter. Input labels come from the app’s device metadata. Only the focused entry lights up; hover brightens text only, so the mouse and a gamepad never show two selections. A short confirmation overlay
 runs independently of navigation; reduced motion disables it and menu transitions.

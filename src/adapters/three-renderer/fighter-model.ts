@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { HUMANOID, plantedBoneSegments, vec2, type BoneId, type Pose } from '../../core';
 import { bodyParts } from './body-layout';
 import { OVERALLS, rivetParts } from './models/rivet';
+import { PLATES, velaParts } from './models/vela';
 
 export const PLAYER_COLORS = [0xe94f4f, 0x4f8fe9, 0x4fd18b, 0xf2c14e] as const;
 
@@ -56,6 +57,7 @@ const CAPSULE_LOOK: CharacterLook = { parts: capsuleParts, playerColor: NEUTRAL_
 export const CHARACTER_LOOKS: Readonly<Record<string, CharacterLook>> = {
   capsule: CAPSULE_LOOK,
   rivet: { parts: rivetParts, playerColor: OVERALLS },
+  vela: { parts: velaParts, playerColor: PLATES },
 };
 
 /** Far-side limbs are drawn darker so the near ones read in front. */
