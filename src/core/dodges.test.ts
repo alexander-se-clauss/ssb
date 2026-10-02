@@ -193,18 +193,6 @@ describe('dodge input', () => {
     expect(fighter(state, 0)).toMatchObject({ action: 'attack', moveId: 'jab' });
   });
 
-  it('does nothing in the air until the air dodge exists', () => {
-    let state = withFighter(standing(), 0, {
-      position: { x: 0, y: 3 },
-      grounded: false,
-      action: 'airborne',
-    });
-    state = dodge(state);
-    expect(fighter(state, 0)).toMatchObject({ action: 'airborne', buffer: null });
-    state = run(state, 60, [NONE]);
-    expect(fighter(state, 0).action).toBe('idle');
-  });
-
   it('is not a drop through the platform when pressed with the stick down', () => {
     let state = withFighter(standing(), 0, { position: { x: 3, y: 2.2 } });
     state = step(state, [inputOf({ y: -1, shield: true })]);
@@ -218,18 +206,6 @@ describe('dodge input', () => {
     state = run(state, 5, [inputOf({ y: -1, shield: true })]);
     expect(fighter(state, 0)).toMatchObject({ action: 'spotDodge', grounded: true });
     expect(fighter(state, 0).position.y).toBe(2.2);
-  });
-
-  it('does not stop a fall through a platform when pressed in the air', () => {
-    let state = withFighter(standing(), 0, {
-      position: { x: 3, y: 2.25 },
-      velocity: { x: 0, y: -0.1 },
-      grounded: false,
-      action: 'airborne',
-    });
-    state = step(state, [inputOf({ y: -1, shield: true })]);
-    expect(fighter(state, 0).grounded).toBe(false);
-    expect(fighter(state, 0).position.y).toBeLessThan(2.2);
   });
 
   it('leaves jumps alone', () => {

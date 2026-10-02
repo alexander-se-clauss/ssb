@@ -75,8 +75,11 @@ when the stick is pushed sideways (`DODGE.rollStick`), and the fighter plays it 
 that name with frame data from `DODGE` in `config.ts`. On the dodge's invulnerable frames
 `invulnerableFrames` is kept above zero, so combat skips the fighter and the view shows it as it
 does after a respawn; the frames after them are recovery and can be punished. A roll moves at an
-even speed, stops at its platform's edge and ends facing back. Ground only: in the air the button
-does nothing until the air dodge (#36).
+even speed, stops at its platform's edge and ends facing back. In the air the button starts an
+Ultimate-style `airDodge` (`DODGE.air`): it carries the fighter the way the stick points (or holds
+it in place) with gravity paused, then the fighter falls and can act again. It is used once per
+airtime (`FighterState.airDodgeUsed`), and landing or being hit gives it back; landing during it
+costs `DODGE.air.landingLag`, and a buffered air dodge is dropped on landing.
 Each fighter carries its current `pose` in `FighterState`: `step` eases it a little each frame towards
 the pose of its movement state, with idle breathing and a running stride (`poses.ts`), and the
 view interpolates it between frames like the position. A move has pose keyframes instead: the

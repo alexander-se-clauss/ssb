@@ -72,7 +72,7 @@ A move is a `MoveDef` of plain data, and one generic move runner in core plays a
 ```ts
 type MoveId = string;
 type MoveSlot = 'jab' | 'forwardTilt' | 'upSmash' | 'neutralAir' | 'upSpecial'; // ... all in #28
-type BufferedAction = MoveSlot | 'spotDodge' | 'roll' | 'block'; // dodges split in #35
+type BufferedAction = MoveSlot | 'spotDodge' | 'roll' | 'airDodge' | 'block'; // #35, #36
 
 type HitboxAnchor = { readonly bone: BoneId; readonly at: number } | { readonly feet: Vec2 };
 
@@ -149,6 +149,22 @@ type MoveDef = AttackMoveDef; // | BlockMoveDef | CounterMoveDef with #6
   invulnerable frames, so combat and the view need no dodge-specific code.
 - A dodge press is dropped when the fighter is in the air (until #36). A cancel window `on` a
   dodge is not played yet; dodge cancels come with the first move that uses them (#6).
+
+### Amendment (2026-10-02, #36)
+
+- **Air dodge.** In the air the dodge button buffers `airDodge`, a third dodge action with its
+  frame data in `DODGE.air`, Ultimate style: the stick's direction is read when it starts, and
+  the fighter can act once it ends.
+- It is used once per airtime: `FighterState.airDodgeUsed` is set when it starts and cleared on
+  landing and on being hit. A press while it is used up is dropped, as is an air dodge still in
+  the buffer on landing.
+- During the whole air dodge the fighter neither drifts nor fast-falls. Landing at any point of
+  it, also while falling after `DODGE.air.moveTo`, ends it with `DODGE.air.landingLag`, keeping
+  the horizontal speed, so an air dodge angled into the ground slides.
+- A dodge pressed during the jump squat is an air dodge once the jump leaves the ground, as in
+  Ultimate (jump, then dodge angled down slides along the ground).
+- Passing through a platform follows the stick held at that moment, as for any fall: an air
+  dodge angled down onto a platform with the stick still held drops through it.
 
 ## Consequences
 

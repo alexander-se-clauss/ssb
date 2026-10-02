@@ -62,8 +62,9 @@ export const FIGHTER = {
 } as const;
 
 /**
- * Ground dodges (#35), pressed with the dodge button: a spot dodge in place, or a roll the way
- * the stick points. There is no shield, so dodging is everyone's defence. Invulnerable on frames
+ * Dodges, pressed with the dodge button. On the ground (#35) a spot dodge in place, or a roll the
+ * way the stick points; in the air (#36) an Ultimate-style air dodge, once per airtime. There is
+ * no shield, so dodging is everyone's defence. Invulnerable on frames
  * `[invulnerableFrom, invulnerableTo)` of the dodge, open to a punish after that.
  */
 export const DODGE = {
@@ -78,6 +79,22 @@ export const DODGE = {
     moveFrom: 2,
     moveTo: 22,
     distance: 2.2,
+  },
+  air: {
+    totalFrames: 40,
+    invulnerableFrom: 3,
+    invulnerableTo: 20,
+    /** Stick deflection from which the air dodge goes that way; below it, it holds in place. */
+    directionStick: 0.3,
+    /**
+     * Speed at the start, in the stick's direction (0 in place). It shrinks by `drag` each
+     * frame, with gravity paused, until frame `moveTo`; then the fighter falls again.
+     */
+    speed: 0.3,
+    drag: 0.85,
+    moveTo: 16,
+    /** Landing during the air dodge ends it with this landing lag. */
+    landingLag: 10,
   },
 } as const;
 

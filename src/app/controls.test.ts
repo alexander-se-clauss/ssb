@@ -31,7 +31,7 @@ describe('controls screen', () => {
       ['Drop / fast-fall', 'S', '↓'],
       ['Attack · pick in menus', 'F', '.'],
       ['Special · cancel in menus', 'G', '/'],
-      ['Dodge (spot dodge; roll with left or right)', 'H', 'Right Shift'],
+      ['Dodge (roll with left or right; air dodge)', 'H', 'Right Shift'],
       ['Start · start the match', 'Enter', 'Enter'],
     ]);
   });
