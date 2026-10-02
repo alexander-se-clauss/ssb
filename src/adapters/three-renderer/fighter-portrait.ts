@@ -1,14 +1,14 @@
 import * as THREE from 'three';
 import { POSES, type CharacterDef } from '../../core';
-import { fighterModel, NEUTRAL_COLOR, poseFighter, PLAYER_COLORS } from './fighter-model';
+import { fighterModel, NEUTRAL_COLOR, poseFighter } from './fighter-model';
 import { disposeScene } from './dispose-scene';
 
-const portraits = new WeakMap<CharacterDef, readonly string[]>();
+const portraits = new WeakMap<CharacterDef, string>();
 
-/** Capture a neutral roster portrait and four gameplay-color variants using one temporary context. */
-export const fighterPortrait = (character: CharacterDef, player?: number): string => {
-  let images = portraits.get(character);
-  if (!images) {
+/** Capture a character's neutral roster portrait once, in a temporary WebGL context. */
+export const fighterPortrait = (character: CharacterDef): string => {
+  let image = portraits.get(character);
+  if (image === undefined) {
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     const scene = new THREE.Scene();
     try {
@@ -33,17 +33,14 @@ export const fighterPortrait = (character: CharacterDef, player?: number): strin
       const camera = new THREE.OrthographicCamera(-half, half, half, -half, 0.1, 30);
       camera.position.set(center.x, center.y + 0.1, 8);
       camera.lookAt(center);
-      images = [NEUTRAL_COLOR, ...PLAYER_COLORS].map((color) => {
-        model.tint(color);
-        renderer.render(scene, camera);
-        return renderer.domElement.toDataURL('image/png');
-      });
-      portraits.set(character, images);
+      renderer.render(scene, camera);
+      image = renderer.domElement.toDataURL('image/png');
+      portraits.set(character, image);
     } finally {
       disposeScene(scene);
       renderer.dispose();
       renderer.forceContextLoss();
     }
   }
-  return images[player === undefined ? 0 : player + 1] ?? images[0] ?? '';
+  return image;
 };

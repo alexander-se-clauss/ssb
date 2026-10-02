@@ -49,22 +49,3 @@ export const menuArtwork = (kind: MenuArtwork): SVGSVGElement => {
       : `<g fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="square" stroke-linejoin="miter">${icons[kind]}</g>`;
   return drawing(markup, '0 0 300 180', 'menu-artwork');
 };
-
-/** Etched arena orbits, fighter silhouettes, speed lines and a dot texture create depth. */
-export const menuAtmosphere = (): SVGSVGElement => {
-  const dots = Array.from(
-    { length: 160 },
-    (_, i) => `<circle cx="${80 + (i % 20) * 26}" cy="${480 + Math.floor(i / 20) * 26}" r="1.5"/>`,
-  ).join('');
-  const rays = Array.from(
-    { length: 12 },
-    (_, i) => `<path d="M${880 + i * 26} 0L${480 + i * 26} 900"/>`,
-  ).join('');
-  const svg = drawing(
-    `<g fill="none" stroke="currentColor"><circle cx="1120" cy="430" r="390" stroke-width="2"/><circle cx="1120" cy="430" r="350" stroke-dasharray="5 18"/><ellipse cx="1110" cy="750" rx="450" ry="95" stroke-width="3"/><ellipse cx="1110" cy="750" rx="340" ry="70"/><path d="M0 230L1440 30M0 254L1440 54M0 900L1440 710" stroke-width="2"/><g opacity=".22">${rays}</g></g><g opacity=".18">${fighter(POSES.jab, 1, 900, 745, 260)}${fighter(POSES.jab3, -1, 1300, 625, 260)}</g><g fill="currentColor" opacity=".45">${dots}<path d="M70 340L120 340L95 368ZM1390 530L1320 600L1390 600Z"/></g>`,
-    '0 0 1440 900',
-    'menu-atmosphere',
-  );
-  svg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
-  return svg;
-};

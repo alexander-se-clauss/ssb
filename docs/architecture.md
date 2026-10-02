@@ -176,18 +176,23 @@ keyboard arrows/WASD and gamepad directions select cards through the same menu h
 The menus use the Kombat look (`menu-theme.css`, colour and font tokens in `style.css`): a gold
 serif heading and a list of entries, the focused one marked by a diamond and an ember glow. The
 two fonts ship as woff2 files in `src/app/fonts/` (`fonts.css`, SIL Open Font License), so there
-is no runtime font dependency. `menu-art.ts` still draws a faint SVG atmosphere behind character
-select.
+is no runtime font dependency.
 `MenuPanel` composes the heading, optional data panel and options; each screen supplies its own
 variant in `app.ts`. Results frames a Three.js medal podium, and stage select centres its
 thumbnail grid. At the bottom of each menu, `MenuPanel` shows the button bar (`button-prompts.ts`:
 which button selects, changes a setting, starts or goes back there), named for the kind of device
 used last in any menu: a key press makes it keyboard names, a `command()` from a gamepad makes it
-pad names. `menu-theme.css` also frames character select and the rules overlay while preserving
-their setup layouts. `fighter-lobby.css` gives character selection a viewport-sized header/roster/player-panel
-composition, with four panels in a row on desktop and a two-by-two grid on portrait screens.
-`fighter-portrait.ts` captures neutral and four player-color images per registry character in one
-temporary WebGL context, caches the PNGs, and releases all GPU resources. `fighter-model.ts` shares
+pad names. `menu-theme.css` also frames the rules overlay. Character select is a 3D set
+(`lobby-scene.ts`): four stone platforms in a row, one per player slot, built from the same
+pieces as the menu backdrop (`firelit-set.ts`). The camera stands back just far enough that the
+platforms line up with the four nameplate columns below them (`lobby-layout.ts`). A joined
+player's platform lights up in their colour with their fighter on it (in a forward smash once
+ready); an open one stays dark. `CharacterSelectView` hands the scene one stand per slot
+(`lobbyStands` in `character-select.ts`), and the scene redraws only when a stand changes, within
+the same frame budget as the backdrop. `fighter-lobby.css` lays out the top bar (Back, title,
+rules), the roster as a row of diamonds and the nameplates. `fighter-portrait.ts` captures each
+roster portrait once in a temporary WebGL context, caches the PNG, and releases all GPU resources.
+`fighter-model.ts` shares
 body geometry, materials and player colors with gameplay and results. Each character's look is a
 `PartBuilder` (`models/`): rigid primitives per bone of the shared core skeleton, so poses,
 hurtboxes and moves never depend on the model. Each look names the one colour that becomes the

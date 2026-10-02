@@ -49,6 +49,7 @@ import {
 } from './audio-settings';
 import { stageThumbnail } from '../adapters/three-renderer/stage-thumbnail';
 import { fighterPortrait } from '../adapters/three-renderer/fighter-portrait';
+import { LobbyScene } from '../adapters/three-renderer/lobby-scene';
 import { MenuBackdrop } from '../adapters/three-renderer/menu-backdrop';
 import { titleScreenBody } from './title-screen';
 import { ScreenTransition } from './screen-transition';
@@ -153,6 +154,8 @@ export class App {
   private readonly transition: ScreenTransition;
   /** The 3D set behind the title and the menus; kept while moving between them. */
   private menuBackdrop: MenuBackdrop | undefined;
+  /** The players' platforms on character select. */
+  private lobbyScene: LobbyScene | undefined;
   private resultsScene: ResultsScene | undefined;
   private eliminations: Elimination[] = [];
   /** The Music and Effects volumes from Options. */
@@ -177,6 +180,7 @@ export class App {
       deviceName: (device) => this.adapters.devices[device]?.label ?? `Input ${device + 1}`,
       start: () => this.confirmCharacters(),
       back: () => this.leaveToMainMenu(),
+      stands: (stands) => this.lobbyScene?.show(stands),
       openRules: () => {
         this.adapters.audio.play('menu-confirm');
         this.setRulesOpen(true);
@@ -240,6 +244,7 @@ export class App {
     const rulesWereOpen = this.rulesShown;
     this.updateMenus();
     this.menuBackdrop?.render(now);
+    this.lobbyScene?.render(now);
     // A gamepad press that just closed the rules overlay (Done) must not also reach the grid
     // below, where it would open the rules again from the banner.
     const rulesJustClosed = rulesWereOpen && !this.rulesShown;
@@ -259,8 +264,8 @@ export class App {
 
   /**
    * Draws the 3D scenes once more, so the transition's snapshot (taken in the same task) holds
-   * their image: a WebGL canvas can only be read right after it was drawn. The menu backdrop keeps
-   * its drawing buffer instead, so it needs no extra drawing here.
+   * their image: a WebGL canvas can only be read right after it was drawn. The menu backdrop and
+   * the lobby scene keep their drawing buffers instead, so they need no extra drawing here.
    */
   private renderScenes(): void {
     this.resultsScene?.render();
@@ -271,6 +276,7 @@ export class App {
     this.transition.resize();
     this.resultsScene?.resize();
     this.menuBackdrop?.resize(this.container.clientWidth, this.container.clientHeight);
+    this.lobbyScene?.resize(this.container.clientWidth, this.container.clientHeight);
     for (const view of this.match?.views ?? []) {
       view.resize(this.container.clientWidth, this.container.clientHeight);
     }
@@ -286,10 +292,13 @@ export class App {
       return;
     }
     if (screen === 'character-select') {
+      this.lobbyScene = new LobbyScene(this.characterSelect.stage);
       this.select = createSelect(MAX_PLAYERS);
       // Start press detection from the current state, so a held button doesn't join at once.
       this.previousInputs = this.adapters.devices.map((device) => device.source.sample());
       this.characterSelect.render(this.select, false, this.rules);
+      // The view is visible only now, so the platforms can measure the screen.
+      this.lobbyScene.resize(this.container.clientWidth, this.container.clientHeight);
       return;
     }
     const focus = screen === 'stage-select' ? STAGES.findIndex((s) => s.id === this.stageId) : 0;
@@ -617,6 +626,8 @@ export class App {
   }
 
   private leaveCharacterSelect(): void {
+    this.lobbyScene?.dispose();
+    this.lobbyScene = undefined;
     this.select = undefined;
     this.syncRulesPanel();
     this.characterSelect.hide();
