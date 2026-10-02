@@ -34,7 +34,8 @@ export type FighterAction =
   | 'landing'
   | 'attack'
   | 'spotDodge'
-  | 'roll'
+  | 'forwardRoll'
+  | 'backRoll'
   | 'airDodge'
   | 'hitstun'
   | 'eliminated';
@@ -66,6 +67,8 @@ export interface FighterState {
   readonly facing: 1 | -1;
   readonly grounded: boolean;
   readonly jumpsRemaining: number;
+  /** The facing before the stick last turned the fighter, and frames since (`DODGE.turnGraceFrames`). */
+  readonly turnedFrom: { readonly facing: 1 | -1; readonly age: number } | null;
   /** The air dodge is used up until the fighter lands or is hit (#36). */
   readonly airDodgeUsed: boolean;
   readonly action: FighterAction;

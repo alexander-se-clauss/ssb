@@ -15,6 +15,7 @@ import {
 import type { GameView, SessionView } from '../../ports';
 import { disposeScene } from './dispose-scene';
 import { bodyParts } from './body-layout';
+import { dodgeDepth } from './dodge-depth';
 import { BOX_COLORS, hurtboxColor } from './debug-colors';
 import { buildScenery, type Scenery } from './scenery';
 
@@ -159,7 +160,7 @@ export class ThreeView implements GameView {
     visual.root.position.set(
       lerp(before.position.x, fighter.position.x, t),
       lerp(before.position.y, fighter.position.y, t),
-      0,
+      lerp(dodgeDepth(before), dodgeDepth(fighter), t),
     );
     // Mirror rather than turn around, so the near limbs stay near the camera either way.
     visual.root.scale.x = fighter.facing;
@@ -185,7 +186,12 @@ export class ThreeView implements GameView {
       const mesh = visual.hurtboxes.get(box.bone);
       if (!mesh) continue;
       mesh.visible = this.showBoxes;
-      mesh.position.set((box.start.x + box.end.x) / 2, (box.start.y + box.end.y) / 2, 0);
+      // At the body's depth, so the overlay follows a dodge into the background.
+      mesh.position.set(
+        (box.start.x + box.end.x) / 2,
+        (box.start.y + box.end.y) / 2,
+        visual.root.position.z,
+      );
       mesh.rotation.set(0, 0, Math.atan2(-(box.end.x - box.start.x), box.end.y - box.start.y));
     }
 

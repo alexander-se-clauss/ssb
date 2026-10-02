@@ -70,12 +70,20 @@ export const FIGHTER = {
 export const DODGE = {
   /** Sideways stick from which the dodge button rolls instead of spot dodging. */
   rollStick: 0.5,
+  /**
+   * A roll counts from the facing before a turn the stick made at most this many frames ago: a
+   * direction key pressed a moment before the dodge key still gives a back roll.
+   */
+  turnGraceFrames: 4,
   spot: { totalFrames: 22, invulnerableFrom: 2, invulnerableTo: 17 },
   roll: {
     totalFrames: 30,
     invulnerableFrom: 4,
     invulnerableTo: 19,
-    /** The roll travels `distance` evenly over frames `[moveFrom, moveTo)`, and ends facing back. */
+    /**
+     * The roll travels `distance` evenly over frames `[moveFrom, moveTo)`. A back roll keeps the
+     * facing; a forward roll turns around at the end, as in Melee.
+     */
     moveFrom: 2,
     moveTo: 22,
     distance: 2.2,
