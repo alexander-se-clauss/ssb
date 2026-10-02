@@ -1,5 +1,5 @@
 import { CENTRED_STICK, attackInput, trackStick } from './attack-input';
-import { FIGHTER, INPUT } from './config';
+import { DODGE, FIGHTER, INPUT } from './config';
 import { NEUTRAL_INPUT, pressed } from './input';
 import { approach } from './math';
 import { findMove } from './move-data';
@@ -7,7 +7,7 @@ import { isAerialSlot, moveSlot } from './move-slots';
 import { findCharacter } from './registry';
 import { nextPose } from './poses';
 import { REST_POSE } from './skeleton';
-import type { BufferedAction, MoveId } from './moves';
+import { isDodge, type BufferedAction, type MoveId } from './moves';
 import type {
   BufferedInput,
   FighterAction,
@@ -61,6 +61,10 @@ export const createFighter = (
 const isControllable = (action: FighterAction): boolean =>
   action === 'idle' || action === 'run' || action === 'airborne';
 
+/** The frame data of a dodge action, or undefined for any other action. */
+const dodgeOf = (action: FighterAction) =>
+  action === 'spotDodge' ? DODGE.spot : action === 'roll' ? DODGE.roll : undefined;
+
 const standsOn = (x: number, y: number, platform: PlatformDef): boolean =>
   x >= platform.bounds.left &&
   x <= platform.bounds.right &&
@@ -87,8 +91,17 @@ export const updateFighter = (
     : pressed(input, prev, 'special')
       ? 'special'
       : null;
+  const dodgePress = pressed(input, prev, 'shield');
   const press = (grounded: boolean): BufferedInput | null => {
-    if (button === null) return null;
+    if (button === null) {
+      // The dodge button dodges on the ground (#35); the air dodge comes with #36. A roll goes
+      // the way the stick points and ends facing back, so it keeps the facing it ends with.
+      if (!dodgePress || !grounded) return null;
+      if (Math.abs(input.x) < DODGE.rollStick) {
+        return { action: 'spotDodge', face: fighter.facing, age: 0 };
+      }
+      return { action: 'roll', face: input.x > 0 ? -1 : 1, age: 0 };
+    }
     const choice = moveSlot({ grounded, button, attack: attackInput(stick, fighter.facing) });
     const face = choice.turnAround ? (fighter.facing === 1 ? -1 : 1) : fighter.facing;
     return { action: choice.slot, face, age: 0 };
@@ -119,8 +132,14 @@ export const updateFighter = (
     landingLagFrames,
     hitTargets,
   } = fighter;
-  // Down with a button is a down attack on the platform, not a drop through it.
-  const wantsDrop = input.y < DROP_THRESHOLD && button === null;
+  // Down with a button is a down attack or a spot dodge on the platform, not a drop through it,
+  // also when the dodge waited in the buffer. In the air the dodge button changes nothing (#36).
+  const waiting = fighter.buffer;
+  const dodgeComing =
+    fighter.grounded &&
+    (dodgePress ||
+      (waiting !== null && isDodge(waiting.action) && waiting.age < INPUT.bufferFrames));
+  const wantsDrop = input.y < DROP_THRESHOLD && button === null && !dodgeComing;
 
   // Still supported by the platform we were standing on? Walking off an edge makes us airborne.
   const support = grounded ? stage.platforms.find((p) => standsOn(px, py, p)) : undefined;
@@ -141,7 +160,7 @@ export const updateFighter = (
   const kept = fighter.buffer && fighter.buffer.age < INPUT.bufferFrames ? fighter.buffer : null;
   let buffer = press(grounded) ?? (kept && { ...kept, age: kept.age + 1 });
   const slotMove = (action: BufferedAction): MoveId | undefined =>
-    action === 'dodge' || action === 'block'
+    isDodge(action) || action === 'block'
       ? undefined
       : findCharacter(fighter.characterId)?.moves[action];
   /** Starts a move from the buffered press, facing the way the press asked for. */
@@ -154,8 +173,17 @@ export const updateFighter = (
     hitTargets = [];
   };
   // An empty slot does nothing: the press is dropped, and a jump on the same frame still counts.
+  // So is a dodge that can no longer start because the fighter left the ground.
   const bufferedMove = buffer ? slotMove(buffer.action) : undefined;
-  if (buffer && bufferedMove === undefined && isControllable(action)) buffer = null;
+  const bufferedDodge = buffer && isDodge(buffer.action) && grounded ? buffer.action : undefined;
+  if (
+    buffer &&
+    bufferedMove === undefined &&
+    bufferedDodge === undefined &&
+    isControllable(action)
+  ) {
+    buffer = null;
+  }
 
   if (action === 'hitstun') {
     hitstunFrames -= 1;
@@ -182,6 +210,12 @@ export const updateFighter = (
       moveId = null;
       hitTargets = [];
     }
+  } else if (action === 'spotDodge' || action === 'roll') {
+    // A dodge plays out its frames; a press waits in the buffer.
+    if (actionFrame >= (dodgeOf(action)?.totalFrames ?? 0)) {
+      action = grounded ? 'idle' : 'airborne';
+      actionFrame = 0;
+    }
   } else if (action === 'landing') {
     // Stuck for the landing lag; a press waits in the buffer.
     landingLagFrames -= 1;
@@ -205,6 +239,13 @@ export const updateFighter = (
     }
   } else if (buffer && bufferedMove !== undefined) {
     startMove(bufferedMove, buffer.face);
+  } else if (buffer && bufferedDodge !== undefined) {
+    action = bufferedDodge;
+    actionFrame = 0;
+    // A roll faces the way the press asked for; a spot dodge keeps the current facing.
+    if (bufferedDodge === 'roll') facing = buffer.face;
+    buffer = null;
+    vx = 0;
   } else if (pressed(input, prev, 'jump') && jumpsRemaining > 0) {
     if (grounded) {
       action = 'jumpsquat';
@@ -225,7 +266,12 @@ export const updateFighter = (
 
   // Horizontal movement. A launch faster than the fighter can drift bleeds off quickly, as
   // knockback decays in Melee; without it a sideways hit carries on almost undamped.
-  if (!grounded && Math.abs(vx) > FIGHTER.airSpeed) {
+  if (action === 'roll') {
+    // A roll covers its distance at an even speed, then stops dead.
+    const { moveFrom, moveTo, distance } = DODGE.roll;
+    const rolling = actionFrame >= moveFrom && actionFrame < moveTo;
+    vx = rolling ? (-facing * distance) / (moveTo - moveFrom) : 0;
+  } else if (!grounded && Math.abs(vx) > FIGHTER.airSpeed) {
     vx = approach(vx, Math.sign(vx) * FIGHTER.airSpeed, FIGHTER.launchDecay);
   } else if (isControllable(action) || inAerial) {
     if (Math.abs(input.x) > FACE_THRESHOLD && grounded) facing = input.x > 0 ? 1 : -1;
@@ -289,6 +335,11 @@ export const updateFighter = (
     py = nextY;
   }
 
+  // A roll stops at the edge of its platform instead of rolling off.
+  if (action === 'roll' && grounded && support) {
+    px = Math.min(Math.max(px, support.bounds.left), support.bounds.right);
+  }
+
   // Solid platforms push the body out sideways or from below.
   for (const platform of stage.platforms) {
     if (platform.passThrough) continue;
@@ -329,6 +380,13 @@ export const updateFighter = (
     }
   }
 
+  // A dodge cannot be hit on its invulnerable frames; a longer invulnerability (a respawn) stays.
+  const dodge = dodgeOf(action);
+  const dodgeInvulnerable =
+    dodge !== undefined &&
+    actionFrame >= dodge.invulnerableFrom &&
+    actionFrame < dodge.invulnerableTo;
+
   const moved: FighterState = {
     ...fighter,
     position: { x: px, y: py },
@@ -343,7 +401,7 @@ export const updateFighter = (
     landingLagFrames,
     hitTargets,
     buffer,
-    invulnerableFrames: Math.max(0, fighter.invulnerableFrames - 1),
+    invulnerableFrames: Math.max(fighter.invulnerableFrames - 1, dodgeInvulnerable ? 1 : 0),
     stick,
     previousInput: input,
   };

@@ -61,6 +61,26 @@ export const FIGHTER = {
   landingLagFrames: 4,
 } as const;
 
+/**
+ * Ground dodges (#35), pressed with the dodge button: a spot dodge in place, or a roll the way
+ * the stick points. There is no shield, so dodging is everyone's defence. Invulnerable on frames
+ * `[invulnerableFrom, invulnerableTo)` of the dodge, open to a punish after that.
+ */
+export const DODGE = {
+  /** Sideways stick from which the dodge button rolls instead of spot dodging. */
+  rollStick: 0.5,
+  spot: { totalFrames: 22, invulnerableFrom: 2, invulnerableTo: 17 },
+  roll: {
+    totalFrames: 30,
+    invulnerableFrom: 4,
+    invulnerableTo: 19,
+    /** The roll travels `distance` evenly over frames `[moveFrom, moveTo)`, and ends facing back. */
+    moveFrom: 2,
+    moveTo: 22,
+    distance: 2.2,
+  },
+} as const;
+
 /** Hitstun frames per unit of launch speed. */
 export const HITSTUN_PER_KNOCKBACK = 40;
 

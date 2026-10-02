@@ -69,6 +69,13 @@ chains into jab 2 and jab 3.
 A ground jump starts with a short `jumpsquat` (`FIGHTER.jumpSquatFrames`) as in Melee: an attack
 pressed during it is still a ground attack, so flicking the stick up (which tap-jumps) and
 pressing attack plays the up smash.
+There is no shield: the dodge button (`PlayerInput.shield`) buffers a `spotDodge`, or a `roll`
+when the stick is pushed sideways (`DODGE.rollStick`), and the fighter plays it as an action of
+that name with frame data from `DODGE` in `config.ts`. On the dodge's invulnerable frames
+`invulnerableFrames` is kept above zero, so combat skips the fighter and the view shows it as it
+does after a respawn; the frames after them are recovery and can be punished. A roll moves at an
+even speed, stops at its platform's edge and ends facing back. Ground only: in the air the button
+does nothing until the air dodge (#36).
 Each fighter carries its current `pose` in `FighterState`: `step` eases it a little each frame towards
 the pose of its movement state, with idle breathing and a running stride (`poses.ts`), and the
 view interpolates it between frames like the position. A move has pose keyframes instead: the

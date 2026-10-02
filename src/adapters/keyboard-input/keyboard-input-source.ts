@@ -43,6 +43,7 @@ export interface KeyLabels {
   readonly down: string;
   readonly attack: string;
   readonly special: string;
+  readonly dodge: string;
   readonly start: string;
 }
 
@@ -74,6 +75,7 @@ export const describeKeys = (keys: KeyMap): KeyLabels => ({
   down: keyName(keys.down),
   attack: keyName(keys.attack),
   special: keyName(keys.special),
+  dodge: keyName(keys.shield),
   // Enter starts for every keyboard player, through the page's menu keys.
   start: 'Enter',
 });

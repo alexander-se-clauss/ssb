@@ -8,6 +8,7 @@ const P1: ControlLabels = {
   down: 'S',
   attack: 'F',
   special: 'G',
+  dodge: 'H',
   start: 'Enter',
 };
 const P2: ControlLabels = {
@@ -17,6 +18,7 @@ const P2: ControlLabels = {
   down: '↓',
   attack: '.',
   special: '/',
+  dodge: 'Right Shift',
   start: 'Enter',
 };
 
@@ -29,6 +31,7 @@ describe('controls screen', () => {
       ['Drop / fast-fall', 'S', '↓'],
       ['Attack · pick in menus', 'F', '.'],
       ['Special · cancel in menus', 'G', '/'],
+      ['Dodge (spot dodge; roll with left or right)', 'H', 'Right Shift'],
       ['Start · start the match', 'Enter', 'Enter'],
     ]);
   });

@@ -37,6 +37,8 @@ export type PoseName =
   | 'upAirEnd'
   | 'downAirWindup'
   | 'downAir'
+  | 'spotDodge'
+  | 'roll'
   | 'hurt'
   | 'tumble';
 
@@ -456,6 +458,32 @@ export const POSES: Readonly<Record<PoseName, Pose>> = {
     lowerLegFront: 0,
     upperLegBack: 185,
     lowerLegBack: 0,
+  },
+  // Spot dodge: drawn up tall and narrow, arms pulled in to the chest, feet together.
+  spotDodge: {
+    torso: -8,
+    head: 5,
+    upperArmFront: 165,
+    lowerArmFront: -130,
+    upperArmBack: 175,
+    lowerArmBack: -120,
+    upperLegFront: 172,
+    lowerLegFront: 10,
+    upperLegBack: 188,
+    lowerLegBack: 10,
+  },
+  // Roll: tucked into a ball, leaning the way it rolls (behind the facing), knees to the chest.
+  roll: {
+    torso: -55,
+    head: -40,
+    upperArmFront: 150,
+    lowerArmFront: -110,
+    upperArmBack: 160,
+    lowerArmBack: -110,
+    upperLegFront: 115,
+    lowerLegFront: 135,
+    upperLegBack: 135,
+    lowerLegBack: 130,
   },
   // Flinch: head and chest snap back, the arms trail behind the body.
   hurt: {
