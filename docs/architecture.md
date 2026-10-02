@@ -140,7 +140,9 @@ stage select, match, results) and the allowed moves between them, as plain data 
 decorative Three.js scene, the menu backdrop (`menu-backdrop.ts`): a fighter in a forward smash
 on a stone platform in a spotlight, fog, rising embers (`ember-drift.ts`) and broken pillars
 against a distant fire. It uses the core skeleton and poses without running a match, stays alive
-while the player moves between menus, stands still under reduced motion, and releases its WebGL
+while the player moves between menus, stands still under reduced motion, draws only as often as
+its measured cost allows (`frame-budget.ts`: every frame on a real GPU, a new picture every few
+seconds on CI's software renderer), and releases its WebGL
 resources when a screen with its own scene opens (`hasMenuBackdrop` in `screens.ts`: character
 select, match and results). The HTML start button also accepts keyboard and gamepad input. As in Melee, character select is where a match is
 set up: its top bar holds Back and the rules banner, which opens the rules overlay (a second

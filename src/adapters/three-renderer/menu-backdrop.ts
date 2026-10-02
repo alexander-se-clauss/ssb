@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { POSES } from '../../core';
 import { disposeScene } from './dispose-scene';
 import { emberHeight } from './ember-drift';
+import { FrameBudget } from './frame-budget';
 import { fighterModel, poseFighter } from './fighter-model';
 
 const EMBERS = 420;
@@ -15,7 +16,11 @@ const DAIS = new THREE.Vector3(5, 0, -1);
  * independent of the simulation; one scene stays alive while the player moves between menus.
  */
 export class MenuBackdrop {
-  private readonly renderer = new THREE.WebGLRenderer({ antialias: true });
+  // The drawing buffer is kept, so the screen wipe can copy the last picture without a new one.
+  private readonly renderer = new THREE.WebGLRenderer({
+    antialias: true,
+    preserveDrawingBuffer: true,
+  });
   private readonly scene = new THREE.Scene();
   private readonly camera = new THREE.PerspectiveCamera(32, 1, 0.1, 200);
   private readonly reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -23,12 +28,16 @@ export class MenuBackdrop {
   private readonly glow = glowTexture();
   private readonly embers: THREE.Points;
   private readonly emberStarts: Float32Array;
+  private readonly budget = new FrameBudget();
+  private readonly probe = new Uint8Array(4);
+  /** The picture no longer fits the canvas, e.g. after a resize. */
+  private changed = true;
   private started: number | undefined;
 
   constructor(container: HTMLElement) {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.domElement.className = 'menu-backdrop';
     this.renderer.domElement.setAttribute('aria-hidden', 'true');
@@ -200,9 +209,13 @@ export class MenuBackdrop {
     );
   }
 
+  /** Called every frame; draws when the picture changed or the frame budget allows motion. */
   render(now: number): void {
     this.started ??= now;
-    const seconds = this.reducedMotion.matches ? 0 : (now - this.started) / 1000;
+    const animated = !this.reducedMotion.matches;
+    if (!this.budget.shouldDraw(now, { animated, changed: this.changed })) return;
+    this.changed = false;
+    const seconds = animated ? (now - this.started) / 1000 : 0;
     const position = this.embers.geometry.getAttribute('position');
     for (let i = 0; i < EMBERS; i++) {
       // Each ember rises at its own pace, between 0.3 and 0.8 units a second.
@@ -220,13 +233,24 @@ export class MenuBackdrop {
       this.camera.position.set(-1 + sway, 2.8, 16);
       this.camera.lookAt(1.5, 2.6, 0);
     }
+    if (!this.budget.measuring) {
+      this.renderer.render(this.scene, this.camera);
+      this.budget.drew(now);
+      return;
+    }
+    const start = performance.now();
     this.renderer.render(this.scene, this.camera);
+    // Reading one pixel waits until the GPU has finished, so the time covers the whole drawing.
+    const gl = this.renderer.getContext();
+    gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, this.probe);
+    this.budget.drew(now, performance.now() - start);
   }
 
   resize(width: number, height: number): void {
     this.camera.aspect = width / Math.max(height, 1);
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
+    this.changed = true;
   }
 
   dispose(): void {
