@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { HITSTUN_PER_KNOCKBACK, POSE } from './config';
+import { DODGE, HITSTUN_PER_KNOCKBACK, POSE } from './config';
 import { NEUTRAL_INPUT, inputOf } from './input';
 import { BONE_IDS, REST_POSE, type BoneId, type Pose } from './skeleton';
 import { POSES, blendPose, poseName, shortestTurn, targetPose, type PoseName } from './poses';
@@ -46,6 +46,14 @@ describe('poses for movement states', () => {
     const stunned: FighterState = { ...standing, action: 'hitstun', actionFrame: 0 };
     expect(poseName({ ...stunned, hitstunFrames: TUMBLE_HITSTUN - 1 })).toBe('hurt');
     expect(poseName({ ...stunned, hitstunFrames: TUMBLE_HITSTUN })).toBe('tumble');
+  });
+
+  it('tucks a roll while it travels and stands it up for its recovery', () => {
+    const standing = fighter(settled(), 0);
+    for (const action of ['forwardRoll', 'backRoll'] as const) {
+      expect(poseName({ ...standing, action, actionFrame: DODGE.roll.moveTo - 1 })).toBe('roll');
+      expect(poseName({ ...standing, action, actionFrame: DODGE.roll.moveTo })).toBe('idle');
+    }
   });
 
   it('gives every movement state its own pose', () => {

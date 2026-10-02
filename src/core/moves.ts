@@ -37,16 +37,17 @@ export interface HitboxDef {
 }
 
 /** What a press asks for, kept in the input buffer: a move slot or a dodge, later block (#6). */
-export type BufferedAction = MoveSlot | DodgeKind | 'block';
+export type BufferedAction = MoveSlot | DodgeKind | 'jump' | 'block';
 
 /**
- * The ground dodges (#35), in place or rolling the way the stick points, and the air dodge (#36).
- * A buffered roll's `face` is the way it travels.
+ * The ground dodges (#35): a sidestep into the background or out towards the camera, or a roll
+ * the way the stick points; and the air dodge (#36). A buffered roll's `face` is the way it
+ * travels.
  */
-export type DodgeKind = 'spotDodge' | 'roll' | 'airDodge';
+export type DodgeKind = 'sidestepIn' | 'sidestepOut' | 'roll' | 'airDodge';
 
 export const isDodge = (action: BufferedAction): action is DodgeKind =>
-  action === 'spotDodge' || action === 'roll' || action === 'airDodge';
+  action === 'sidestepIn' || action === 'sidestepOut' || action === 'roll' || action === 'airDodge';
 
 /**
  * A window in which the move gives way to a buffered action: on frames `[from, to)`, a buffered

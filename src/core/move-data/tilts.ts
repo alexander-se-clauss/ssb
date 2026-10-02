@@ -23,7 +23,7 @@ const kick = (
 export const FORWARD_TILT: MoveDef = {
   kind: 'attack',
   id: 'forwardTilt',
-  totalFrames: 26,
+  totalFrames: 18,
   hitboxes: kick(
     {
       radius: 0.3,
@@ -40,7 +40,7 @@ export const FORWARD_TILT: MoveDef = {
     { frame: 2, pose: POSES.kickChamber },
     { frame: 5, pose: POSES.forwardTilt },
     { frame: 9, pose: POSES.forwardTilt },
-    { frame: 20, pose: POSES.idle },
+    { frame: 15, pose: POSES.idle },
   ],
   cancels: [],
 };
@@ -52,7 +52,7 @@ export const FORWARD_TILT: MoveDef = {
 export const UP_TILT: MoveDef = {
   kind: 'attack',
   id: 'upTilt',
-  totalFrames: 24,
+  totalFrames: 18,
   hitboxes: kick(
     {
       radius: 0.3,
@@ -69,7 +69,7 @@ export const UP_TILT: MoveDef = {
     { frame: 3, pose: POSES.upTiltStart },
     { frame: 6, pose: POSES.upTilt },
     { frame: 10, pose: POSES.upTiltEnd },
-    { frame: 18, pose: POSES.idle },
+    { frame: 15, pose: POSES.idle },
   ],
   cancels: [],
 };
@@ -81,7 +81,7 @@ export const UP_TILT: MoveDef = {
 export const DOWN_TILT: MoveDef = {
   kind: 'attack',
   id: 'downTilt',
-  totalFrames: 24,
+  totalFrames: 17,
   hitboxes: kick(
     {
       radius: 0.3,
@@ -98,7 +98,7 @@ export const DOWN_TILT: MoveDef = {
     { frame: 3, pose: POSES.crouch },
     { frame: 7, pose: POSES.downTilt },
     { frame: 10, pose: POSES.downTilt },
-    { frame: 20, pose: POSES.idle },
+    { frame: 14, pose: POSES.idle },
   ],
   cancels: [],
 };

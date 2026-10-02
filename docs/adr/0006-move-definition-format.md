@@ -184,6 +184,19 @@ type MoveDef = AttackMoveDef; // | BlockMoveDef | CounterMoveDef with #6
   still gives a back roll. A turn followed within the grace frames by a roll the new way is a
   back roll from the old facing, not a forward roll.
 
+### Amendment (2026-10-02, sidestep, roll and jump buffer)
+
+- The spot dodge becomes a sidestep out of the stage plane, `sidestepIn` (stick up or centred)
+  or `sidestepOut` (stick down), sharing `DODGE.sidestep`. A roll needs the stick more sideways
+  than up or down. The view moves a sidestep in depth, somersaults a roll and spins an air dodge
+  (`dodgeMotion`); rolls no longer leave the stage plane. A roll stands up for its recovery.
+- A jump press is a `BufferedAction` (`'jump'`), so a double jump pressed during an aerial or air
+  dodge comes out when it ends. A second press during the jump squat is dropped at take-off, and
+  a jump press with none left is dropped. A jump never replaces a waiting move or dodge, is not
+  buffered in hitstun (jumping out of hitstun needs a fresh press, as in Melee), and landing drops
+  it.
+- Weak attacks recover sooner: jab and jab 2 last 14 frames, jab 3 22, the tilts 17 to 18.
+
 ## Consequences
 
 - New moves are data. Tests, tools and an AI agent can write and check them without new code.

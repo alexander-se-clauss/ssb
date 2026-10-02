@@ -69,7 +69,7 @@ takes input at once. Layouts adapt to narrow and short viewports and respect red
 
 Smash meets Monster Hunter: defense is about commitment and timing, not a panic button.
 
-- **No shield.** Everyone can spot dodge, roll and air dodge (Ultimate style: directional,
+- **No shield.** Everyone can sidestep, roll and air dodge (Ultimate style: directional,
   actionable afterwards), each with invulnerability frames and recovery.
 - **Block and counter are per character.** Block soaks a hit (less damage and knockback,
   pushback, can break). Counter is a timing window that strikes back automatically.

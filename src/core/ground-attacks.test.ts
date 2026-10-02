@@ -27,15 +27,15 @@ const GROUND_ATTACKS: readonly {
     slot: 'forwardTilt',
     id: 'forwardTilt',
     input: inputOf({ x: 0.5 }),
-    timing: [5, 4, 26],
+    timing: [5, 4, 18],
     targetX: 0.9,
   },
-  { slot: 'upTilt', id: 'upTilt', input: inputOf({ y: 0.5 }), timing: [4, 6, 24], targetX: 0.6 },
+  { slot: 'upTilt', id: 'upTilt', input: inputOf({ y: 0.5 }), timing: [4, 6, 18], targetX: 0.6 },
   {
     slot: 'downTilt',
     id: 'downTilt',
     input: inputOf({ y: -0.5 }),
-    timing: [7, 3, 24],
+    timing: [7, 3, 17],
     targetX: 0.9,
   },
   {
@@ -138,6 +138,14 @@ describe('ground attacks of the first fighter', () => {
     expect(fighter(state, 0)).toMatchObject({ action: 'jumpsquat', grounded: true });
     state = step(state, [inputOf({ y: 1, jump: true, attack: true })]);
     expect(fighter(state, 0)).toMatchObject({ action: 'attack', moveId: 'upSmash' });
+  });
+
+  it.each([
+    ['jab', 14],
+    ['jab2', 14],
+    ['jab3', 22],
+  ] as const)('%s recovers quickly, like the other weak attacks (%i frames)', (id, total) => {
+    expect(findMove(id).totalFrames).toBe(total);
   });
 
   it.each(GROUND_ATTACKS)('$id has its frame data', ({ id, timing }) => {

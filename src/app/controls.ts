@@ -17,7 +17,7 @@ const ACTIONS: readonly (readonly [keyof ControlLabels, string])[] = [
   ['down', 'Drop / fast-fall'],
   ['attack', 'Attack · pick in menus'],
   ['special', 'Special · cancel in menus'],
-  ['dodge', 'Dodge (roll with left or right; air dodge)'],
+  ['dodge', 'Dodge (sidestep; roll with left or right; air dodge)'],
   ['start', 'Start · start the match'],
 ];
 
