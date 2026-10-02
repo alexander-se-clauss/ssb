@@ -24,8 +24,8 @@ const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
 
 interface FighterVisual {
   readonly root: THREE.Group;
-  readonly parts: ReadonlyMap<BoneId, THREE.Mesh>;
-  /** The player's colour, and a darker shade for the limbs on the far side. */
+  readonly parts: ReadonlyMap<BoneId, THREE.Object3D>;
+  /** Every material of the body, flashed while invulnerable and tinted in hitstun. */
   readonly materials: readonly THREE.MeshStandardMaterial[];
   /** Debug overlay: one sphere per active hitbox, grown as moves need more. */
   readonly hitboxes: THREE.Mesh[];
@@ -98,12 +98,12 @@ export class ThreeView implements GameView {
     this.renderer.domElement.remove();
   }
 
-  private visualFor(slot: number): FighterVisual {
+  private visualFor(slot: number, characterId: string): FighterVisual {
     const existing = this.fighters.get(slot);
     if (existing) return existing;
 
     const color = PLAYER_COLORS[slot % PLAYER_COLORS.length] ?? 0xffffff;
-    const { root, parts, materials } = fighterModel(color);
+    const { root, parts, materials } = fighterModel(characterId, color);
 
     const hurtboxes = new Map<BoneId, THREE.Mesh>();
     const hurtboxMaterial = overlay(BOX_COLORS.hurtbox);
@@ -144,7 +144,7 @@ export class ThreeView implements GameView {
     alpha: number,
     frame: number,
   ): void {
-    const visual = this.visualFor(fighter.slot);
+    const visual = this.visualFor(fighter.slot, fighter.characterId);
     const eliminated = fighter.action === 'eliminated';
     visual.root.visible = !eliminated;
     if (eliminated) {

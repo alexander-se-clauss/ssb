@@ -10,6 +10,10 @@ describe('character and stage registry', () => {
     expect(STAGES.map((s) => s.id)).toContain('battlefield');
   });
 
+  it('gives Rivet the capsule moveset until he gets his own', () => {
+    expect(findCharacter('rivet')?.moves).toEqual(findCharacter('capsule')?.moves);
+  });
+
   it('has unique ids', () => {
     const unique = (ids: string[]) => new Set(ids).size === ids.length;
     expect(unique(CHARACTERS.map((c) => c.id))).toBe(true);
@@ -20,7 +24,7 @@ describe('character and stage registry', () => {
     expect(findStage('battlefield')).toBe(BATTLEFIELD);
     expect(findCharacter('capsule')?.name).toBe('Capsule');
     expect(findStage('hyrule-temple')).toBeUndefined();
-    expect(findCharacter('mario')).toBeUndefined();
+    expect(findCharacter('nobody')).toBeUndefined();
   });
 });
 

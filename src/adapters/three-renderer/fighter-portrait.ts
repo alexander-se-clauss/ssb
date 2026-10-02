@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { POSES, type CharacterDef } from '../../core';
-import { fighterModel, poseFighter, PLAYER_COLORS } from './fighter-model';
+import { fighterModel, NEUTRAL_COLOR, poseFighter, PLAYER_COLORS } from './fighter-model';
 import { disposeScene } from './dispose-scene';
 
 const portraits = new WeakMap<CharacterDef, readonly string[]>();
@@ -22,7 +22,7 @@ export const fighterPortrait = (character: CharacterDef, player?: number): strin
       const rim = new THREE.DirectionalLight(0x80bfff, 3);
       rim.position.set(3, 2, -3);
       scene.add(rim);
-      const model = fighterModel(0xbdcadb);
+      const model = fighterModel(character.id, NEUTRAL_COLOR);
       poseFighter(model, POSES.idle);
       model.root.rotation.y = -0.4;
       scene.add(model.root);
@@ -33,9 +33,8 @@ export const fighterPortrait = (character: CharacterDef, player?: number): strin
       const camera = new THREE.OrthographicCamera(-half, half, half, -half, 0.1, 30);
       camera.position.set(center.x, center.y + 0.1, 8);
       camera.lookAt(center);
-      images = [0xbdcadb, ...PLAYER_COLORS].map((color) => {
-        model.materials[0]?.color.setHex(color);
-        model.materials[1]?.color.setHex(color).multiplyScalar(0.65);
+      images = [NEUTRAL_COLOR, ...PLAYER_COLORS].map((color) => {
+        model.tint(color);
         renderer.render(scene, camera);
         return renderer.domElement.toDataURL('image/png');
       });
