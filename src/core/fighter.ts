@@ -216,7 +216,12 @@ export const updateFighter = (
   }
 
   // An aerial drifts and fast-falls like a fighter in the air without an attack, as in Melee.
-  const inAerial = action === 'attack' && !grounded;
+  // Only aerials: a ground move that slides off an edge keeps its locked movement.
+  const inAerial =
+    action === 'attack' &&
+    !grounded &&
+    moveId !== null &&
+    findMove(moveId).landingLag !== undefined;
 
   // Horizontal movement. A launch faster than the fighter can drift bleeds off quickly, as
   // knockback decays in Melee; without it a sideways hit carries on almost undamped.

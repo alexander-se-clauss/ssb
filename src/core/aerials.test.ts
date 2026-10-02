@@ -180,6 +180,26 @@ describe('moving during an aerial', () => {
   });
 });
 
+describe('ground moves off an edge', () => {
+  it('do not drift or fast-fall when one slides off the stage: only aerials steer', () => {
+    let state = withFighter(settled(), 0, {
+      position: { x: 6.9, y: 0 },
+      velocity: { x: 0.12, y: 0 },
+      grounded: true,
+      action: 'idle',
+      facing: 1,
+    });
+    state = step(state, [inputOf({ x: 1, attack: true })]);
+    expect(fighter(state, 0).moveId).toBe('forwardSmash');
+    state = run(state, 20, [inputOf({ x: -1, y: -1 })]);
+    const smash = fighter(state, 0);
+    expect(smash).toMatchObject({ moveId: 'forwardSmash', grounded: false });
+    // Only air friction slows it; drifting back would have turned it around by now.
+    expect(smash.velocity.x).toBeGreaterThan(0.03);
+    expect(smash.velocity.y).toBeGreaterThanOrEqual(-FIGHTER.maxFallSpeed);
+  });
+});
+
 describe('aerial knockback', () => {
   const launchOf = (id: string, damage = 0) => {
     const { input, target } = byId(id);
