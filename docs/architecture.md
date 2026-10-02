@@ -53,8 +53,12 @@ own damage, angle and knockback. A hit freezes attacker and target for `hitlagFr
 harder hits (`HITLAG` in `config.ts`): nothing moves, and the launch is held until it ends.
 In the air, horizontal speed above `FIGHTER.airSpeed` bleeds off at `FIGHTER.launchDecay`, so a
 sideways launch flies a set distance instead of drifting on almost undamped.
-Move data is one file per family in `move-data/` (`jab.ts`, `tilts.ts`, `smashes.ts`, each
-registered in `move-data/index.ts`). A
+Move data is one file per family in `move-data/` (`jab.ts`, `tilts.ts`, `smashes.ts`,
+`aerials.ts`, each registered in `move-data/index.ts`). A move with a `landingLag` is an aerial:
+landing while it runs ends it and puts the fighter in the `landing` action for that many frames
+(`landingLagFrames`). Landing from a jump or fall without one costs `FIGHTER.landingLagFrames`;
+a fighter in hitstun lands without lag. An aerial press still in the buffer on landing is
+dropped, and during an aerial the fighter drifts and fast-falls like `airborne`. A
 press of attack or special picks a move slot from the situation and the stick (`move-slots.ts`:
 jab, tilts and smashes on the ground, five aerials, four specials), and the character's `moves`
 table fills each slot with a move id or leaves it empty. The press goes into

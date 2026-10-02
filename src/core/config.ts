@@ -47,6 +47,8 @@ export const FIGHTER = {
   totalJumps: 2,
   weight: 1,
   respawnInvulnerabilityFrames: 120,
+  /** Landing lag after a jump or fall without an aerial running; aerials set their own. */
+  landingLagFrames: 4,
 } as const;
 
 /** Hitstun frames per unit of launch speed. */

@@ -67,6 +67,11 @@ export interface AttackMoveDef {
    */
   readonly poses: readonly PoseKey[];
   readonly cancels: readonly CancelDef[];
+  /**
+   * Makes the move an aerial: landing while it runs ends it, and the fighter is stuck for this
+   * many frames. Ground moves leave it out.
+   */
+  readonly landingLag?: number;
 }
 
 /** Block and counter moves join this union with #6. */
@@ -130,6 +135,12 @@ export const validateMove = (move: MoveDef): void => {
     }
     if (to > move.totalFrames) fail(`cancel ${index} ends after the move (${to})`);
   });
+  if (
+    move.landingLag !== undefined &&
+    !(Number.isInteger(move.landingLag) && move.landingLag >= 1)
+  ) {
+    fail(`landingLag must be at least one whole frame, got ${move.landingLag}`);
+  }
   // From the first keyframe on the pose is exact, so a bone hitbox reaches the same spot.
   if (first && first.frame > moveTiming(move).startupFrames) {
     fail(`the first keyframe (${first.frame}) comes after the first hitbox`);

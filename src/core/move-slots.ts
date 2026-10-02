@@ -69,6 +69,10 @@ const SPECIALS: Readonly<Record<AttackDirection, MoveSlot>> = {
   down: 'downSpecial',
 };
 
+/** True for the five aerial slots, which only exist in the air. */
+export const isAerialSlot = (action: string): boolean =>
+  (Object.values(AERIALS) as string[]).includes(action);
+
 /**
  * The slot for a press. Aerials have their own back slot, so only ground attacks and side
  * specials turn the fighter around.
