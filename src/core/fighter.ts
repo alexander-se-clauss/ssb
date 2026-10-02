@@ -38,6 +38,7 @@ export const createFighter = (
     grounded: false,
     jumpsRemaining: FIGHTER.totalJumps - 1,
     airDodgeUsed: false,
+    turnedFrom: null,
     action: 'airborne',
     actionFrame: 0,
     moveId: null,
@@ -66,7 +67,7 @@ const isControllable = (action: FighterAction): boolean =>
 const dodgeOf = (action: FighterAction) =>
   action === 'spotDodge'
     ? DODGE.spot
-    : action === 'roll'
+    : action === 'forwardRoll' || action === 'backRoll'
       ? DODGE.roll
       : action === 'airDodge'
         ? DODGE.air
@@ -102,9 +103,9 @@ export const updateFighter = (
   const press = (grounded: boolean): BufferedInput | null => {
     if (button === null) {
       // The dodge button dodges on the ground (#35), and in the air once per airtime (#36). A
-      // roll goes the way the stick points and ends facing back, so it keeps the facing it ends
-      // with. An air dodge reads its direction from the stick when it starts; one pressed in the
-      // jump squat starts once the jump leaves the ground, as in Ultimate.
+      // roll goes the way the stick points. An air dodge reads its direction from the stick when
+      // it starts; one pressed in the jump squat starts once the jump leaves the ground, as in
+      // Ultimate.
       if (!dodgePress) return null;
       if (!grounded || fighter.action === 'jumpsquat') {
         return fighter.airDodgeUsed ? null : { action: 'airDodge', face: fighter.facing, age: 0 };
@@ -112,7 +113,7 @@ export const updateFighter = (
       if (Math.abs(input.x) < DODGE.rollStick) {
         return { action: 'spotDodge', face: fighter.facing, age: 0 };
       }
-      return { action: 'roll', face: input.x > 0 ? -1 : 1, age: 0 };
+      return { action: 'roll', face: input.x > 0 ? 1 : -1, age: 0 };
     }
     const choice = moveSlot({ grounded, button, attack: attackInput(stick, fighter.facing) });
     const face = choice.turnAround ? (fighter.facing === 1 ? -1 : 1) : fighter.facing;
@@ -138,6 +139,7 @@ export const updateFighter = (
     grounded,
     jumpsRemaining,
     airDodgeUsed,
+    turnedFrom,
     action,
     actionFrame,
     moveId,
@@ -145,6 +147,10 @@ export const updateFighter = (
     landingLagFrames,
     hitTargets,
   } = fighter;
+  turnedFrom =
+    turnedFrom && turnedFrom.age < DODGE.turnGraceFrames
+      ? { ...turnedFrom, age: turnedFrom.age + 1 }
+      : null;
   // Down with a button is a down attack or a spot dodge on the platform, not a drop through it,
   // also when the dodge waited in the buffer.
   const waiting = fighter.buffer;
@@ -227,9 +233,10 @@ export const updateFighter = (
       moveId = null;
       hitTargets = [];
     }
-  } else if (action === 'spotDodge' || action === 'roll' || action === 'airDodge') {
-    // A dodge plays out its frames; a press waits in the buffer.
+  } else if (dodgeOf(action) !== undefined) {
+    // A dodge plays out its frames; a press waits in the buffer. A forward roll ends turned round.
     if (actionFrame >= (dodgeOf(action)?.totalFrames ?? 0)) {
+      if (action === 'forwardRoll') facing = facing === 1 ? -1 : 1;
       action = grounded ? 'idle' : 'airborne';
       actionFrame = 0;
     }
@@ -257,10 +264,16 @@ export const updateFighter = (
   } else if (buffer && bufferedMove !== undefined) {
     startMove(bufferedMove, buffer.face);
   } else if (buffer && bufferedDodge !== undefined) {
-    action = bufferedDodge;
     actionFrame = 0;
-    // A roll faces the way the press asked for; a spot dodge keeps the current facing.
-    if (bufferedDodge === 'roll') facing = buffer.face;
+    if (bufferedDodge === 'roll') {
+      // Towards the facing a forward roll, away from it a back roll, counted from the facing
+      // before a turn the stick made just now.
+      if (turnedFrom) facing = turnedFrom.facing;
+      action = buffer.face === facing ? 'forwardRoll' : 'backRoll';
+    } else {
+      action = bufferedDodge;
+    }
+    turnedFrom = null;
     buffer = null;
     vx = 0;
     if (bufferedDodge === 'airDodge') {
@@ -298,15 +311,21 @@ export const updateFighter = (
       vx *= DODGE.air.drag;
       vy *= DODGE.air.drag;
     }
-  } else if (action === 'roll') {
+  } else if (action === 'forwardRoll' || action === 'backRoll') {
     // A roll covers its distance at an even speed, then stops dead.
     const { moveFrom, moveTo, distance } = DODGE.roll;
     const rolling = actionFrame >= moveFrom && actionFrame < moveTo;
-    vx = rolling ? (-facing * distance) / (moveTo - moveFrom) : 0;
+    const travel = action === 'forwardRoll' ? facing : -facing;
+    vx = rolling ? (travel * distance) / (moveTo - moveFrom) : 0;
   } else if (!grounded && Math.abs(vx) > FIGHTER.airSpeed) {
     vx = approach(vx, Math.sign(vx) * FIGHTER.airSpeed, FIGHTER.launchDecay);
   } else if (isControllable(action) || inAerial) {
-    if (Math.abs(input.x) > FACE_THRESHOLD && grounded) facing = input.x > 0 ? 1 : -1;
+    const stickFacing = input.x > 0 ? 1 : -1;
+    if (Math.abs(input.x) > FACE_THRESHOLD && grounded && stickFacing !== facing) {
+      // Turning back to where the fighter faced before the last turn undoes that turn.
+      turnedFrom = turnedFrom?.facing === stickFacing ? null : (turnedFrom ?? { facing, age: 0 });
+      facing = stickFacing;
+    }
     if (grounded) {
       vx = approach(vx, input.x * FIGHTER.walkSpeed, FIGHTER.groundAcceleration);
     } else if (Math.abs(input.x) > 0.1) {
@@ -377,7 +396,7 @@ export const updateFighter = (
   }
 
   // A roll stops at the edge of its platform instead of rolling off.
-  if (action === 'roll' && grounded && support) {
+  if ((action === 'forwardRoll' || action === 'backRoll') && grounded && support) {
     px = Math.min(Math.max(px, support.bounds.left), support.bounds.right);
   }
 
@@ -436,6 +455,7 @@ export const updateFighter = (
     grounded,
     jumpsRemaining,
     airDodgeUsed,
+    turnedFrom,
     action,
     actionFrame,
     moveId,

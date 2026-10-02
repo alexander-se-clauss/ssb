@@ -39,7 +39,10 @@ export interface HitboxDef {
 /** What a press asks for, kept in the input buffer: a move slot or a dodge, later block (#6). */
 export type BufferedAction = MoveSlot | DodgeKind | 'block';
 
-/** The ground dodges (#35), in place or rolling the way the stick points, and the air dodge (#36). */
+/**
+ * The ground dodges (#35), in place or rolling the way the stick points, and the air dodge (#36).
+ * A buffered roll's `face` is the way it travels.
+ */
 export type DodgeKind = 'spotDodge' | 'roll' | 'airDodge';
 
 export const isDodge = (action: BufferedAction): action is DodgeKind =>

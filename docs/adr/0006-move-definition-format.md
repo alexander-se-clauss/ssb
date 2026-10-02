@@ -141,7 +141,8 @@ type MoveDef = AttackMoveDef; // | BlockMoveDef | CounterMoveDef with #6
 
 - **Dodges.** `dodge` splits into `spotDodge` and `roll`. The dodge button turns into one of them
   at the press, like an attack into its slot; the buffer's `face` is the way the fighter faces
-  when the dodge starts (for a roll, away from where it travels).
+  when the dodge starts (for a roll, away from where it travels; superseded by the dodge-rework
+  amendment below).
 - Dodges are fighter actions with shared frame data (`DODGE` in `config.ts`), not `MoveDef`s:
   they have no hitboxes, and every character dodges alike for now. If dodges ever differ per
   character, they become a move kind.
@@ -165,6 +166,23 @@ type MoveDef = AttackMoveDef; // | BlockMoveDef | CounterMoveDef with #6
   Ultimate (jump, then dodge angled down slides along the ground).
 - Passing through a platform follows the stick held at that moment, as for any fall: an air
   dodge angled down onto a platform with the stick still held drops through it.
+
+### Amendment (2026-10-02, dodge rework)
+
+- The `roll` action splits into `forwardRoll` and `backRoll`. A buffered `roll` press now stores
+  the way it travels in `face`. A roll towards the facing is a forward roll and turns around at
+  its end, as in Melee; a roll away from it is a back roll and keeps the facing.
+- `FighterState.turnedFrom` keeps the facing from before a turn the stick made in the last
+  `DODGE.turnGraceFrames`, and a roll counts from it, so a direction key that lands a frame
+  before the dodge key still gives a back roll.
+- Dodges move the body out of the stage plane in the view only (`dodgeDepth`), back on it when
+  the invulnerability ends; the F2 overlay follows the body's depth. Core and hurtboxes stay on
+  the 2D plane.
+- Roll and air dodge poses are upright instead of curled. Hurtboxes follow poses, so these
+  dodges are now about as tall as standing and easier to punish in their recovery.
+- Turning the stick back to the facing from before the last turn undoes it, so a quick wiggle
+  still gives a back roll. A turn followed within the grace frames by a roll the new way is a
+  back roll from the old facing, not a forward roll.
 
 ## Consequences
 

@@ -71,11 +71,16 @@ A ground jump starts with a short `jumpsquat` (`FIGHTER.jumpSquatFrames`) as in 
 pressed during it is still a ground attack, so flicking the stick up (which tap-jumps) and
 pressing attack plays the up smash.
 There is no shield: the dodge button (`PlayerInput.shield`) buffers a `spotDodge`, or a `roll`
-when the stick is pushed sideways (`DODGE.rollStick`), and the fighter plays it as an action of
-that name with frame data from `DODGE` in `config.ts`. On the dodge's invulnerable frames
+when the stick is pushed sideways (`DODGE.rollStick`), and the fighter plays it with frame data
+from `DODGE` in `config.ts`: a roll towards the facing is a `forwardRoll`, which turns around at
+the end as in Melee, and one away from it a `backRoll`, which slides back keeping the facing.
+The facing counts from before a turn the stick made in the last `DODGE.turnGraceFrames`
+(`FighterState.turnedFrom`), so a direction key pressed just before the dodge key still slides
+back. The view steps a dodging fighter out of the stage plane into the background and back
+(`three-renderer/dodge-depth.ts`), as in Melee; the game itself stays 2D. On the dodge's invulnerable frames
 `invulnerableFrames` is kept above zero, so combat skips the fighter and the view shows it as it
 does after a respawn; the frames after them are recovery and can be punished. A roll moves at an
-even speed, stops at its platform's edge and ends facing back. In the air the button starts an
+even speed and stops at its platform's edge. In the air the button starts an
 Ultimate-style `airDodge` (`DODGE.air`): it carries the fighter the way the stick points (or holds
 it in place) with gravity paused, then the fighter falls and can act again. It is used once per
 airtime (`FighterState.airDodgeUsed`), and landing or being hit gives it back; landing during it

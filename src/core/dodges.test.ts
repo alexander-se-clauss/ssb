@@ -35,7 +35,7 @@ const dodge = (state: MatchState, stick: Partial<PlayerInput> = {}): MatchState 
 const invulnerableFrames = (state: MatchState): number[] => {
   const frames: number[] = [];
   let next = state;
-  while (fighter(next, 0).action === 'spotDodge' || fighter(next, 0).action === 'roll') {
+  while (['spotDodge', 'forwardRoll', 'backRoll'].includes(fighter(next, 0).action)) {
     if (fighter(next, 0).invulnerableFrames > 0) frames.push(fighter(next, 0).actionFrame);
     next = step(next, [NONE]);
   }
@@ -80,11 +80,11 @@ describe('spot dodge', () => {
 });
 
 describe('roll', () => {
-  it('rolls the way the stick points and ends facing back the other way', () => {
+  it('rolls the way the stick points; only a forward roll turns around', () => {
     const forward = dodge(standing(0, 1), { x: 1 });
-    expect(fighter(forward, 0)).toMatchObject({ action: 'roll', actionFrame: 0 });
+    expect(fighter(forward, 0)).toMatchObject({ action: 'forwardRoll', actionFrame: 0 });
     const away = dodge(standing(0, 1), { x: -1 });
-    expect(fighter(away, 0)).toMatchObject({ action: 'roll', actionFrame: 0 });
+    expect(fighter(away, 0)).toMatchObject({ action: 'backRoll', actionFrame: 0 });
 
     const end = (state: MatchState) => fighter(run(state, DODGE.roll.totalFrames, [NONE]), 0);
     expect(end(forward).position.x).toBeCloseTo(2.2, 9);
@@ -95,13 +95,13 @@ describe('roll', () => {
 
   it('needs a clear push to roll; a light touch spot dodges', () => {
     expect(fighter(dodge(standing(), { x: 0.3 }), 0).action).toBe('spotDodge');
-    expect(fighter(dodge(standing(), { x: 0.6 }), 0).action).toBe('roll');
+    expect(fighter(dodge(standing(), { x: 0.6 }), 0).action).toBe('forwardRoll');
   });
 
   it('lasts 30 frames, then hands control back standing still', () => {
     let state = dodge(standing(), { x: 1 });
     state = run(state, 29, [NONE]);
-    expect(fighter(state, 0).action).toBe('roll');
+    expect(fighter(state, 0).action).toBe('forwardRoll');
     state = step(state, [NONE]);
     expect(fighter(state, 0)).toMatchObject({ action: 'idle', velocity: { x: 0 } });
   });
@@ -151,6 +151,66 @@ describe('dodging attacks', () => {
   });
 });
 
+describe('roll direction', () => {
+  /** The facing on every frame of P1's roll, and where it ends. */
+  const rollFacings = (state: MatchState) => {
+    const facings = new Set<number>();
+    let next = state;
+    while (['forwardRoll', 'backRoll'].includes(fighter(next, 0).action)) {
+      facings.add(fighter(next, 0).facing);
+      next = step(next, [NONE]);
+    }
+    return { facings: [...facings], end: fighter(next, 0) };
+  };
+
+  it('slides backwards, still facing the same way, when rolling away from the facing', () => {
+    const state = dodge(standing(0, -1), { x: 1 });
+    expect(fighter(state, 0).action).toBe('backRoll');
+    const { facings, end } = rollFacings(state);
+    expect(facings).toEqual([-1]);
+    expect(end.facing).toBe(-1);
+    expect(end.position.x).toBeCloseTo(DODGE.roll.distance, 9);
+  });
+
+  it('rolls forward facing ahead, and turns around at the end, as in Melee', () => {
+    const state = dodge(standing(0, 1), { x: 1 });
+    expect(fighter(state, 0).action).toBe('forwardRoll');
+    const { facings, end } = rollFacings(state);
+    expect(facings).toEqual([1]);
+    expect(end.facing).toBe(-1);
+    expect(end.position.x).toBeCloseTo(DODGE.roll.distance, 9);
+  });
+
+  it('still slides backwards when the stick turned the fighter just before the dodge', () => {
+    // On a keyboard, the direction key often lands a frame or two before the dodge key.
+    let state = run(standing(0, -1), 2, [inputOf({ x: 1 })]);
+    expect(fighter(state, 0).facing).toBe(1);
+    state = dodge(state, { x: 1 });
+    expect(fighter(state, 0)).toMatchObject({ action: 'backRoll', facing: -1 });
+    expect(rollFacings(state).end.facing).toBe(-1);
+  });
+
+  it('still slides backwards after a quick wiggle of the stick', () => {
+    let state = step(standing(0, -1), [inputOf({ x: 1 })]);
+    state = step(state, [inputOf({ x: -1 })]);
+    state = dodge(state, { x: 1 });
+    expect(fighter(state, 0)).toMatchObject({ action: 'backRoll', facing: -1 });
+  });
+
+  it('counts the turn for exactly the grace frames', () => {
+    const after = (frames: number) =>
+      fighter(dodge(run(standing(0, -1), frames, [inputOf({ x: 1 })]), { x: 1 }), 0).action;
+    expect(after(DODGE.turnGraceFrames)).toBe('backRoll');
+    expect(after(DODGE.turnGraceFrames + 1)).toBe('forwardRoll');
+  });
+
+  it('rolls forward after running that way for a while', () => {
+    let state = run(standing(0, -1), DODGE.turnGraceFrames + 2, [inputOf({ x: 1 })]);
+    state = dodge(state, { x: 1 });
+    expect(fighter(state, 0)).toMatchObject({ action: 'forwardRoll', facing: 1 });
+  });
+});
+
 describe('punishing a roll', () => {
   const { startupFrames } = moveTiming(findMove('jab'));
 
@@ -159,7 +219,7 @@ describe('punishing a roll', () => {
    * P1 to about jab range from P2 by the time the jab comes out.
    */
   const jabIntoRoll = (frame: number) => {
-    let state = withFighter(standing(0, -1), 0, { action: 'roll', actionFrame: frame });
+    let state = withFighter(standing(0, -1), 0, { action: 'backRoll', actionFrame: frame });
     state = withFighter(state, 1, { position: { x: 1.4, y: 0 }, facing: -1 });
     state = step(state, [NONE, inputOf({ attack: true })]);
     state = run(state, findMove('jab').totalFrames, [NONE, NONE]);

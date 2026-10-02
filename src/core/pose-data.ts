@@ -473,31 +473,31 @@ export const POSES: Readonly<Record<PoseName, Pose>> = {
     upperLegBack: 188,
     lowerLegBack: 10,
   },
-  // Roll: tucked into a ball, leaning the way it rolls (behind the facing), knees to the chest.
+  // Roll: upright mid-step, arms drawn in; the view carries the body through the background.
   roll: {
-    torso: -55,
-    head: -40,
-    upperArmFront: 150,
-    lowerArmFront: -110,
-    upperArmBack: 160,
-    lowerArmBack: -110,
-    upperLegFront: 115,
-    lowerLegFront: 135,
-    upperLegBack: 135,
-    lowerLegBack: 130,
-  },
-  // Air dodge: curled up in mid-air, knees drawn in and arms hugging the chest.
-  airDodge: {
-    torso: 25,
-    head: -20,
-    upperArmFront: 150,
+    torso: 5,
+    head: -5,
+    upperArmFront: 160,
     lowerArmFront: -120,
-    upperArmBack: 165,
+    upperArmBack: 170,
     lowerArmBack: -115,
-    upperLegFront: 110,
-    lowerLegFront: 120,
-    upperLegBack: 150,
-    lowerLegBack: 110,
+    upperLegFront: 150,
+    lowerLegFront: 30,
+    upperLegBack: 205,
+    lowerLegBack: 25,
+  },
+  // Air dodge: upright, knees lifted a little and arms drawn in; the view moves it backwards.
+  airDodge: {
+    torso: 0,
+    head: 0,
+    upperArmFront: 160,
+    lowerArmFront: -125,
+    upperArmBack: 170,
+    lowerArmBack: -120,
+    upperLegFront: 160,
+    lowerLegFront: 40,
+    upperLegBack: 190,
+    lowerLegBack: 45,
   },
   // Flinch: head and chest snap back, the arms trail behind the body.
   hurt: {
