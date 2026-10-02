@@ -43,7 +43,8 @@ A move is a `MoveDef` of plain data, and one generic move runner in core plays a
   - While `hitlagFrames > 0`, a fighter does not move, and its move frame and pose stand still.
   - Its buffered input is kept and does not age.
 - **Input buffer and cancels.** A press is turned into what it asks for at once:
-  - a move slot (#28, which reads tilt or smash at that moment), or `dodge` or `block`
+  - a move slot (#28, which reads tilt or smash at that moment), or `dodge` (split into
+    `spotDodge` and `roll` in #35) or `block`
   - it is stored as `FighterState.buffer = { action, age }`, and is dropped after
     `INPUT.bufferFrames`
   - a move's `cancels` list says which of these actions it accepts, and on which frames
@@ -71,7 +72,7 @@ A move is a `MoveDef` of plain data, and one generic move runner in core plays a
 ```ts
 type MoveId = string;
 type MoveSlot = 'jab' | 'forwardTilt' | 'upSmash' | 'neutralAir' | 'upSpecial'; // ... all in #28
-type BufferedAction = MoveSlot | 'dodge' | 'block';
+type BufferedAction = MoveSlot | 'spotDodge' | 'roll' | 'block'; // dodges split in #35
 
 type HitboxAnchor = { readonly bone: BoneId; readonly at: number } | { readonly feet: Vec2 };
 
@@ -135,6 +136,19 @@ type MoveDef = AttackMoveDef; // | BlockMoveDef | CounterMoveDef with #6
 - An aerial started on the frame before landing still costs its full landing lag, as in Melee.
 - An aerial press still in the buffer on landing is dropped, so no aerial plays on the ground.
 - During an aerial the fighter drifts with the stick and can fast-fall, like `airborne`.
+
+### Amendment (2026-10-02, #35)
+
+- **Dodges.** `dodge` splits into `spotDodge` and `roll`. The dodge button turns into one of them
+  at the press, like an attack into its slot; the buffer's `face` is the way the fighter faces
+  when the dodge starts (for a roll, away from where it travels).
+- Dodges are fighter actions with shared frame data (`DODGE` in `config.ts`), not `MoveDef`s:
+  they have no hitboxes, and every character dodges alike for now. If dodges ever differ per
+  character, they become a move kind.
+- Invulnerability reuses `invulnerableFrames`: a dodge keeps it at one or more on its
+  invulnerable frames, so combat and the view need no dodge-specific code.
+- A dodge press is dropped when the fighter is in the air (until #36). A cancel window `on` a
+  dodge is not played yet; dodge cancels come with the first move that uses them (#6).
 
 ## Consequences
 

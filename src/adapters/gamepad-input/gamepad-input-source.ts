@@ -30,6 +30,7 @@ export const GAMEPAD_LABELS = {
   down: 'Stick down',
   attack: 'A',
   special: 'B',
+  dodge: 'L / R',
   start: 'Start',
 } as const;
 
@@ -40,7 +41,7 @@ const browserGamepads: GamepadReader = () => navigator.getGamepads();
 
 /**
  * One gamepad as a player's input, with Melee's layout: A attacks, B specials, X and Y jump,
- * the triggers shield, Start starts, the left stick or d-pad moves. The browser Gamepad API has no events for
+ * the triggers dodge, Start starts, the left stick or d-pad moves. The browser Gamepad API has no events for
  * buttons, so `sample()` polls the pad; the app calls it once per frame.
  */
 export class GamepadInputSource implements InputSource {

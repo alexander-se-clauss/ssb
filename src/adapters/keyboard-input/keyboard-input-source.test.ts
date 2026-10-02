@@ -54,6 +54,7 @@ describe('describeKeys', () => {
       down: 'S',
       attack: 'F',
       special: 'G',
+      dodge: 'H',
       start: 'Enter',
     });
     expect(describeKeys(PLAYER_TWO_KEYS)).toEqual({
@@ -63,6 +64,7 @@ describe('describeKeys', () => {
       down: '↓',
       attack: '.',
       special: '/',
+      dodge: 'Right Shift',
       start: 'Enter',
     });
   });

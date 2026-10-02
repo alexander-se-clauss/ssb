@@ -36,8 +36,14 @@ export interface HitboxDef {
   readonly hitlagScale?: number;
 }
 
-/** What a press asks for, kept in the input buffer: a move slot, later also dodge or block (#6). */
-export type BufferedAction = MoveSlot | 'dodge' | 'block';
+/** What a press asks for, kept in the input buffer: a move slot or a dodge, later block (#6). */
+export type BufferedAction = MoveSlot | DodgeKind | 'block';
+
+/** The ground dodges (#35): in place, or rolling the way the stick points. */
+export type DodgeKind = 'spotDodge' | 'roll';
+
+export const isDodge = (action: BufferedAction): action is DodgeKind =>
+  action === 'spotDodge' || action === 'roll';
 
 /**
  * A window in which the move gives way to a buffered action: on frames `[from, to)`, a buffered

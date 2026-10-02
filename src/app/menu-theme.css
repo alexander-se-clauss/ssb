@@ -368,7 +368,7 @@
     padding: 8px;
   }
   .menu-table :is(th, td) {
-    padding: 10px 4px;
+    padding: 7px 4px;
     font-size: 0.72rem;
     overflow-wrap: anywhere;
   }

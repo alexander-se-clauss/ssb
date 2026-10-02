@@ -20,13 +20,23 @@ export interface PlayerInput {
   readonly jump: boolean;
   readonly attack: boolean;
   readonly special: boolean;
+  /** The dodge button (#35). Named after Melee's shield button; this game has no shield. */
   readonly shield: boolean;
   /** The Start button. Menus use it; the simulation ignores it. */
   readonly start: boolean;
 }
 
 export type FighterAction =
-  'idle' | 'run' | 'jumpsquat' | 'airborne' | 'landing' | 'attack' | 'hitstun' | 'eliminated';
+  | 'idle'
+  | 'run'
+  | 'jumpsquat'
+  | 'airborne'
+  | 'landing'
+  | 'attack'
+  | 'spotDodge'
+  | 'roll'
+  | 'hitstun'
+  | 'eliminated';
 
 /** A press waiting until the fighter can act on it (ADR 0006). */
 export interface BufferedInput {
