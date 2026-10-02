@@ -20,12 +20,12 @@ describe('dodge depth', () => {
     'steps %s into the background and back by the end of its invulnerability, as in Melee',
     (action, { invulnerableTo, totalFrames }) => {
       expect(at(action, 0)).toBeCloseTo(0, 9);
-      expect(at(action, Math.round(invulnerableTo / 2))).toBeCloseTo(-DODGE_DEPTH, 1);
-      for (let frame = 1; frame < invulnerableTo; frame += 1) {
-        expect(at(action, frame)).toBeLessThan(0);
-      }
-      // Open to a punish, the fighter is back on the stage plane where it can be hit.
-      for (let frame = invulnerableTo; frame <= totalFrames; frame += 1) {
+      const back = invulnerableTo - 1;
+      expect(at(action, Math.round(back / 2))).toBeCloseTo(-DODGE_DEPTH, 1);
+      for (let frame = 1; frame < back; frame += 1) expect(at(action, frame)).toBeLessThan(0);
+      // Back on the stage plane by the last invulnerable frame: the view interpolates from it to
+      // the first frame the fighter can be hit, and draws that in between on the plane too.
+      for (let frame = back; frame <= totalFrames; frame += 1) {
         expect(at(action, frame)).toBeCloseTo(0, 9);
       }
     },
