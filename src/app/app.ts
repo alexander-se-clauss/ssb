@@ -30,6 +30,7 @@ import {
   type SelectState,
 } from './character-select';
 import { menuCommands } from './menu-commands';
+import { LastDevice } from './button-prompts';
 import { screenMusic, selectCue } from './menu-sounds';
 import { eventCue, stateCues, type FightCue } from './match-sounds';
 import { CharacterSelectView } from './character-select-view';
@@ -148,6 +149,8 @@ export class App {
   private eliminations: Elimination[] = [];
   /** The Music and Effects volumes from Options. */
   private audioSettings: AudioSettings;
+  /** Keyboard or gamepad, whichever was used last on any screen: names the button bar. */
+  private readonly lastDevice = new LastDevice();
 
   constructor(
     private readonly container: HTMLElement,
@@ -157,8 +160,9 @@ export class App {
     this.applyVolume('music');
     this.applyVolume('effects');
     const play = (cue: SoundCue): void => adapters.audio.play(cue);
-    this.menu = new MenuPanel(container, play);
-    this.rulesPanel = new MenuPanel(container, play);
+    this.menu = new MenuPanel(container, play, this.lastDevice);
+    this.rulesPanel = new MenuPanel(container, play, this.lastDevice);
+    window.addEventListener('keydown', () => this.lastDevice.use('keyboard'));
     this.transition = new ScreenTransition(container);
     this.characterSelect = new CharacterSelectView(container, CHARACTERS, GRID_COLUMNS, {
       portrait: fighterPortrait,
@@ -429,6 +433,7 @@ export class App {
       const previous = this.previousMenuInputs[index] ?? current;
       this.previousMenuInputs[index] = current;
       for (const command of menuCommands(previous, current)) {
+        this.lastDevice.use('gamepad');
         // Once a command changed the screen or closed the overlay, the rest of this frame's
         // presses were meant for the old one: two pads pressing A on the title must not also
         // pick VS. Mode.
@@ -453,12 +458,16 @@ export class App {
     const rulesWereOpen = before?.rulesOpen ?? false;
     let startRequested = false;
     let backRequested = false;
-    this.adapters.devices.forEach(({ source }, device) => {
+    this.adapters.devices.forEach(({ source, drivesMenus }, device) => {
       const current = source.sample();
       const previous = this.previousInputs[device] ?? NEUTRAL_INPUT;
       this.previousInputs[device] = current;
       const state = this.select;
       if (ignorePresses || !state) return;
+      // A pad that acts here names the button bar of the screens that follow, e.g. results.
+      if (drivesMenus && menuCommands(previous, current).length > 0) {
+        this.lastDevice.use('gamepad');
+      }
       const player = slotOf(state, device);
       if (player < 0) {
         // Unjoined devices navigate header actions; attack with no header focus joins.

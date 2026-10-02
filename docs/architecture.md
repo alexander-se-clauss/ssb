@@ -160,12 +160,17 @@ focus to the nearest button in that direction (`spatial-focus.ts`), so the Back 
 too. Stage select shows a centered grid of named cards: thumbnails capture the actual match
 scenery once per stage, then release their GPU resources and reuse the images. Mouse clicks,
 keyboard arrows/WASD and gamepad directions select cards through the same menu handling.
-The menu family uses `menu-art.ts` for original SVG arena orbits, textures and fighter silhouettes
-computed from the core skeleton and poses. `MenuPanel` composes a framed heading, optional data
-panel, and selection panels; each screen supplies its own variant in `app.ts`. Main menu gives
-VS. Mode the largest panel, settings uses offset equipment panels, results frames a Three.js medal podium with the selected fighter models, and stage select attaches its heading to the centered thumbnail grid.
-`menu-theme.css` also frames character select and the rules overlay while preserving their setup
-layouts. `fighter-lobby.css` gives character selection a viewport-sized header/roster/player-panel
+The menus use the Kombat look (`menu-theme.css`, colour and font tokens in `style.css`): a gold
+serif heading and a list of entries, the focused one marked by a diamond and an ember glow. The
+two fonts ship as woff2 files in `src/app/fonts/` (`fonts.css`, SIL Open Font License), so there
+is no runtime font dependency. `menu-art.ts` still draws a faint SVG atmosphere behind the menus.
+`MenuPanel` composes the heading, optional data panel and options; each screen supplies its own
+variant in `app.ts`. Results frames a Three.js medal podium, and stage select centres its
+thumbnail grid. At the bottom of each menu, `MenuPanel` shows the button bar (`button-prompts.ts`:
+which button selects, changes a setting, starts or goes back there), named for the kind of device
+used last in any menu: a key press makes it keyboard names, a `command()` from a gamepad makes it
+pad names. `menu-theme.css` also frames character select and the rules overlay while preserving
+their setup layouts. `fighter-lobby.css` gives character selection a viewport-sized header/roster/player-panel
 composition, with four panels in a row on desktop and a two-by-two grid on portrait screens.
 `fighter-portrait.ts` captures neutral and four player-color images per registry character in one
 temporary WebGL context, caches the PNGs, and releases all GPU resources. `fighter-model.ts` shares
@@ -174,7 +179,7 @@ body geometry, materials and player colors with gameplay and results. Each chara
 hurtboxes and moves never depend on the model. Each look names the one colour that becomes the
 player's colour (the whole capsule, Rivet's overalls), so mirror matches stay readable. Player previews follow the
 roster cursor before confirmation and retain confirmed picks; header navigation retains the last
-browsed fighter. Input labels come from the app’s device metadata. Hover and focus share outline, shadow and position cues. A short confirmation overlay
+browsed fighter. Input labels come from the app’s device metadata. Only the focused entry lights up; hover brightens text only, so the mouse and a gamepad never show two selections. A short confirmation overlay
 runs independently of navigation; reduced motion disables it and menu transitions.
 Browser tests check visibility and overlap across desktop, portrait, compact and short landscape
 viewports, including four-player results. `ResultsScene` renders gold, silver, bronze and fourth-place

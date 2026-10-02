@@ -16,7 +16,7 @@
   align-items: center;
   padding: 0 14px;
   border-bottom: 3px solid #efb977;
-  background: linear-gradient(110deg, #283d58, #122033);
+  background: linear-gradient(110deg, #2e2016, #140e0a);
 }
 .css-topbar .menu-back {
   position: relative;
@@ -56,9 +56,9 @@
   min-height: 0;
   display: grid;
   padding: 14px;
-  border: 1px solid #405570;
+  border: 1px solid #5a4a36;
   border-left: 5px solid #efb977;
-  background: rgb(17 30 47 / 65%);
+  background: rgb(26 18 12 / 65%);
 }
 .css-grid {
   display: grid;
@@ -80,10 +80,10 @@
   position: relative;
   min-height: 0;
   overflow: hidden;
-  border: 2px solid #68809a;
+  border: 2px solid #6d5a40;
   background:
     repeating-linear-gradient(135deg, transparent 0 30px, #ffffff06 30px 32px),
-    radial-gradient(ellipse at 50% 40%, #536e89, #1b2e45 75%);
+    radial-gradient(ellipse at 50% 40%, #4a3826, #1a120c 75%);
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto auto;
 }
@@ -96,7 +96,7 @@
 .css-fighter-name {
   text-align: center;
   padding: 6px;
-  background: #0c192c;
+  background: #140e0a;
   font-size: clamp(0.8rem, 1.6vw, 1.3rem);
   font-weight: 950;
   font-style: italic;
@@ -109,11 +109,11 @@
   gap: 4px;
   min-height: 22px;
   padding: 4px;
-  background: #0c192c;
+  background: #140e0a;
 }
 .css-badge {
   background: var(--player-color);
-  color: #0a1120;
+  color: #120c08;
   font-size: 0.7rem;
   font-weight: 950;
   padding: 2px 7px;
@@ -139,12 +139,12 @@
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto auto;
   padding: 10px 14px;
-  border: 1px solid color-mix(in srgb, var(--player-color) 65%, #20334a);
+  border: 1px solid color-mix(in srgb, var(--player-color) 65%, #2a1d13);
   border-top: 5px solid var(--player-color);
   background: linear-gradient(
     140deg,
-    color-mix(in srgb, var(--player-color) 20%, #0e1c30),
-    #101f32 80%
+    color-mix(in srgb, var(--player-color) 20%, #100a07),
+    #120c08 80%
   );
 }
 .css-player-header {
@@ -162,7 +162,7 @@
   font-size: 0.65rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #bed0e0;
+  color: #d8c8a8;
 }
 .css-player-preview {
   min-height: 0;
@@ -183,30 +183,30 @@
   text-transform: uppercase;
 }
 .css-player-device {
-  color: #bdcbdc;
+  color: #d6c6a6;
   font-size: 0.75rem;
   margin-top: 3px;
 }
 .css-slot.empty {
   border-style: dashed;
   border-top-style: solid;
-  background: rgb(17 30 47 / 85%);
+  background: rgb(26 18 12 / 85%);
 }
 .css-slot.empty .css-player-preview strong {
   font-size: clamp(0.85rem, 1.8vw, 1.6rem);
 }
 .css-slot.empty .css-player-preview span {
-  color: #a7bdd1;
+  color: #c2ae8a;
   font-size: 0.8rem;
 }
 .css-slot.empty .css-player-name {
-  color: #8ba1b8;
+  color: #a8946f;
 }
 .css-slot.picked {
   box-shadow: inset 0 0 0 1px var(--player-color);
 }
 .css-slot.picked .css-player-status {
-  color: #0a1120;
+  color: #120c08;
   background: var(--player-color);
   padding: 3px 7px;
 }
@@ -221,7 +221,7 @@
 .css-footer.ready {
   border-left: 7px solid #ffdc94;
   border-right: 7px solid #ffdc94;
-  background: linear-gradient(100deg, #8b4324, #352330);
+  background: linear-gradient(100deg, #8b4324, #3a2216);
 }
 .css-footer strong {
   font-size: clamp(1.2rem, 2.6vw, 2rem);

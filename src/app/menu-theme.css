@@ -1,13 +1,19 @@
-/* SSB's menu family: etched arenas, cut panels, warm highlights and oversized type. */
+/*
+ * The Kombat menu family: firelit black, gold serif headings, a quiet list whose focused entry
+ * carries a diamond and an ember glow, and the button bar at the bottom.
+ */
 .menu:not(.menu-title),
 .css {
   isolation: isolate;
   box-sizing: border-box;
-  padding: 88px 48px 32px;
+  padding: 88px 7vw 96px;
   overflow-y: auto;
-  background:
-    radial-gradient(ellipse at 90% 55%, rgb(53 100 150 / 24%), transparent 55%),
-    radial-gradient(ellipse at 10% 90%, rgb(179 69 43 / 15%), transparent 55%), #0a1120;
+  color: var(--k-text);
+  background: var(--app-background);
+}
+
+.menu:not(.menu-title) {
+  align-items: flex-start;
 }
 
 .menu-atmosphere {
@@ -15,99 +21,149 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  color: #6885a6;
-  opacity: 0.28;
+  color: #c99a4b;
+  opacity: 0.08;
   pointer-events: none;
   z-index: -1;
+}
+
+/* Darkens the corners, like a stage lit from one spot. */
+.menu:not(.menu-title)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 55% 45%, transparent 35%, rgb(0 0 0 / 70%) 100%);
 }
 
 .menu-composition {
   position: relative;
   flex-shrink: 0;
-  width: min(1060px, 100%);
+  width: min(640px, 100%);
   display: grid;
-  gap: 24px;
+  gap: 28px;
   margin-block: auto;
-  animation: menu-arrive 140ms ease-out;
-}
-
-.menu-composition::after {
-  content: '';
-  position: absolute;
-  bottom: -16px;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(90deg, #e2ad69 0 12%, #405570 12% 80%, transparent 80%);
+  animation: menu-arrive 180ms ease-out;
 }
 
 .menu-heading {
   position: relative;
-  border-left: 8px solid #efb977;
-  border-bottom: 1px solid #4c607a;
-  padding: 12px 24px 16px;
-  background: linear-gradient(100deg, rgb(28 44 66 / 90%), rgb(28 44 66 / 15%));
+  padding-bottom: 18px;
 }
 
 .menu-heading::after {
   content: '';
   position: absolute;
-  right: 0;
-  bottom: -1px;
-  width: 64px;
-  height: 12px;
-  background: #efb977;
-  clip-path: polygon(20% 0, 100% 0, 80% 100%, 0 100%);
+  left: 0;
+  bottom: 0;
+  width: min(460px, 100%);
+  height: 1px;
+  background: linear-gradient(90deg, var(--k-gold), transparent);
 }
 
 .menu-heading h1,
 .css h1 {
   position: static;
-  font-style: italic;
-  font-weight: 950;
-  font-size: clamp(2rem, 5.4vw, 4.7rem);
-  line-height: 1;
-  letter-spacing: -0.045em;
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(2.2rem, 5vw, 4.2rem);
+  line-height: 1.05;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   text-wrap: balance;
+  background: var(--k-gold-text);
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 3px 0 #1a0d04) drop-shadow(0 0 22px rgb(255 150 40 / 30%));
 }
 
 .menu-heading p {
-  margin: 12px 0 0;
+  margin: 10px 0 0;
+  color: var(--k-muted);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
 }
 
-.menu:not(.menu-title) button,
-.css button {
+/* A menu entry is a line of serif capitals; focus lights it up. */
+.menu:not(.menu-title) button {
   position: relative;
-  border: 2px solid #56708c;
-  border-radius: 2px;
-  background: linear-gradient(115deg, #273d59, #142237);
-  box-shadow: 0 6px 0 #050a13;
-  transform: skewX(-5deg);
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 12px 0 12px 56px;
+  background: none;
+  box-shadow: none;
+  transform: none;
+  color: var(--k-dim);
+  font-family: var(--font-display);
+  font-style: normal;
+  font-weight: 700;
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  letter-spacing: 0.14em;
+  text-align: left;
+  text-transform: uppercase;
+  cursor: pointer;
   transition:
-    translate 120ms ease-out,
-    box-shadow 120ms ease-out,
-    border-color 120ms ease-out,
-    background-color 120ms ease-out;
+    color 120ms ease-out,
+    text-shadow 120ms ease-out;
 }
 
-.menu:not(.menu-title) button:is(:hover, :focus),
-.css button:is(:hover, :focus) {
-  outline: 2px solid #fff0ce;
-  outline-offset: 3px;
-  border-color: #ffd79b;
-  background: linear-gradient(110deg, #ffdf9c, #e9a85c);
-  color: #1c1720;
-  box-shadow:
-    0 9px 0 #513921,
-    0 0 32px rgb(239 185 119 / 18%);
-  translate: 4px -3px;
+.menu:not(.menu-title) button::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--k-gold);
+  transform: translateY(-50%) rotate(45deg);
+  box-shadow: 0 0 16px var(--k-ember);
+  opacity: 0;
 }
 
-.menu:not(.menu-title) button:active,
-.css button:active {
-  translate: 2px 1px;
-  box-shadow: 0 2px 0 #513921;
+.menu:not(.menu-title) button::after {
+  content: '';
+  position: absolute;
+  inset: 4px -30% 4px -12vw;
+  z-index: -1;
+  background: linear-gradient(90deg, rgb(255 120 30 / 24%), rgb(255 120 30 / 8%) 60%, transparent);
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+
+.menu:not(.menu-title) button:hover {
+  color: var(--k-muted);
+}
+
+/* Only the focused entry lights up, so the mouse and a gamepad never show two selections. */
+.menu:not(.menu-title) button:focus {
+  outline: none;
+  color: #f6d68f;
+  text-shadow:
+    0 2px 0 #1a0d04,
+    0 0 24px var(--k-ember-glow);
+}
+
+.menu:not(.menu-title) button:focus::before,
+.menu:not(.menu-title) button:focus::after {
+  opacity: 1;
+}
+
+.menu:not(.menu-title) button:focus-visible::before {
+  background: rgb(255 138 42 / 25%);
+}
+
+.menu-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* A thin gold rule between entries, as on the concept. */
+.menu-options > :not(:last-child) {
+  border-bottom: 1px solid rgb(201 154 75 / 22%);
 }
 
 .menu-option-label {
@@ -116,156 +172,191 @@
   display: block;
 }
 
+/* The list carries the meaning on its own; the old line art stays out of this look. */
 .menu-artwork {
-  position: absolute;
-  right: 16px;
-  top: 6%;
-  width: 48%;
-  height: 88%;
-  opacity: 0.28;
-  pointer-events: none;
+  display: none;
 }
 
 .menu:not(.menu-title) .menu-back,
 .css .menu-back {
   position: absolute;
-  top: 24px;
-  left: 28px;
+  top: 28px;
+  left: 7vw;
   z-index: 2;
   min-width: 0;
-  padding: 9px 20px;
+  padding: 6px 16px;
+  border: 1px solid var(--k-line);
+  background: rgb(10 6 4 / 60%);
+  color: var(--k-muted);
+  font-family: var(--font-label);
+  font-weight: 500;
   font-size: 0.85rem;
-}
-
-/* Starting a match owns the composition; the secondary destination trails its diagonal. */
-.menu-main .menu-heading {
-  width: 74%;
-  margin-left: 16px;
-  margin-bottom: -12px;
-}
-
-.menu-main .menu-options {
-  gap: 24px;
-  padding-inline: 16px;
-}
-
-.menu-main .menu-options > button {
-  text-align: left;
-  padding: 32px;
-}
-
-.menu-main .menu-options > button:first-child {
-  width: 86%;
-  min-height: 230px;
-  border-left: 10px solid #ffac73;
-  background: linear-gradient(110deg, #a0372f, #442636);
-  font-size: clamp(2.6rem, 6.8vw, 5.6rem);
-  letter-spacing: -0.045em;
-}
-
-.menu-main .menu-options > button:last-child {
-  width: 54%;
-  align-self: flex-end;
-  min-height: 132px;
-  font-size: clamp(1.8rem, 3.5vw, 2.6rem);
-  border-left: 8px solid #89b7dc;
-}
-
-.menu-main .menu-options > button:is(:hover, :focus) {
-  background: linear-gradient(110deg, #ffdf9c, #e9a85c);
-}
-
-/* Settings are large offset equipment panels. Confirm changes the focused setting. */
-.menu-settings .menu-options {
-  display: grid;
-  grid-template-columns: 1.3fr 1fr 1fr;
-  gap: 40px;
-  align-items: start;
-}
-
-.menu:not(.menu-title) .menu-row button {
+  letter-spacing: 0.3em;
+  text-shadow: none;
   transform: none;
 }
 
-.menu-settings .menu-options > button:first-child {
-  margin-top: 0;
-  min-height: 210px;
-  padding: 100px 18px 24px;
-  font-size: clamp(1.2rem, 2.6vw, 2rem);
+.menu:not(.menu-title) .menu-back::before,
+.menu:not(.menu-title) .menu-back::after {
+  display: none;
 }
 
-.menu-settings .menu-artwork {
-  width: 100%;
-  right: 0;
-  top: 6px;
-  height: 120px;
+.menu:not(.menu-title) .menu-back:is(:hover, :focus),
+.css .menu-back:is(:hover, :focus) {
+  outline: none;
+  border-color: var(--k-gold);
+  color: var(--k-gold);
+  background: rgb(40 20 8 / 80%);
+  box-shadow: 0 0 18px rgb(255 138 42 / 30%);
 }
 
-.menu-settings .menu-options > button {
-  margin-top: 100px;
-  min-height: 180px;
-  min-width: 0;
-  padding: 100px 16px 24px;
-  font-size: 2rem;
+/* The main menu: the first entry leads, with a small line under it. */
+.menu-main .menu-options > button:first-child {
+  font-size: clamp(2rem, 4.2vw, 3.4rem);
 }
 
+/* A setting row: the value in the middle, small diamonds on each side for the mouse. */
+.menu-row {
+  gap: 4px;
+}
+
+.menu:not(.menu-title) .menu-row > button:not(.menu-step) {
+  flex: 1;
+}
+
+.menu:not(.menu-title) .menu-step {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  margin: 0 10px;
+  border: 1.5px solid var(--k-line);
+  font-family: var(--font-label);
+  font-size: 1.1rem;
+  letter-spacing: 0;
+  text-align: center;
+  color: var(--k-muted);
+}
+
+.menu:not(.menu-title) .menu-step::before,
+.menu:not(.menu-title) .menu-step::after {
+  display: none;
+}
+
+.menu:not(.menu-title) .menu-step:hover {
+  border-color: var(--k-gold);
+  color: var(--k-gold);
+}
+
+/* Controls: a ledger with gold column heads. */
 .menu-details {
-  padding: 16px;
-  background: rgb(12 23 39 / 92%);
-  border: 1px solid #405570;
-  border-left: 6px solid #6d9bbf;
+  padding: 0;
+  background: none;
+  border: 0;
 }
 
 .menu-table {
   width: 100%;
   margin: 0;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  color: var(--k-text);
 }
 
 .menu-table th {
-  color: #aac4dd;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--k-gold);
+  color: var(--k-gold);
+  font-weight: 500;
+  font-size: 0.8rem;
+  letter-spacing: 0.25em;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-size: 0.75rem;
-  font-weight: 800;
 }
 
 .menu-table :is(th, td) {
-  padding: 14px 16px;
+  padding: 10px 16px;
+  text-align: center;
 }
 
-.menu-table tbody tr:nth-child(odd) {
-  background: rgb(88 124 159 / 8%);
+.menu-table td:first-child {
+  text-align: left;
+  color: var(--k-muted);
 }
 
-/* A centered arena grid, with its heading attached to the same frame. */
-.menu-stage-select .menu-composition {
-  width: min(740px, 100%);
+.menu-table tbody tr {
+  border-bottom: 1px solid rgb(201 154 75 / 15%);
 }
 
+.menu-controls .menu-composition {
+  width: min(1060px, 100%);
+}
+
+/* Stage select: framed views of each stage, centred. */
 .menu.menu-stage-select {
+  align-items: center;
   padding-block: 0;
 }
 
-.menu-stage-select .menu-heading {
-  position: absolute;
-  bottom: calc(100% + 22px);
-  left: 0;
-  right: 0;
+.menu-stage-select .menu-composition {
+  width: min(900px, 100%);
 }
 
-.menu-stage-select .menu-heading h1 {
-  font-size: clamp(1.6rem, 3.8vw, 3rem);
+/* The heading hangs above the grid, so the grid itself sits in the middle of the screen. */
+.menu-stage-select .menu-heading {
+  position: absolute;
+  bottom: calc(100% + 24px);
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+
+.menu-stage-select .menu-heading::after {
+  left: 50%;
+  translate: -50% 0;
+  background: linear-gradient(90deg, transparent, var(--k-gold), transparent);
 }
 
 .menu-stage-select .menu-grid {
   width: 100%;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px;
+  gap: 28px;
 }
 
-.menu-stage-select .menu-grid button {
-  transform: none;
-  font-size: clamp(0.8rem, 2vw, 1.25rem);
+.menu:not(.menu-title) .menu-grid button {
+  padding: 0;
+  overflow: visible;
+  border: 1.5px solid var(--k-line);
+  background: var(--k-panel);
+  font-size: clamp(0.9rem, 1.8vw, 1.3rem);
+  text-align: center;
+}
+
+.menu:not(.menu-title) .menu-grid button::before {
+  display: none;
+}
+
+.menu:not(.menu-title) .menu-grid button::after {
+  inset: -10px;
+  background: radial-gradient(ellipse at 50% 60%, rgb(255 120 30 / 30%), transparent 70%);
+}
+
+.menu:not(.menu-title) .menu-grid button:focus {
+  border-color: var(--k-gold);
+  box-shadow: 0 0 28px rgb(255 140 40 / 40%);
+}
+
+.menu-grid button span {
+  display: block;
+  padding: 12px 6px;
+}
+
+.menu-option-image {
+  border-bottom: 1px solid var(--k-line);
+  filter: saturate(0.85) brightness(0.9);
+}
+
+.menu-grid button:is(:hover, :focus) .menu-option-image {
+  filter: none;
 }
 
 .menu-confirmation {
@@ -274,39 +365,86 @@
   z-index: 20;
   opacity: 0;
   pointer-events: none;
-  background: linear-gradient(120deg, transparent 35%, #ffd79b 50%, transparent 65%);
+  background: radial-gradient(ellipse at 30% 50%, rgb(255 170 80 / 70%), transparent 60%);
 }
 
-.menu-overlay {
-  background: rgb(6 12 23 / 94%) !important;
+/* The rules overlay and the sound screen: short lists of settings. */
+.menu.menu-overlay {
+  align-items: center;
+  background: rgb(7 5 4 / 94%) !important;
 }
 
 :is(.menu-overlay, .menu-list) .menu-composition {
-  width: min(600px, 100%);
+  width: min(640px, 100%);
 }
 
 :is(.menu-overlay, .menu-list) .menu-heading h1 {
-  font-size: 2.4rem;
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
 }
 
-:is(.menu-overlay, .menu-list) .menu-options {
-  gap: 18px;
-  padding-inline: 12px;
-}
-
+:is(.menu-overlay, .menu-list) .menu:not(.menu-title) button,
+:is(.menu-overlay, .menu-list) .menu-options > button,
 :is(.menu-overlay, .menu-list) .menu-row button:not(.menu-step) {
-  min-width: 0;
-  flex: 1;
+  font-size: clamp(1.1rem, 2.4vw, 1.7rem);
 }
 
-:is(.menu-overlay, .menu-list) .menu-options > button {
-  width: 100%;
-  min-width: 0;
+/* The button bar: what each button does here. */
+.menu-prompts {
+  position: absolute;
+  left: 7vw;
+  bottom: 28px;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 30px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+  color: var(--k-muted);
+  font-family: var(--font-label);
+  font-weight: 500;
+  font-size: 0.95rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
 }
 
+.menu-prompts li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* A single button letter sits in a diamond; key names get a cut frame. */
+.menu-prompts kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  border: 1.5px solid var(--k-gold);
+  color: var(--k-gold);
+  font: 700 0.8rem var(--font-label);
+  letter-spacing: 0.05em;
+  transform: rotate(45deg);
+}
+
+.menu-prompts kbd[data-wide='true'] {
+  min-width: 0;
+  padding: 0 8px;
+  transform: none;
+  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+  background: rgb(240 196 106 / 12%);
+}
+
+/* The letter inside a diamond stays upright. */
+.menu-prompts kbd[data-wide='false'] span {
+  transform: rotate(-45deg);
+}
+
+/* Only opacity, so nothing is measured or clicked while it slides. */
 @keyframes menu-arrive {
   from {
-    opacity: 0.8;
+    opacity: 0.6;
   }
   to {
     opacity: 1;
@@ -318,54 +456,19 @@
   .css {
     padding-inline: 24px;
   }
-  .menu-heading {
-    padding: 14px 16px;
+  .menu:not(.menu-title) .menu-back,
+  .menu-prompts {
+    left: 24px;
   }
-  .menu-main .menu-heading {
-    width: auto;
-    margin-left: 0;
+  .menu:not(.menu-title) button {
+    padding-left: 44px;
+    letter-spacing: 0.08em;
   }
-  .menu-main .menu-options {
-    padding-inline: 6px;
-  }
-  .menu-main .menu-options > button {
-    min-width: 0;
-    padding: 24px;
-  }
-  .menu-main .menu-options > button:first-child {
-    width: 95%;
-    min-height: 210px;
-  }
-  .menu-main .menu-options > button:last-child {
-    width: 85%;
-    min-height: 120px;
-  }
-  .menu-artwork {
-    width: 70%;
-    opacity: 0.18;
-  }
-  .menu-settings .menu-options {
-    grid-template-columns: 1fr;
-    gap: 24px;
-    padding-inline: 6px;
-  }
-  .menu-settings .menu-options > button {
-    margin-top: 0;
-    min-height: 120px;
-    padding: 24px;
-    text-align: left;
-  }
-  .menu-settings .menu-options > button .menu-artwork {
-    width: 50%;
-    right: 8px;
-    top: 0;
-  }
-  .menu-settings .menu-options > button:first-child {
-    min-height: 170px;
-    padding-top: 90px;
-  }
-  .menu-details {
-    padding: 8px;
+  .menu-prompts {
+    bottom: 18px;
+    gap: 8px 20px;
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
   }
   .menu-table :is(th, td) {
     padding: 7px 4px;
@@ -374,113 +477,54 @@
   }
   .menu-table th {
     font-size: 0.6rem;
-    letter-spacing: 0;
+    letter-spacing: 0.05em;
   }
   .menu-stage-select .menu-grid {
     gap: 16px;
-  }
-  .menu-results .menu-heading h1 {
-    font-size: 2.5rem;
-  }
-  .menu-results .menu-options button {
-    min-height: 96px;
-    font-size: 1.05rem;
-    padding: 16px 8px;
-  }
-
-  :is(.menu-overlay, .menu-list) .menu-options {
-    padding-inline: 6px;
-  }
-  :is(.menu-overlay, .menu-list) .menu-row {
-    gap: 8px;
-  }
-  :is(.menu-overlay, .menu-list) .menu-row button:not(.menu-step) {
-    font-size: 1rem;
-    padding-inline: 8px;
-  }
-  :is(.menu-overlay, .menu-list) .menu-step {
-    width: 36px;
   }
 }
 
 @media (max-height: 520px) {
   .menu:not(.menu-title),
   .css {
-    padding-top: 72px;
-    padding-bottom: 24px;
+    padding-top: 76px;
+    padding-bottom: 64px;
+  }
+  .menu:not(.menu-title) .menu-back {
+    top: 18px;
   }
   .menu-composition {
-    gap: 14px;
+    gap: 12px;
   }
   .menu-heading {
-    padding: 8px 16px;
+    padding-bottom: 10px;
   }
-  .menu-heading h1,
-  .menu-main .menu-heading {
-    margin-bottom: 0;
+  .menu-heading h1 {
+    font-size: 1.8rem;
   }
-  .menu-main .menu-options {
-    display: grid;
-    grid-template-columns: 1.3fr 1fr;
-    gap: 24px;
+  .menu:not(.menu-title) button {
+    padding-block: 6px;
+    font-size: 1.3rem;
   }
-  .menu-main .menu-options > button:first-child,
-  .menu-main .menu-options > button:last-child {
-    width: 100%;
-    min-height: 120px;
-    padding: 16px;
-    font-size: 2rem;
-  }
-  .menu-main .menu-options > button:last-child {
-    margin-top: 48px;
-  }
-  .menu-settings .menu-options {
-    grid-template-columns: 1.2fr 1fr 1fr;
-    gap: 24px;
-  }
-  .menu-settings .menu-options > button {
-    min-height: 116px;
-    padding: 68px 12px 12px;
-    font-size: 1.1rem;
-  }
-  .menu-settings .menu-options > button {
-    margin-top: 30px;
-  }
-  .menu-settings .menu-options > button:first-child {
-    margin-top: 0;
-    min-height: 116px;
-    padding: 68px 12px 12px;
-    font-size: 1.1rem;
-  }
-  .menu-settings .menu-artwork {
-    height: 70px;
+  .menu-main .menu-options > button:first-child {
+    font-size: 1.7rem;
   }
   .menu-table :is(th, td) {
     font-size: 0.7rem;
     padding: 5px 8px;
   }
   .menu-stage-select .menu-composition {
-    width: min(520px, 100%);
+    width: min(460px, 100%);
   }
   .menu-stage-select .menu-heading {
-    bottom: calc(100% + 14px);
+    bottom: calc(100% + 10px);
+    padding-bottom: 6px;
   }
   .menu-stage-select .menu-heading h1 {
     font-size: 1.4rem;
   }
-  .menu-stage-select .menu-grid button span {
-    padding: 8px 6px;
-  }
-
-  :is(.menu-overlay, .menu-list) .menu-heading h1 {
-    font-size: 1.5rem;
-  }
-  :is(.menu-overlay, .menu-list) .menu-options {
-    gap: 12px;
-  }
-  .menu-overlay .menu-options button {
-    padding-block: 6px;
-    font-size: 1rem;
+  .menu-prompts {
+    bottom: 14px;
   }
 }
 
@@ -494,14 +538,13 @@
   }
 }
 
-/* Header focus changes framing and brightness without shifting the layout. */
-
-/* The ceremony fills the results composition; actions stay beneath the podium. */
+/* Results: the podium fills the composition; the two choices sit side by side beneath it. */
+.menu.menu-results {
+  align-items: center;
+  padding: 24px 40px 80px;
+}
 .menu-results .menu-details {
   min-width: 0;
-}
-.menu.menu-results {
-  padding: 24px 40px;
 }
 .menu-results .menu-composition {
   grid-template-columns: minmax(0, 1fr);
@@ -509,10 +552,14 @@
   width: min(1100px, 100%);
 }
 .menu-results .menu-heading {
-  padding: 10px 22px;
+  text-align: center;
+}
+.menu-results .menu-heading::after {
+  left: 50%;
+  translate: -50% 0;
+  background: linear-gradient(90deg, transparent, var(--k-gold), transparent);
 }
 .menu-results .menu-heading h1 {
-  margin: 0;
   font-size: clamp(1.8rem, 4vw, 3rem);
 }
 .results-podium {
@@ -530,54 +577,54 @@
 .results-placements {
   display: flex;
   justify-content: center;
-  gap: 12px;
+  gap: 28px;
   padding: 0;
   margin: 0;
   list-style: none;
 }
 .results-placements li {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 10px;
-  padding: 8px 14px;
-  border-bottom: 2px solid #6c839e;
-  background: #17263b;
-  font-size: 0.95rem;
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--k-line);
+  color: var(--k-muted);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-size: 0.9rem;
 }
 .results-placements strong {
-  font-size: 1.3rem;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  letter-spacing: 0.05em;
 }
 .results-placements [data-place='1'] {
-  border-color: #e9b94f;
+  border-color: var(--k-gold);
+  color: var(--k-text);
 }
 .results-placements [data-place='1'] strong {
-  color: #e9b94f;
+  color: var(--k-gold);
 }
 .results-placements [data-place='2'] strong {
-  color: #b9c8db;
+  color: #c9c4b8;
 }
 .results-placements [data-place='3'] strong {
-  color: #ce9362;
+  color: #c08452;
 }
 .menu-results .menu-options {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-  gap: 20px;
-  padding: 0 6px;
+  flex-direction: row;
+  justify-content: center;
+  gap: 48px;
 }
-.menu-results .menu-options button {
-  min-width: 0;
-  text-align: left;
-  min-height: 74px;
-  padding: 12px 24px;
-  font-size: clamp(1rem, 2.2vw, 1.5rem);
+.menu-results .menu-options > :not(:last-child) {
+  border-bottom: 0;
+}
+.menu:not(.menu-title).menu-results .menu-options button {
+  font-size: clamp(1.1rem, 2.4vw, 1.8rem);
 }
 @media (max-width: 600px) {
   .menu.menu-results {
-    padding: 18px 14px;
-  }
-  .menu-results .menu-heading {
-    padding: 10px 14px;
+    padding: 18px 14px 64px;
   }
   .results-scene {
     height: clamp(190px, 42vh, 340px);
@@ -588,61 +635,28 @@
     gap: 6px;
   }
   .results-placements li {
-    padding: 6px 8px;
     gap: 6px;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
   }
   .results-placements strong {
     font-size: 1rem;
   }
   .menu-results .menu-options {
-    gap: 12px;
-  }
-  .menu-results .menu-options button {
-    min-height: 66px;
-    padding: 10px 14px;
+    gap: 16px;
   }
 }
 @media (max-height: 460px) and (min-width: 601px) {
   .menu.menu-results {
-    padding: 12px 32px;
+    padding: 12px 32px 56px;
   }
   .menu-results .menu-composition {
     gap: 6px;
   }
-  .menu-results .menu-heading {
-    padding: 6px 16px;
-  }
   .menu-results .menu-heading h1 {
-    font-size: 1.8rem;
+    font-size: 1.6rem;
   }
   .results-scene {
     height: 190px;
-  }
-  .results-placements li {
-    padding: 4px 10px;
-    font-size: 0.8rem;
-  }
-  .results-placements strong {
-    font-size: 1rem;
-  }
-  .menu-results .menu-options button {
-    min-height: 54px;
-    padding: 8px 18px;
-    font-size: 1rem;
-  }
-}
-
-/* Three stacked Options panels on a short phone (320x568). */
-@media (max-width: 700px) and (max-height: 640px) {
-  .menu-settings .menu-options {
-    gap: 16px;
-  }
-  .menu-settings .menu-options > button {
-    min-height: 96px;
-  }
-  .menu-settings .menu-options > button:first-child {
-    min-height: 130px;
-    padding-top: 70px;
   }
 }

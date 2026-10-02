@@ -11,6 +11,7 @@ import { markHandled, wasHandled } from './key-events';
 import type { MenuCommand } from './menu-commands';
 import { nearestInDirection } from './spatial-focus';
 import { menuArtwork, menuAtmosphere, type MenuArtwork } from './menu-art';
+import { LastDevice, menuPrompts, renderPrompts } from './button-prompts';
 
 export interface MenuOption {
   readonly label: string;
@@ -63,6 +64,8 @@ const START_KEYS = new Set(['Enter', 'Space']);
 
 export class MenuPanel {
   private readonly root: HTMLElement;
+  private readonly prompts: HTMLUListElement;
+  private readonly stopWatchingDevice: () => void;
   private buttons: HTMLButtonElement[] = [];
   private backButton: HTMLButtonElement | undefined;
   private content: MenuContent | undefined;
@@ -71,6 +74,7 @@ export class MenuPanel {
   private readonly onKeyDown = (event: KeyboardEvent): void => {
     const content = this.content;
     if (!content || wasHandled(event)) return;
+    this.device.use('keyboard');
     // A held key must not click through several screens in a row.
     if (event.repeat) {
       if (START_KEYS.has(event.code)) markHandled(event);
@@ -91,17 +95,23 @@ export class MenuPanel {
     }
     // Enter on a focused button clicks it natively, so only moves are handled here.
     const command = KEY_COMMANDS[event.code];
-    if (command && this.command(command)) markHandled(event);
+    if (command && this.run(command)) markHandled(event);
   };
 
   constructor(
     container: HTMLElement,
     private readonly play: (cue: SoundCue) => void = () => undefined,
+    /** The device used last, for the names in the button bar; shared by the app's panels. */
+    private readonly device = new LastDevice(),
   ) {
+    this.stopWatchingDevice = device.onChange(() => this.updatePrompts());
     this.root = document.createElement('div');
     this.root.className = 'menu';
     this.root.hidden = true;
     container.append(this.root);
+    this.prompts = document.createElement('ul');
+    this.prompts.className = 'menu-prompts';
+    this.prompts.setAttribute('aria-label', 'Buttons');
     this.confirmation = document.createElement('div');
     this.confirmation.className = 'menu-confirmation';
     this.confirmation.setAttribute('aria-hidden', 'true');
@@ -181,7 +191,7 @@ export class MenuPanel {
     options.hidden = rows.length === 0;
     this.root.className = content.variant ? `menu ${content.variant}` : 'menu';
     if (content.variant === 'menu-title') {
-      this.root.replaceChildren(back, title, body, content.body ?? '', options);
+      this.root.replaceChildren(back, title, body, content.body ?? '', options, this.prompts);
     } else {
       const heading = document.createElement('header');
       heading.className = 'menu-heading';
@@ -193,11 +203,18 @@ export class MenuPanel {
       details.hidden = !content.body;
       if (content.body) details.append(content.body);
       composition.append(heading, details, options);
-      this.root.replaceChildren(menuAtmosphere(), back, composition);
+      this.root.replaceChildren(menuAtmosphere(), back, composition, this.prompts);
     }
     this.root.hidden = false;
     this.content = content;
+    this.updatePrompts();
     (this.buttons[focus] ?? this.buttons[0])?.focus();
+  }
+
+  /** One step of navigation from a gamepad; see `run`. */
+  command(given: MenuCommand): boolean {
+    this.device.use('gamepad');
+    return this.run(given);
   }
 
   /**
@@ -205,7 +222,7 @@ export class MenuPanel {
    * nearest button above or below (wrapping around at the ends), left and right change a setting
    * or move along the row. Returns whether the command did anything.
    */
-  command(given: MenuCommand): boolean {
+  private run(given: MenuCommand): boolean {
     // Outside character select, Start does what attack does, as in Melee.
     const command = given === 'start' ? 'confirm' : given;
     const content = this.content;
@@ -248,6 +265,10 @@ export class MenuPanel {
     return true;
   }
 
+  private updatePrompts(): void {
+    if (this.content) renderPrompts(this.prompts, menuPrompts(this.content, this.device.kind));
+  }
+
   private goBack(back: () => void): void {
     this.confirmFeedback();
     this.play('menu-back');
@@ -279,6 +300,7 @@ export class MenuPanel {
 
   dispose(): void {
     window.removeEventListener('keydown', this.onKeyDown);
+    this.stopWatchingDevice();
     this.root.remove();
     this.confirmation.remove();
   }

@@ -40,9 +40,12 @@ Set on character select, as in Melee: the banner at the top shows the rules and 
 
 ## Menu presentation
 
-Menus share an original arena identity: fighter silhouettes, etched orbits, angled panels and
-bold titles connected to the screen framing. VS. Mode is the dominant main-menu destination;
-settings, controls, stage selection and results each use a composition suited to their content.
+Menus use the Kombat look (epic #121), after Mortal Kombat 1 and Tekken: firelit black, gold
+serif headings (Cinzel), spaced labels (Oswald) and a quiet list whose focused entry carries a
+gold diamond and an ember glow. A button bar at the bottom of every menu but character select names what each button
+does there (Enter / Esc on the keyboard, A / B on a gamepad, after the device used last). Every
+screen supports up to four players. Stage selection and results keep compositions suited to
+their content.
 Results show a 3D medal podium for two to four players, with player-colored fighter models,
 numbered steps and a gold laurel wreath for first place. Stock standings follow elimination order;
 timed standings follow score, with ties sharing a place. Rematch and Main menu remain available.
@@ -104,6 +107,9 @@ a playable build; it is done when that build works, not on a date.
       Epic #83.
 - [x] **Polish** (beside S4). Blade wipe between screens, READY / GO! at match start and a
       GAME! banner at match end, all in one style. Epic #108.
+- [ ] **Kombat UI** (beside S4). Menus in the Kombat look with a button bar; a 3D menu
+      backdrop; a four-player character select on stone platforms; a four-player HUD across the
+      top. Epic #121.
 - [ ] **S4 Moves and dodges.** Tilts, standard smashes, aerials and landing lag; spot dodge,
       roll and air dodge. Epics #5, #6.
 - [x] **Second fighter look** (beside S4). Rivet, a handyman built from primitives on the shared

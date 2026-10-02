@@ -1,0 +1,17 @@
+/*
+ * The Kombat look's two faces, shipped with the game (SIL Open Font License, see fonts/OFL-*.txt).
+ * Both are variable fonts: one file covers every weight. Latin only, which includes German.
+ */
+@font-face {
+  font-family: 'Cinzel';
+  src: url('./fonts/cinzel.woff2') format('woff2');
+  font-weight: 400 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Oswald';
+  src: url('./fonts/oswald.woff2') format('woff2');
+  font-weight: 200 700;
+  font-display: swap;
+}
