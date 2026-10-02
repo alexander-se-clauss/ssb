@@ -237,3 +237,84 @@ describe('dodge button in the air', () => {
     expect(fighter(state, 0).position.y).toBeLessThan(2.2);
   });
 });
+
+describe('second jump after air actions', () => {
+  it('jumps again as soon as the air dodge ends when jump is pressed late in it', () => {
+    let state = airDodge(inTheAir({ position: { x: 6, y: 10 } }));
+    state = run(state, DODGE.air.totalFrames - 3, [NONE]);
+    state = step(state, [inputOf({ jump: true })]);
+    state = run(state, 3, [NONE]);
+    expect(fighter(state, 0).jumpsRemaining).toBe(FIGHTER.totalJumps - 2);
+    expect(fighter(state, 0).velocity.y).toBeGreaterThan(0);
+  });
+
+  it('jumps again right after an aerial when jump is pressed late in it', () => {
+    let state = step(inTheAir({ position: { x: 6, y: 10 } }), [inputOf({ attack: true })]);
+    state = run(state, findMove('neutralAir').totalFrames - 3, [NONE]);
+    state = step(state, [inputOf({ jump: true })]);
+    state = run(state, 3, [NONE]);
+    expect(fighter(state, 0).jumpsRemaining).toBe(FIGHTER.totalJumps - 2);
+    expect(fighter(state, 0).velocity.y).toBeGreaterThan(0);
+  });
+
+  it('does not use the second jump at take-off for a jump pressed twice in the jump squat', () => {
+    let state = withFighter(inTheAir(), 0, {
+      position: { x: 3, y: 0 },
+      grounded: true,
+      action: 'idle',
+      jumpsRemaining: FIGHTER.totalJumps,
+    });
+    state = step(state, [inputOf({ jump: true })]);
+    state = step(state, [NONE]);
+    state = step(state, [inputOf({ jump: true })]);
+    state = run(state, 6, [NONE]);
+    expect(fighter(state, 0)).toMatchObject({
+      action: 'airborne',
+      jumpsRemaining: FIGHTER.totalJumps - 1,
+    });
+  });
+
+  it('keeps a buffered air dodge when jump is pressed after it in the jump squat', () => {
+    let state = withFighter(inTheAir(), 0, {
+      position: { x: 3, y: 0 },
+      grounded: true,
+      action: 'idle',
+      jumpsRemaining: FIGHTER.totalJumps,
+    });
+    state = step(state, [inputOf({ jump: true })]);
+    state = step(state, [inputOf({ shield: true })]);
+    state = step(state, [inputOf({ jump: true })]);
+    state = until(state, (s) => fighter(s, 0).action !== 'jumpsquat');
+    state = step(state, [NONE]);
+    expect(fighter(state, 0).action).toBe('airDodge');
+  });
+
+  it('drops a jump pressed in hitstun: jumping out of it needs a fresh press, as in Melee', () => {
+    let state = inTheAir({ position: { x: 6, y: 10 } });
+    state = withFighter(state, 0, { action: 'hitstun', actionFrame: 0, hitstunFrames: 4 });
+    state = step(state, [inputOf({ jump: true })]);
+    state = run(state, 6, [NONE]);
+    expect(fighter(state, 0)).toMatchObject({
+      action: 'airborne',
+      jumpsRemaining: FIGHTER.totalJumps - 1,
+    });
+  });
+
+  it('drops a jump pressed late in an aerial when the fighter lands', () => {
+    let state = inTheAir({ position: { x: 3, y: 0.3 }, velocity: { x: 0, y: -0.1 } });
+    state = step(state, [inputOf({ attack: true })]);
+    state = step(state, [inputOf({ jump: true })]);
+    state = until(state, (s) => fighter(s, 0).grounded);
+    expect(fighter(state, 0).buffer).toBeNull();
+  });
+
+  it('drops a jump press when no jump is left', () => {
+    let state = inTheAir({ position: { x: 6, y: 10 }, jumpsRemaining: 0 });
+    state = step(state, [inputOf({ jump: true })]);
+    expect(fighter(state, 0).buffer).toBeNull();
+    // Not even while an aerial plays, where a buffered attack would otherwise wait.
+    state = step(state, [inputOf({ attack: true })]);
+    state = step(state, [inputOf({ jump: true })]);
+    expect(fighter(state, 0).buffer).toBeNull();
+  });
+});

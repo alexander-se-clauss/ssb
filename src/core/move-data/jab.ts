@@ -9,7 +9,7 @@ import { POSES } from '../pose-data';
 export const JAB: MoveDef = {
   kind: 'attack',
   id: 'jab',
-  totalFrames: 18,
+  totalFrames: 14,
   hitboxes: [
     {
       anchor: { bone: 'lowerArmFront', at: 1 },
@@ -38,16 +38,16 @@ export const JAB: MoveDef = {
   poses: [
     { frame: 2, pose: POSES.jab },
     { frame: 6, pose: POSES.jab },
-    { frame: 14, pose: POSES.idle },
+    { frame: 11, pose: POSES.idle },
   ],
-  cancels: [{ on: 'jab', into: 'jab2', from: 6, to: 18 }],
+  cancels: [{ on: 'jab', into: 'jab2', from: 6, to: 14 }],
 };
 
 /** The back fist follows: another light hit that keeps the target close for jab 3. */
 export const JAB2: MoveDef = {
   kind: 'attack',
   id: 'jab2',
-  totalFrames: 18,
+  totalFrames: 14,
   hitboxes: [
     {
       anchor: { bone: 'lowerArmBack', at: 1 },
@@ -64,16 +64,16 @@ export const JAB2: MoveDef = {
   poses: [
     { frame: 2, pose: POSES.jab2 },
     { frame: 6, pose: POSES.jab2 },
-    { frame: 14, pose: POSES.idle },
+    { frame: 11, pose: POSES.idle },
   ],
-  cancels: [{ on: 'jab', into: 'jab3', from: 6, to: 18 }],
+  cancels: [{ on: 'jab', into: 'jab3', from: 6, to: 14 }],
 };
 
 /** The finisher: a front kick that launches. Slower to come out and to recover. */
 export const JAB3: MoveDef = {
   kind: 'attack',
   id: 'jab3',
-  totalFrames: 28,
+  totalFrames: 22,
   hitboxes: [
     {
       anchor: { bone: 'lowerLegFront', at: 1 },
@@ -101,7 +101,7 @@ export const JAB3: MoveDef = {
   poses: [
     { frame: 4, pose: POSES.jab3 },
     { frame: 10, pose: POSES.jab3 },
-    { frame: 22, pose: POSES.idle },
+    { frame: 18, pose: POSES.idle },
   ],
   cancels: [],
 };

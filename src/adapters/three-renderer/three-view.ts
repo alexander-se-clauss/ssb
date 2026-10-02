@@ -15,7 +15,7 @@ import {
 import type { GameView, SessionView } from '../../ports';
 import { disposeScene } from './dispose-scene';
 import { bodyParts } from './body-layout';
-import { dodgeDepth } from './dodge-depth';
+import { dodgeMotion, lerpAngle, ROLL_PIVOT } from './dodge-motion';
 import { BOX_COLORS, hurtboxColor } from './debug-colors';
 import { buildScenery, type Scenery } from './scenery';
 
@@ -157,18 +157,27 @@ export class ThreeView implements GameView {
     // Do not interpolate across a respawn teleport.
     const teleported = Math.abs(fighter.position.y - before.position.y) > 2;
     const t = teleported ? 1 : alpha;
+    const x = lerp(before.position.x, fighter.position.x, t);
+    const y = lerp(before.position.y, fighter.position.y, t);
+    // A dodge moves the body beyond its pose (`dodge-motion.ts`): out of the stage plane, in a
+    // somersault around its middle, or in a spin.
+    const from = dodgeMotion(before);
+    const to = dodgeMotion(fighter);
+    const depth = lerp(from.depth, to.depth, t);
+    const spin = lerpAngle(from.spin, to.spin, t);
     visual.root.position.set(
-      lerp(before.position.x, fighter.position.x, t),
-      lerp(before.position.y, fighter.position.y, t),
-      lerp(dodgeDepth(before), dodgeDepth(fighter), t),
+      x + ROLL_PIVOT * Math.sin(spin),
+      y + ROLL_PIVOT * (1 - Math.cos(spin)),
+      depth,
     );
+    visual.root.rotation.set(0, lerpAngle(from.yaw, to.yaw, t), spin);
     // Mirror rather than turn around, so the near limbs stay near the camera either way.
     visual.root.scale.x = fighter.facing;
 
     // Core eases the pose each frame; between frames the view interpolates like the position.
     // Planting keeps the feet on the ground when the stance bends the knees.
     const pose = teleported ? fighter.pose : blendPose(before.pose, fighter.pose, t);
-    const position = vec2(visual.root.position.x, visual.root.position.y);
+    const position = vec2(x, y);
     for (const part of bodyParts(plantedBoneSegments(HUMANOID, pose, vec2(0, 0), 1))) {
       const mesh = visual.parts.get(part.bone);
       mesh?.position.set(part.x, part.y, part.depth);
@@ -186,12 +195,8 @@ export class ThreeView implements GameView {
       const mesh = visual.hurtboxes.get(box.bone);
       if (!mesh) continue;
       mesh.visible = this.showBoxes;
-      // At the body's depth, so the overlay follows a dodge into the background.
-      mesh.position.set(
-        (box.start.x + box.end.x) / 2,
-        (box.start.y + box.end.y) / 2,
-        visual.root.position.z,
-      );
+      // At the body's depth, so the overlay follows a sidestep out of the stage plane.
+      mesh.position.set((box.start.x + box.end.x) / 2, (box.start.y + box.end.y) / 2, depth);
       mesh.rotation.set(0, 0, Math.atan2(-(box.end.x - box.start.x), box.end.y - box.start.y));
     }
 

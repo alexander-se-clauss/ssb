@@ -37,7 +37,7 @@ export type PoseName =
   | 'upAirEnd'
   | 'downAirWindup'
   | 'downAir'
-  | 'spotDodge'
+  | 'sidestep'
   | 'roll'
   | 'airDodge'
   | 'hurt'
@@ -460,8 +460,8 @@ export const POSES: Readonly<Record<PoseName, Pose>> = {
     upperLegBack: 185,
     lowerLegBack: 0,
   },
-  // Spot dodge: drawn up tall and narrow, arms pulled in to the chest, feet together.
-  spotDodge: {
+  // Sidestep: drawn up tall and narrow, arms pulled in to the chest, feet together.
+  sidestep: {
     torso: -8,
     head: 5,
     upperArmFront: 165,
@@ -473,20 +473,20 @@ export const POSES: Readonly<Record<PoseName, Pose>> = {
     upperLegBack: 188,
     lowerLegBack: 10,
   },
-  // Roll: upright mid-step, arms drawn in; the view carries the body through the background.
+  // Roll: tucked into a ball, knees to the chest and arms round them; the view somersaults it.
   roll: {
-    torso: 5,
-    head: -5,
-    upperArmFront: 160,
-    lowerArmFront: -120,
-    upperArmBack: 170,
-    lowerArmBack: -115,
-    upperLegFront: 150,
-    lowerLegFront: 30,
-    upperLegBack: 205,
-    lowerLegBack: 25,
+    torso: 45,
+    head: -35,
+    upperArmFront: 130,
+    lowerArmFront: -100,
+    upperArmBack: 140,
+    lowerArmBack: -100,
+    upperLegFront: 100,
+    lowerLegFront: 150,
+    upperLegBack: 115,
+    lowerLegBack: 145,
   },
-  // Air dodge: upright, knees lifted a little and arms drawn in; the view moves it backwards.
+  // Air dodge: upright, knees lifted a little and arms drawn in; the view spins it round.
   airDodge: {
     torso: 0,
     head: 0,

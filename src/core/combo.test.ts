@@ -43,6 +43,14 @@ describe('jab combo', () => {
     expect(findMove('jab3').cancels).toEqual([]);
   });
 
+  it('keeps a buffered jab 2 when jump is pressed after it', () => {
+    let state = press(settled());
+    state = press(until(state, 'jab', 4));
+    state = press(state, inputOf({ jump: true }));
+    state = until(state, 'jab2', 0);
+    expect(fighter(state, 0).moveId).toBe('jab2');
+  });
+
   it('opens jab 2 exactly when the window opens if attack was pressed just before', () => {
     const { from } = windowOf('jab');
     // Pressed a few frames early, inside the buffer: jab 1 plays on until the window opens.

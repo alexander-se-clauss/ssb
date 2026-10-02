@@ -35,7 +35,9 @@ const dodge = (state: MatchState, stick: Partial<PlayerInput> = {}): MatchState 
 const invulnerableFrames = (state: MatchState): number[] => {
   const frames: number[] = [];
   let next = state;
-  while (['spotDodge', 'forwardRoll', 'backRoll'].includes(fighter(next, 0).action)) {
+  while (
+    ['sidestepIn', 'sidestepOut', 'forwardRoll', 'backRoll'].includes(fighter(next, 0).action)
+  ) {
     if (fighter(next, 0).invulnerableFrames > 0) frames.push(fighter(next, 0).actionFrame);
     next = step(next, [NONE]);
   }
@@ -45,25 +47,38 @@ const invulnerableFrames = (state: MatchState): number[] => {
 /** Frames `from` up to (not including) `to`. */
 const range = (from: number, to: number) => Array.from({ length: to - from }, (_, i) => from + i);
 
-describe('spot dodge', () => {
-  it('starts from the dodge button with the stick centred or held down', () => {
-    for (const stick of [{}, { y: -1 }]) {
+describe('sidestep', () => {
+  it('steps into the background with the stick up or centred', () => {
+    for (const stick of [{}, { y: 1 }, { x: 0.7, y: 0.7 }]) {
       const state = dodge(standing(), stick);
-      expect(fighter(state, 0)).toMatchObject({ action: 'spotDodge', actionFrame: 0, facing: 1 });
+      expect(fighter(state, 0)).toMatchObject({ action: 'sidestepIn', actionFrame: 0, facing: 1 });
     }
+  });
+
+  it('steps towards the camera with the stick down', () => {
+    for (const stick of [{ y: -1 }, { x: -0.7, y: -0.7 }]) {
+      const state = dodge(standing(), stick);
+      expect(fighter(state, 0)).toMatchObject({ action: 'sidestepOut', actionFrame: 0, facing: 1 });
+    }
+  });
+
+  it('shares the frame data both ways', () => {
+    expect(invulnerableFrames(dodge(standing(), { y: -1 }))).toEqual(
+      invulnerableFrames(dodge(standing(), { y: 1 })),
+    );
   });
 
   it('stays on a pass-through platform when the stick is held down', () => {
     let state = withFighter(standing(), 0, { position: { x: 3, y: 2.2 } });
     state = dodge(state, { y: -1 });
-    state = run(state, DODGE.spot.totalFrames, [inputOf({ y: -1, shield: true })]);
+    state = run(state, DODGE.sidestep.totalFrames, [inputOf({ y: -1, shield: true })]);
     expect(fighter(state, 0)).toMatchObject({ grounded: true, position: { x: 3, y: 2.2 } });
   });
 
   it('lasts 22 frames in place, then hands control back', () => {
     let state = dodge(standing(1));
     state = run(state, 21, [NONE]);
-    expect(fighter(state, 0)).toMatchObject({ action: 'spotDodge', actionFrame: 21 });
+    expect(fighter(state, 0)).toMatchObject({ action: 'sidestepIn', actionFrame: 21 });
     expect(fighter(state, 0).position.x).toBe(1);
     state = step(state, [NONE]);
     expect(fighter(state, 0).action).toBe('idle');
@@ -75,7 +90,7 @@ describe('spot dodge', () => {
 
   it('keeps a longer invulnerability after a respawn', () => {
     const state = dodge(withFighter(standing(), 0, { invulnerableFrames: 100 }));
-    expect(invulnerableFrames(state)).toEqual(range(0, DODGE.spot.totalFrames));
+    expect(invulnerableFrames(state)).toEqual(range(0, DODGE.sidestep.totalFrames));
   });
 });
 
@@ -93,8 +108,8 @@ describe('roll', () => {
     expect(end(away).facing).toBe(1);
   });
 
-  it('needs a clear push to roll; a light touch spot dodges', () => {
-    expect(fighter(dodge(standing(), { x: 0.3 }), 0).action).toBe('spotDodge');
+  it('needs a clear sideways push to roll; a light touch sidesteps', () => {
+    expect(fighter(dodge(standing(), { x: 0.3 }), 0).action).toBe('sidestepIn');
     expect(fighter(dodge(standing(), { x: 0.6 }), 0).action).toBe('forwardRoll');
   });
 
@@ -123,7 +138,7 @@ describe('dodging attacks', () => {
   const { startupFrames, activeFrames } = moveTiming(jab);
 
   /**
-   * P2 jabs P1 from the right; P1 spot dodges first and P2 presses attack `delay` frames later,
+   * P2 jabs P1 from the right; P1 sidesteps first and P2 presses attack `delay` frames later,
    * so the jab's first active frame meets dodge frame `delay + startupFrames`.
    */
   const jabIntoDodge = (delay: number) => {
@@ -242,12 +257,12 @@ describe('dodge input', () => {
     state = run(state, jabFrames - 4, [NONE]);
     state = step(state, [DODGE_PRESS]);
     state = run(state, 4, [NONE]);
-    expect(fighter(state, 0).action).toBe('spotDodge');
+    expect(fighter(state, 0).action).toBe('sidestepIn');
   });
 
   it('buffers an attack pressed late in the dodge', () => {
     let state = dodge(standing());
-    state = run(state, DODGE.spot.totalFrames - 3, [NONE]);
+    state = run(state, DODGE.sidestep.totalFrames - 3, [NONE]);
     state = step(state, [inputOf({ attack: true })]);
     state = run(state, 3, [NONE]);
     expect(fighter(state, 0)).toMatchObject({ action: 'attack', moveId: 'jab' });
@@ -264,7 +279,7 @@ describe('dodge input', () => {
     state = step(state, [inputOf({ attack: true })]);
     state = run(state, findMove('jab').totalFrames - 4, [NONE]);
     state = run(state, 5, [inputOf({ y: -1, shield: true })]);
-    expect(fighter(state, 0)).toMatchObject({ action: 'spotDodge', grounded: true });
+    expect(fighter(state, 0)).toMatchObject({ action: 'sidestepOut', grounded: true });
     expect(fighter(state, 0).position.y).toBe(2.2);
   });
 

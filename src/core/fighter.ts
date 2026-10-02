@@ -65,8 +65,8 @@ const isControllable = (action: FighterAction): boolean =>
 
 /** The frame data of a dodge action, or undefined for any other action. */
 const dodgeOf = (action: FighterAction) =>
-  action === 'spotDodge'
-    ? DODGE.spot
+  action === 'sidestepIn' || action === 'sidestepOut'
+    ? DODGE.sidestep
     : action === 'forwardRoll' || action === 'backRoll'
       ? DODGE.roll
       : action === 'airDodge'
@@ -102,16 +102,25 @@ export const updateFighter = (
   const dodgePress = pressed(input, prev, 'shield');
   const press = (grounded: boolean): BufferedInput | null => {
     if (button === null) {
-      // The dodge button dodges on the ground (#35), and in the air once per airtime (#36). A
-      // roll goes the way the stick points. An air dodge reads its direction from the stick when
-      // it starts; one pressed in the jump squat starts once the jump leaves the ground, as in
-      // Ultimate.
-      if (!dodgePress) return null;
+      // A jump waits in the buffer like any press, so it is not lost while an aerial or a dodge
+      // plays out. Not with no jump left, and not in hitstun: jumping out of it needs a fresh
+      // press, as in Melee.
+      if (!dodgePress) {
+        const canJump = grounded || fighter.jumpsRemaining > 0;
+        return pressed(input, prev, 'jump') && canJump && fighter.action !== 'hitstun'
+          ? { action: 'jump', face: fighter.facing, age: 0 }
+          : null;
+      }
+      // The dodge button dodges on the ground (#35), and in the air once per airtime (#36). On
+      // the ground the stick sideways rolls along the stage plane; up, down or centred sidesteps
+      // out of it. An air dodge reads its direction from the stick when it starts; one pressed in
+      // the jump squat starts once the jump leaves the ground, as in Ultimate.
       if (!grounded || fighter.action === 'jumpsquat') {
         return fighter.airDodgeUsed ? null : { action: 'airDodge', face: fighter.facing, age: 0 };
       }
-      if (Math.abs(input.x) < DODGE.rollStick) {
-        return { action: 'spotDodge', face: fighter.facing, age: 0 };
+      if (Math.abs(input.x) < DODGE.rollStick || Math.abs(input.x) <= Math.abs(input.y)) {
+        const side = input.y <= -DODGE.rollStick ? 'sidestepOut' : 'sidestepIn';
+        return { action: side, face: fighter.facing, age: 0 };
       }
       return { action: 'roll', face: input.x > 0 ? 1 : -1, age: 0 };
     }
@@ -120,13 +129,20 @@ export const updateFighter = (
     return { action: choice.slot, face, age: 0 };
   };
 
+  /** A new press replaces the waiting one, except that a jump never pushes out a move or dodge. */
+  const latest = (
+    fresh: BufferedInput | null,
+    waiting: BufferedInput | null,
+  ): BufferedInput | null =>
+    fresh && !(fresh.action === 'jump' && waiting && waiting.action !== 'jump') ? fresh : waiting;
+
   // Frozen by a hit: everything stands still. A press is still buffered, and the buffer does not
   // age; the stick is still tracked, so a stick held through the freeze is not read as a flick.
   if (fighter.hitlagFrames > 0) {
     return {
       ...fighter,
       hitlagFrames: fighter.hitlagFrames - 1,
-      buffer: press(fighter.grounded) ?? fighter.buffer,
+      buffer: latest(press(fighter.grounded), fighter.buffer),
       stick,
       previousInput: input,
     };
@@ -151,7 +167,7 @@ export const updateFighter = (
     turnedFrom && turnedFrom.age < DODGE.turnGraceFrames
       ? { ...turnedFrom, age: turnedFrom.age + 1 }
       : null;
-  // Down with a button is a down attack or a spot dodge on the platform, not a drop through it,
+  // Down with a button is a down attack or a sidestep on the platform, not a drop through it,
   // also when the dodge waited in the buffer.
   const waiting = fighter.buffer;
   const dodgeComing =
@@ -177,9 +193,9 @@ export const updateFighter = (
   actionFrame += 1;
 
   const kept = fighter.buffer && fighter.buffer.age < INPUT.bufferFrames ? fighter.buffer : null;
-  let buffer = press(grounded) ?? (kept && { ...kept, age: kept.age + 1 });
+  let buffer = latest(press(grounded), kept && { ...kept, age: kept.age + 1 });
   const slotMove = (action: BufferedAction): MoveId | undefined =>
-    isDodge(action) || action === 'block'
+    isDodge(action) || action === 'jump' || action === 'block'
       ? undefined
       : findCharacter(fighter.characterId)?.moves[action];
   /** Starts a move from the buffered press, facing the way the press asked for. */
@@ -199,10 +215,14 @@ export const updateFighter = (
     dodge === 'airDodge' ? !grounded && !airDodgeUsed : grounded;
   const bufferedDodge =
     buffer && isDodge(buffer.action) && dodgeCanStart(buffer.action) ? buffer.action : undefined;
+  // A jump without one left is dropped too. A jump pressed with another button counts at once.
+  const bufferedJump =
+    (buffer?.action === 'jump' || pressed(input, prev, 'jump')) && jumpsRemaining > 0;
   if (
     buffer &&
     bufferedMove === undefined &&
     bufferedDodge === undefined &&
+    !(buffer.action === 'jump' && bufferedJump) &&
     isControllable(action)
   ) {
     buffer = null;
@@ -253,6 +273,8 @@ export const updateFighter = (
     if (buffer && bufferedMove !== undefined) {
       startMove(bufferedMove, buffer.face);
     } else if (actionFrame >= FIGHTER.jumpSquatFrames || !grounded) {
+      // A second press during the squat is not kept for a double jump at take-off.
+      if (buffer?.action === 'jump') buffer = null;
       vy = FIGHTER.jumpVelocity;
       // This is the ground jump, also when the fighter slid off an edge while crouched, which
       // has used it up already.
@@ -284,7 +306,8 @@ export const updateFighter = (
       vx = input.x * speed;
       vy = input.y * speed;
     }
-  } else if (pressed(input, prev, 'jump') && jumpsRemaining > 0) {
+  } else if (bufferedJump) {
+    if (buffer?.action === 'jump') buffer = null;
     if (grounded) {
       action = 'jumpsquat';
       actionFrame = 0;
@@ -366,9 +389,10 @@ export const updateFighter = (
       grounded = true;
       jumpsRemaining = FIGHTER.totalJumps;
       airDodgeUsed = false;
-      // An aerial or air dodge press still waiting in the buffer is dropped: neither plays on
-      // the ground.
-      if (buffer && (isAerialSlot(buffer.action) || buffer.action === 'airDodge')) buffer = null;
+      // An aerial, air dodge or jump press still waiting in the buffer is dropped: none of them
+      // was meant for the ground.
+      const airOnly = (a: BufferedAction) => isAerialSlot(a) || a === 'airDodge' || a === 'jump';
+      if (buffer && airOnly(buffer.action)) buffer = null;
       // An aerial or air dodge ends on landing, with its own landing lag; a plain landing has a
       // short one. A launched fighter in hitstun lands without lag.
       const lag =

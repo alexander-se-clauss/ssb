@@ -4,7 +4,7 @@
  * target a little each frame, so switching states never pops. The pose lives in `FighterState`,
  * so hurtboxes follow it and the view only interpolates and draws it.
  */
-import { HITSTUN_PER_KNOCKBACK, POSE } from './config';
+import { DODGE, HITSTUN_PER_KNOCKBACK, POSE } from './config';
 import { findMove } from './move-data';
 import type { MoveDef } from './moves';
 import { POSES, type PoseName } from './pose-data';
@@ -25,11 +25,13 @@ export const poseName = (fighter: FighterState): PoseName | null => {
       return 'crouch';
     case 'landing':
       return 'land';
-    case 'spotDodge':
-      return 'spotDodge';
+    case 'sidestepIn':
+    case 'sidestepOut':
+      return 'sidestep';
     case 'forwardRoll':
     case 'backRoll':
-      return 'roll';
+      // Tucked while it rolls, then standing up for the recovery, open to a punish.
+      return fighter.actionFrame < DODGE.roll.moveTo ? 'roll' : 'idle';
     case 'airDodge':
       return 'airDodge';
     case 'attack':

@@ -11,7 +11,7 @@ const JAB = findMove('jab');
 
 describe('move data', () => {
   it('puts the jab on the front fist, with the arm behind it as a weaker hit', () => {
-    expect(moveTiming(JAB)).toEqual({ startupFrames: 3, activeFrames: 3, totalFrames: 18 });
+    expect(moveTiming(JAB)).toEqual({ startupFrames: 3, activeFrames: 3, totalFrames: 14 });
     expect(JAB.hitboxes.map((hitbox) => [hitbox.anchor, hitbox.priority, hitbox.damage])).toEqual([
       [{ bone: 'lowerArmFront', at: 1 }, 1, 4],
       [{ bone: 'upperArmFront', at: 1 }, 0, 3],

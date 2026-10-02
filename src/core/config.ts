@@ -62,20 +62,25 @@ export const FIGHTER = {
 } as const;
 
 /**
- * Dodges, pressed with the dodge button. On the ground (#35) a spot dodge in place, or a roll the
- * way the stick points; in the air (#36) an Ultimate-style air dodge, once per airtime. There is
+ * Dodges, pressed with the dodge button. On the ground (#35) a sidestep out of the stage plane
+ * (into the background with the stick up or centred, towards the camera with it down), or a roll
+ * along it the way the stick points sideways; in the air (#36) an Ultimate-style air dodge, once
+ * per airtime. There is
  * no shield, so dodging is everyone's defence. Invulnerable on frames
  * `[invulnerableFrom, invulnerableTo)` of the dodge, open to a punish after that.
  */
 export const DODGE = {
-  /** Sideways stick from which the dodge button rolls instead of spot dodging. */
+  /**
+   * Stick deflection that picks a ground dodge's direction: sideways (and more than up or down)
+   * rolls, down sidesteps towards the camera, anything else sidesteps into the background.
+   */
   rollStick: 0.5,
   /**
    * A roll counts from the facing before a turn the stick made at most this many frames ago: a
    * direction key pressed a moment before the dodge key still gives a back roll.
    */
   turnGraceFrames: 4,
-  spot: { totalFrames: 22, invulnerableFrom: 2, invulnerableTo: 17 },
+  sidestep: { totalFrames: 22, invulnerableFrom: 2, invulnerableTo: 17 },
   roll: {
     totalFrames: 30,
     invulnerableFrom: 4,
