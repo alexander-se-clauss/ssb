@@ -553,6 +553,20 @@ const flick = async (page: Page, pad: number, x: number, y: number) => {
   await nextFrames(page);
 };
 
+test('the button bar names the keys or pad buttons of the device used last', async ({ page }) => {
+  await installPads(page, 1);
+  await page.goto('/');
+  await nextFrames(page);
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('main-menu');
+  const bar = page.getByRole('list', { name: 'Buttons' });
+  await expect(bar.getByRole('listitem')).toHaveText(['EnterSelect', 'EscBack']);
+  await flick(page, 0, 0, 1);
+  await expect(bar.getByRole('listitem')).toHaveText(['ASelect', 'BBack']);
+  await page.keyboard.press('ArrowUp');
+  await expect(bar.getByRole('listitem')).toHaveText(['EnterSelect', 'EscBack']);
+});
+
 test('the whole menu flow works with gamepads only', async ({ page }) => {
   await installPads(page, 2);
   await page.goto('/');
@@ -764,10 +778,12 @@ test('the menu family keeps titles and controls visible across desktop, portrait
   await page.goto('/');
   await page.keyboard.press('Enter');
   await inspectMenu(page, 'main', testInfo);
-  const primary = await page.getByRole('button', { name: 'VS. Mode' }).boundingBox();
-  const secondary = await page.getByRole('button', { name: 'Options', exact: true }).boundingBox();
-  if (!primary || !secondary) throw new Error('Missing main-menu panels');
-  expect(primary.width * primary.height).toBeGreaterThan(secondary.width * secondary.height * 2);
+  // VS. Mode leads the list in larger type.
+  const fontSize = (name: string) =>
+    page
+      .getByRole('button', { name, exact: true })
+      .evaluate((button) => parseFloat(getComputedStyle(button).fontSize));
+  expect(await fontSize('VS. Mode')).toBeGreaterThan((await fontSize('Options')) * 1.2);
   await page.getByRole('button', { name: 'Options', exact: true }).click();
   await inspectMenu(page, 'options', testInfo);
   await page.getByRole('button', { name: 'Sound', exact: true }).click();
@@ -804,27 +820,23 @@ test('the menu family keeps titles and controls visible across desktop, portrait
   await expect.poll(() => screen(page)).toBe('main-menu');
 });
 
-test('hover and focus share outline and lift cues, and confirmation never delays navigation', async ({
+test('only the focused entry lights up, and confirmation never delays navigation', async ({
   page,
 }) => {
   await page.goto('/');
   await page.keyboard.press('Enter');
   const primary = page.getByRole('button', { name: 'VS. Mode' });
   const option = page.getByRole('button', { name: 'Options', exact: true });
-  const appearance = () =>
-    option.evaluate((button) => {
-      const style = getComputedStyle(button);
-      return { outline: style.outlineWidth, shadow: style.boxShadow, translate: style.translate };
-    });
+  // The diamond marker before the label shows which entry is selected.
+  const marked = () =>
+    option.evaluate((button) => getComputedStyle(button, '::before').opacity === '1');
   await page.keyboard.press('ArrowDown');
   await expect(option).toBeFocused();
-  await expect.poll(async () => (await appearance()).translate).toBe('4px -3px');
-  const focused = await appearance();
-  expect(focused.outline).toBe('2px');
-  expect(focused.shadow).not.toBe('none');
+  await expect.poll(marked).toBe(true);
   await primary.focus();
   await option.hover();
-  await expect.poll(appearance).toEqual(focused);
+  await expect.poll(marked).toBe(false);
+  await expect(primary).toBeFocused();
   const confirmed = await option.evaluate((button: HTMLButtonElement) => {
     button.click();
     return {
@@ -853,7 +865,7 @@ test('hover and focus share outline and lift cues, and confirmation never delays
   expect(reduced).toEqual({ screen: 'options', animations: 0 });
 });
 
-test('Options directions navigate panels and screen mode changes only on confirmation', async ({
+test('Options directions move through the entries and screen mode changes only on confirmation', async ({
   page,
 }) => {
   await installPads(page, 1);
@@ -873,16 +885,16 @@ test('Options directions navigate panels and screen mode changes only on confirm
   const sound = page.getByRole('button', { name: 'Sound', exact: true });
   const controls = page.getByRole('button', { name: 'Controls', exact: true });
   await expect(screenMode).toBeFocused();
-  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowDown');
   await expect(sound).toBeFocused();
-  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowDown');
   await expect(controls).toBeFocused();
-  await page.keyboard.press('ArrowLeft');
-  await page.keyboard.press('ArrowLeft');
+  await page.keyboard.press('ArrowUp');
+  await page.keyboard.press('ArrowUp');
   await expect(screenMode).toBeFocused();
-  await flick(page, 0, 1, 0);
+  await flick(page, 0, 0, 1);
   await expect(sound).toBeFocused();
-  await flick(page, 0, -1, 0);
+  await flick(page, 0, 0, -1);
   await expect(screenMode).toBeFocused();
   expect(await requests()).toBe(0);
   await page.keyboard.press('Enter');
@@ -891,8 +903,8 @@ test('Options directions navigate panels and screen mode changes only on confirm
   expect(await requests()).toBe(2);
   await screenMode.click();
   expect(await requests()).toBe(3);
-  await flick(page, 0, 1, 0);
-  await flick(page, 0, 1, 0);
+  await flick(page, 0, 0, 1);
+  await flick(page, 0, 0, 1);
   await press(page, 0, PAD.a);
   await expect.poll(() => screen(page)).toBe('controls');
   await press(page, 0, PAD.b);

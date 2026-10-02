@@ -18,6 +18,7 @@ import { WebAudioOutput } from '../adapters/web-audio/web-audio-output';
 import { RecordingAudioOutput } from '../adapters/recording-audio/recording-audio-output';
 import { App } from './app';
 import { installDebugHandle } from './debug';
+import './fonts.css';
 import './style.css';
 import './menu-theme.css';
 import './fighter-lobby.css';

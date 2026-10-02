@@ -1,23 +1,35 @@
 :root {
   color-scheme: dark;
-  font-family: system-ui, sans-serif;
-  /* Melee-like menu palette: deep blue backdrop, gold highlight. */
-  --menu-gold: #f2c14e;
-  --menu-panel: linear-gradient(100deg, #24357e, #172457);
-  --menu-panel-focus: linear-gradient(100deg, #f7d774, #e59b2f);
-  /* The blade family of the screen wipe and the match banners. */
+  font-family: 'Oswald', 'Arial Narrow', sans-serif;
+  /* The Kombat look: firelit black, aged gold, embers. */
+  --k-ink: #070504;
+  --k-panel: rgb(20 14 10 / 88%);
+  --k-line: #5a4a36;
+  --k-text: #f1e6cf;
+  --k-muted: #b8a888;
+  --k-dim: #7a6c58;
+  --k-gold: #f0c46a;
+  --k-gold-text: linear-gradient(180deg, #fff3cf 0%, #f0c46a 38%, #a8661f 62%, #f7d58a 100%);
+  --k-ember: #ff8a2a;
+  --k-ember-glow: rgb(255 138 42 / 45%);
+  --font-display: 'Cinzel', 'Times New Roman', serif;
+  --font-label: 'Oswald', 'Arial Narrow', sans-serif;
+  --menu-gold: var(--k-gold);
+  --menu-panel: linear-gradient(100deg, #2a1e14, #140e0a);
+  --menu-panel-focus: linear-gradient(100deg, #f7d774, #c98a2f);
+  /* The blade family of the screen wipe and the match banners, in the same firelit tones. */
   --blade-gold: #efb977;
   --blade-gold-light: #ffdf9c;
   --blade-gold-deep: #e9a85c;
   --blade-spark: #fff0ce;
-  --blade-shadow: #050a13;
-  --blade-navy: #0a1120;
-  --blade-navy-mid: #1c2c42;
-  --blade-navy-light: #273d59;
-  --blade-pinstripe: rgb(104 133 166 / 9%);
+  --blade-shadow: #050302;
+  --blade-navy: #120c08;
+  --blade-navy-mid: #2a1e14;
+  --blade-navy-light: #3d2c1c;
+  --blade-pinstripe: rgb(201 154 75 / 9%);
   --app-background:
-    radial-gradient(circle at 25% 15%, rgb(80 110 230 / 35%), transparent 45%),
-    radial-gradient(circle at 80% 90%, rgb(40 60 160 / 40%), transparent 50%), #0e1330;
+    radial-gradient(ellipse at 70% 60%, rgb(255 110 30 / 14%), transparent 55%),
+    radial-gradient(ellipse at 15% 100%, rgb(120 40 20 / 18%), transparent 50%), var(--k-ink);
 }
 
 html,
@@ -179,7 +191,8 @@ canvas {
   box-sizing: border-box;
   padding: 0 8%;
   gap: 0;
-  background: linear-gradient(90deg, rgb(6 9 21 / 80%), transparent 68%);
+  color: var(--k-text);
+  background: linear-gradient(90deg, rgb(7 5 4 / 85%), transparent 68%);
 }
 
 .menu-title::after {
@@ -187,77 +200,96 @@ canvas {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  box-shadow: inset 0 0 140px rgb(0 0 0 / 45%);
+  box-shadow: inset 0 0 160px rgb(0 0 0 / 70%);
 }
 
 .menu-title h1 {
-  font-size: clamp(6rem, 15vw, 13rem);
-  font-style: italic;
+  font-family: var(--font-display);
+  font-size: clamp(5rem, 13vw, 11rem);
+  font-weight: 900;
   line-height: 0.95;
-  letter-spacing: -0.075em;
-  padding-right: 0.12em;
-  background: linear-gradient(#fff 35%, #aac5e2);
+  letter-spacing: 0.12em;
+  background: var(--k-gold-text);
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 8px 0 rgb(6 12 26 / 75%));
+  filter: drop-shadow(0 6px 0 #1a0d04) drop-shadow(0 0 40px rgb(255 150 40 / 35%));
 }
 
 .menu-title > p {
-  margin: 20px 0 36px;
-  font-size: clamp(1.05rem, 2vw, 1.6rem);
-  font-weight: 600;
-  color: #d0dced;
-  letter-spacing: 0.04em;
+  margin: 18px 0 40px;
+  font-size: clamp(1rem, 1.8vw, 1.4rem);
+  font-weight: 500;
+  color: var(--k-muted);
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
 }
 
 .title-eyebrow {
   position: absolute;
   top: 8%;
   left: 8%;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.22em;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.4em;
   text-transform: uppercase;
-  color: #b7cce4;
-  border-left: 3px solid #f4bc70;
-  padding-left: 12px;
+  color: var(--k-muted);
+  border-left: 2px solid var(--k-gold);
+  padding-left: 14px;
 }
 
 .menu-title .title-start {
-  min-width: 220px;
-  padding: 14px 28px;
-  border-color: #ffdb95;
-  color: #21170d;
-  background: linear-gradient(110deg, #ffe5a9, #eaa247);
-  box-shadow:
-    0 5px 0 #825321,
-    0 0 32px rgb(255 178 84 / 15%);
-  font-size: 1.1rem;
-  transition: box-shadow 150ms;
+  min-width: 240px;
+  padding: 14px 32px;
+  border: 1.5px solid var(--k-gold);
+  border-radius: 0;
+  transform: none;
+  color: #f6d68f;
+  background: linear-gradient(90deg, rgb(255 120 30 / 28%), rgb(255 120 30 / 6%));
+  box-shadow: 0 0 28px rgb(255 138 42 / 25%);
+  font-family: var(--font-display);
+  font-style: normal;
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: 0.3em;
+  animation: title-glow 2.4s ease-in-out infinite;
 }
 
 .menu-title .title-start:hover,
 .menu-title .title-start:focus-visible {
+  outline: none;
+  background: linear-gradient(90deg, rgb(255 120 30 / 45%), rgb(255 120 30 / 12%));
   box-shadow:
-    0 5px 0 #825321,
-    0 0 0 3px #fff,
-    0 0 40px rgb(255 178 84 / 35%);
+    0 0 0 3px rgb(240 196 106 / 35%),
+    0 0 44px rgb(255 138 42 / 50%);
+}
+
+@keyframes title-glow {
+  50% {
+    box-shadow: 0 0 44px rgb(255 138 42 / 45%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-title .title-start {
+    animation: none;
+  }
 }
 
 @media (max-width: 700px) {
   .menu-title {
     align-items: center;
     justify-content: flex-end;
-    padding: 0 24px 12vh;
+    padding: 0 24px 16vh;
     text-align: center;
-    background: linear-gradient(0deg, rgb(6 9 21 / 95%), transparent 75%);
+    background: linear-gradient(0deg, rgb(7 5 4 / 95%), transparent 75%);
   }
   .menu-title h1 {
-    font-size: clamp(5rem, 24vw, 8rem);
+    font-size: clamp(4rem, 20vw, 7rem);
   }
   .menu-title > p {
     margin: 14px 0 24px;
-    font-size: 1rem;
+    font-size: 0.9rem;
+    letter-spacing: 0.25em;
   }
   .title-eyebrow {
     top: 28px;
@@ -268,7 +300,7 @@ canvas {
 
 @media (max-height: 450px) and (min-width: 701px) {
   .menu-title h1 {
-    font-size: 6rem;
+    font-size: 5.5rem;
   }
   .menu-title > p {
     margin: 12px 0 20px;
