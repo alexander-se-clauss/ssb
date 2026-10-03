@@ -1,6 +1,8 @@
 /**
  * Aerials (#34): attacks in the air. Each has a landing lag; landing while one runs ends it and
- * the fighter is stuck for that many frames, so a late aerial is punishable.
+ * the fighter is stuck for that many frames, so a late aerial is punishable. Tuned with the blast
+ * zones (#42): from a short hop over Battlefield's centre the back and up aerials KO at about 125%,
+ * the forward aerial at 130%, the weak neutral aerial at 155%.
  */
 import type { MoveDef } from '../moves';
 import { POSES } from '../pose-data';
@@ -24,7 +26,7 @@ export const NEUTRAL_AIR: MoveDef = {
       damage: 11,
       angle: 40,
       baseKnockback: 0.15,
-      knockbackGrowth: 0.004,
+      knockbackGrowth: 0.0052,
     },
     {
       anchor: { bone: 'lowerLegFront', at: 1 },
@@ -35,7 +37,7 @@ export const NEUTRAL_AIR: MoveDef = {
       damage: 6,
       angle: 40,
       baseKnockback: 0.1,
-      knockbackGrowth: 0.0025,
+      knockbackGrowth: 0.0032,
     },
   ],
   poses: [
@@ -62,7 +64,7 @@ export const FORWARD_AIR: MoveDef = {
       damage: 13,
       angle: 45,
       baseKnockback: 0.16,
-      knockbackGrowth: 0.0045,
+      knockbackGrowth: 0.0058,
     },
     {
       anchor: { bone: 'upperArmFront', at: 1 },
@@ -73,7 +75,7 @@ export const FORWARD_AIR: MoveDef = {
       damage: 10,
       angle: 45,
       baseKnockback: 0.13,
-      knockbackGrowth: 0.0035,
+      knockbackGrowth: 0.0045,
     },
   ],
   poses: [
@@ -104,7 +106,7 @@ export const BACK_AIR: MoveDef = {
       damage: 13,
       angle: 145,
       baseKnockback: 0.17,
-      knockbackGrowth: 0.005,
+      knockbackGrowth: 0.0056,
     },
     {
       anchor: { bone: 'lowerLegBack', at: 0.3 },
@@ -115,7 +117,7 @@ export const BACK_AIR: MoveDef = {
       damage: 9,
       angle: 145,
       baseKnockback: 0.13,
-      knockbackGrowth: 0.004,
+      knockbackGrowth: 0.0045,
     },
   ],
   poses: [
@@ -143,7 +145,7 @@ export const UP_AIR: MoveDef = {
       damage: 11,
       angle: 85,
       baseKnockback: 0.14,
-      knockbackGrowth: 0.0035,
+      knockbackGrowth: 0.0039,
     },
     {
       anchor: { bone: 'lowerLegFront', at: 0 },
@@ -154,7 +156,7 @@ export const UP_AIR: MoveDef = {
       damage: 8,
       angle: 85,
       baseKnockback: 0.11,
-      knockbackGrowth: 0.003,
+      knockbackGrowth: 0.0034,
     },
   ],
   poses: [

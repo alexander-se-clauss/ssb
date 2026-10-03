@@ -16,7 +16,8 @@ export const BATTLEFIELD: StageDef = {
     { x: -1, y: 5 },
     { x: 1, y: 5 },
   ],
-  blastZone: { left: -16, right: 16, bottom: -9, top: 14 },
+  // Melee-like room past the ledges to fight and recover off-stage (#42).
+  blastZone: { left: -22, right: 22, bottom: -11, top: 20 },
 };
 
 /** A Final Destination-style layout: one wide, flat stage with no platforms. */
@@ -30,5 +31,5 @@ export const FINAL_DESTINATION: StageDef = {
     { x: -1.5, y: 2 },
     { x: 1.5, y: 2 },
   ],
-  blastZone: { left: -18, right: 18, bottom: -9, top: 14 },
+  blastZone: { left: -26, right: 26, bottom: -13, top: 20 },
 };

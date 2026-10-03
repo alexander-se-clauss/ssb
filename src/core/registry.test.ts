@@ -90,6 +90,21 @@ describe('stage data', () => {
     },
   );
 
+  it.each(STAGES.map((stage) => [stage.id, stage] as const))(
+    '%s leaves room to fight and recover beyond the ledges (#42)',
+    (_id, stage) => {
+      const main = stage.platforms.find((p) => !p.passThrough);
+      if (!main) throw new Error('Expected a main stage');
+      const halfWidth = (main.bounds.right - main.bounds.left) / 2;
+      const zone = stage.blastZone;
+      // Melee's stages leave about twice the stage's half width beside each ledge.
+      expect(zone.right - main.bounds.right).toBeGreaterThanOrEqual(halfWidth * 1.8);
+      expect(main.bounds.left - zone.left).toBeGreaterThanOrEqual(halfWidth * 1.8);
+      expect(zone.top - main.bounds.top).toBeGreaterThanOrEqual(18);
+      expect(main.bounds.top - zone.bottom).toBeGreaterThanOrEqual(10);
+    },
+  );
+
   it('starts a match on the chosen stage', () => {
     const other = STAGES[1];
     if (!other) throw new Error('Expected a second stage');
