@@ -115,13 +115,38 @@ export const DODGE = {
  * (`ledge.ts`), sideways, above and below. Holding on gives brief invulnerability, the air jumps
  * and the air dodge back; after `hangFrames` the fighter lets go, and can grab a ledge again
  * `regrabFrames` later. Only a fighter falling under control (`airborne`) grabs: an aerial or an
- * air dodge sails past, as in Melee. Getting up or letting go early comes with #41.
+ * air dodge sails past, as in Melee.
+ *
+ * From `waitFrames` after the grab the fighter picks an option (#41) with a fresh input, a press
+ * or the stick pushed past `stick` (held input does not count): jump jumps up past the ledge,
+ * dodge rolls onto the stage, attack or special climbs up and attacks (the character's
+ * `ledgeAttack`), the stick towards the stage or up stands up, and the stick down or away lets
+ * go. Climbing takes `climbFrames`: up beside the ledge first, then in onto the stage, ending
+ * `distance` from its corner. Each option is invulnerable for its first `invulnerableFrames`, or
+ * for what is left of the grab's if that is longer, as in Melee, and done after `totalFrames`
+ * (the attack: after its move).
  */
 export const LEDGE = {
   snap: { x: 1, above: 0.6, below: 1.2 },
   invulnerableFrames: 30,
   hangFrames: 300,
   regrabFrames: 30,
+  waitFrames: 8,
+  stick: 0.5,
+  getup: {
+    stand: { climbFrames: 20, totalFrames: 30, invulnerableFrames: 24, distance: 0.7 },
+    /** Climbs `climbDistance` onto the stage, then rolls on to `distance` until frame `rollTo`. */
+    roll: {
+      climbFrames: 14,
+      climbDistance: 0.4,
+      rollTo: 36,
+      totalFrames: 46,
+      invulnerableFrames: 34,
+      distance: 2.6,
+    },
+    attack: { climbFrames: 18, invulnerableFrames: 24, distance: 0.7 },
+    jump: { invulnerableFrames: 10 },
+  },
 } as const;
 
 /** Hitstun frames per unit of launch speed. */

@@ -1,4 +1,4 @@
-import { DODGE, type FighterState } from '../../core';
+import { DODGE, LEDGE, climbFrames, type FighterState } from '../../core';
 import { MAIN_BLOCK_DEPTH } from './scenery/common';
 
 /** How far a sidestep moves the body out of the stage plane, in stage units. */
@@ -55,6 +55,19 @@ export const dodgeMotion = (
       return { ...STILL, yaw: TURN * progress(frame, 0, DODGE.air.invulnerableTo - 1) };
     case 'ledge':
       return { ...STILL, depth: LEDGE_DEPTH };
+    case 'ledgeStand':
+    case 'ledgeAttack':
+    case 'ledgeRoll': {
+      // Back onto the stage plane while climbing; a roll then somersaults on along the stage.
+      const depth = LEDGE_DEPTH * (1 - progress(frame, 0, climbFrames(fighter.action)));
+      if (fighter.action !== 'ledgeRoll') return { ...STILL, depth };
+      const { roll } = LEDGE.getup;
+      return {
+        ...STILL,
+        depth,
+        spin: -fighter.facing * TURN * progress(frame, roll.climbFrames, roll.rollTo),
+      };
+    }
     default:
       return STILL;
   }

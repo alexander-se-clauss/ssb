@@ -3,7 +3,7 @@ import { activeHitboxes } from './combat';
 import { FIGHTER, INPUT } from './config';
 import { findMove } from './move-data';
 import { moveTiming } from './moves';
-import type { MoveSlot } from './move-slots';
+import type { PressSlot } from './move-slots';
 import { CAPSULE } from './registry';
 import { step } from './simulation';
 import { fighter, inputOf, run, settled, withFighter } from './test-helpers';
@@ -17,7 +17,7 @@ const NONE = inputOf({});
  * attacker, both falling side by side).
  */
 const AERIALS: readonly {
-  slot: MoveSlot;
+  slot: PressSlot;
   id: string;
   input: PlayerInput;
   timing: [startup: number, active: number, total: number];

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { FIGHTER, inputOf, type MatchState } from '../core';
+import { BATTLEFIELD, CAPSULE, FIGHTER, LEDGE, inputOf, type MatchState } from '../core';
+import { hangPosition } from '../core/ledge';
 import { newMatch, run, settled, withFighter } from '../core/test-helpers';
 import { eventCue, stateCues } from './match-sounds';
 
@@ -43,6 +44,35 @@ describe('stateCues', () => {
       velocity: { x: 0.1, y: 0 },
     });
     expect(cuesOf(before, walkedOff)).toEqual([]);
+  });
+
+  describe('from a ledge', () => {
+    const ledge = BATTLEFIELD.ledges[1];
+    if (!ledge) throw new Error('Battlefield has a right ledge');
+    const hang = hangPosition(ledge, CAPSULE);
+    /** P1 hanging from Battlefield's right ledge, ready to pick an option. */
+    const hanging = run(
+      withFighter(ground, 0, {
+        position: { x: hang.x, y: hang.y + 0.1 },
+        velocity: { x: 0, y: 0 },
+        grounded: false,
+        action: 'airborne',
+      }),
+      LEDGE.invulnerableFrames,
+    );
+
+    it('plays jump for a jump from the ledge', () => {
+      expect(hanging.fighters[0]?.action).toBe('ledge');
+      const jumped = run(hanging, 1, [inputOf({ jump: true })]);
+      expect(cuesOf(hanging, jumped)).toEqual(['jump']);
+    });
+
+    it('does not take climbing onto the stage for a landing', () => {
+      const climbing = run(hanging, 1, [inputOf({ x: -1 })]);
+      const up = run(climbing, LEDGE.getup.stand.totalFrames);
+      expect(up.fighters[0]?.action).toBe('idle');
+      expect(cuesOf(climbing, up)).toEqual([]);
+    });
   });
 
   it('plays jump for a jump stopped at once by a platform above', () => {

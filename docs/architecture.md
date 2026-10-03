@@ -63,7 +63,7 @@ harder hits (`HITLAG` in `config.ts`): nothing moves, and the launch is held unt
 In the air, horizontal speed above the character's `airSpeed` bleeds off at `FIGHTER_RULES.launchDecay`, so a
 sideways launch flies a set distance instead of drifting on almost undamped.
 Move data is one file per family in `move-data/` (`jab.ts`, `tilts.ts`, `smashes.ts`,
-`aerials.ts`, each registered in `move-data/index.ts`). A move with a `landingLag` is an aerial:
+`aerials.ts`, `ledge.ts`, each registered in `move-data/index.ts`). A move with a `landingLag` is an aerial:
 landing while it runs ends it and puts the fighter in the `landing` action for that many frames
 (`landingLagFrames`). Landing from a jump or fall without one costs the character's `landingLagFrames`;
 a fighter in hitstun lands without lag. An aerial press still in the buffer on landing is
@@ -101,9 +101,14 @@ costs `DODGE.air.landingLag`, and a buffered air dodge is dropped on landing.
 Ledges are stage data (`StageDef.ledges`, #40): a fighter falling near a free one snaps to hang
 from it (`ledge.ts` works out where from the character's own hanging pose), with brief
 invulnerability and its air jumps and air dodge back, and lets go after `LEDGE.hangFrames`
-(getting up or letting go early comes with #41). One
-fighter per ledge: `step` updates fighters in slot order and hands each the ledges held by the
-others, so of two reaching a ledge on the same frame the lower slot gets it.
+(#41: from `LEDGE.waitFrames` on, a fresh press or stick push picks jump, roll, attack, stand or
+let go; held input does not count. Climbing follows a fixed path, `climbPosition` in `ledge.ts`,
+not physics: the fighter stays `grounded: false` until it is on the stage, and the ledge is free
+for others from the first climbing frame. The attack is the character's `ledgeAttack` move slot,
+which no button press resolves to (`PRESS_SLOTS` vs `MOVE_SLOTS`)). One
+fighter per ledge: `step` updates the fighters on a ledge first, so a ledge let go of or climbed
+from is free on that same frame, then the others in slot order, each handed the ledges held by
+the rest, so of two reaching a ledge on the same frame the lower slot gets it.
 Each fighter carries its current `pose` in `FighterState`: `step` eases it a little each frame towards
 the pose of its movement state, with idle breathing and a running stride (`poses.ts`), and the
 view interpolates it between frames like the position. A move has pose keyframes instead: the
