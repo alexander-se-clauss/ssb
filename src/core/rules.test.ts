@@ -3,9 +3,13 @@ import { DEFAULT_RULES, TICK_RATE } from './config';
 import { score, timeLeftFrames } from './rules';
 import { step } from './simulation';
 import { fighter, newMatch, run, settled, withFighter } from './test-helpers';
+import { BATTLEFIELD } from './stages';
 import type { MatchState } from './types';
 
-const offStage = { position: { x: 20, y: 0 }, action: 'airborne' as const };
+const offStage = {
+  position: { x: BATTLEFIELD.blastZone.right + 1, y: 0 },
+  action: 'airborne' as const,
+};
 
 /** A two-player time match of `seconds`, with everyone standing on the stage. */
 const timeMatch = (seconds = 60): MatchState =>

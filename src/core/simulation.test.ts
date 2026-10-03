@@ -2,9 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { FIGHTER_RULES } from './config';
 import { step } from './simulation';
 import { fighter, inputOf, newMatch, run, settled, withFighter } from './test-helpers';
+import { BATTLEFIELD } from './stages';
 import type { PlayerInput } from './types';
 
-const offStage = { position: { x: 20, y: 0 }, action: 'airborne' as const, damage: 80 };
+const offStage = {
+  position: { x: BATTLEFIELD.blastZone.right + 1, y: 0 },
+  action: 'airborne' as const,
+  damage: 80,
+};
 
 describe('match simulation', () => {
   it('loses a stock and respawns invulnerable when leaving the blast zone', () => {

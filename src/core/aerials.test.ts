@@ -72,8 +72,8 @@ const byId = (id: string) => {
   return aerial;
 };
 
-/** P1 high above the stage facing right, at rest in the air; P2 at `target` from it. */
-const inTheAir = (target = { x: 3, y: 0 }, damage = 0): MatchState => {
+/** P1 `height` above the stage centre facing right, at rest in the air; P2 at `target` from it. */
+const inTheAir = (target = { x: 3, y: 0 }, damage = 0, height = 8): MatchState => {
   const airborne = (x: number, y: number): Partial<FighterState> => ({
     position: { x, y },
     velocity: { x: 0, y: 0 },
@@ -81,9 +81,9 @@ const inTheAir = (target = { x: 3, y: 0 }, damage = 0): MatchState => {
     action: 'airborne',
     jumpsRemaining: 0,
   });
-  let state = withFighter(settled(), 0, { ...airborne(0, 8), facing: 1 });
+  let state = withFighter(settled(), 0, { ...airborne(0, height), facing: 1 });
   state = withFighter(state, 1, {
-    ...airborne(target.x, 8 + target.y),
+    ...airborne(target.x, height + target.y),
     facing: target.x > 0 ? -1 : 1,
     damage,
   });
@@ -222,6 +222,30 @@ describe('aerial knockback', () => {
     expect(down.y).toBeLessThan(0);
     expect(Math.abs(down.x)).toBeLessThan(Math.abs(down.y) / 3);
   });
+
+  it.each([
+    ['backAir', 110, 140],
+    ['forwardAir', 115, 145],
+    ['upAir', 110, 140],
+    ['neutralAir', 140, 170],
+  ] as const)(
+    '%s from a short hop over the centre KOs between %i and %i percent (#42)',
+    (id, safe, kills) => {
+      const { input, target } = byId(id);
+      /** Whether P2 leaves through the side or top of the blast zone. */
+      const kos = (damage: number): boolean => {
+        let state = step(inTheAir(target, damage, 1.5), [{ ...input, attack: true }]);
+        for (let frame = 0; frame < 500; frame += 1) {
+          const before = fighter(state, 1).position;
+          state = step(state, [NONE]);
+          if (fighter(state, 1).falls > 0) return before.y > state.stage.blastZone.bottom + 1;
+        }
+        return false;
+      };
+      expect(kos(safe)).toBe(false);
+      expect(kos(kills)).toBe(true);
+    },
+  );
 
   it('mirrors the launch when the attacker faces left', () => {
     const { input, target } = byId('backAir');

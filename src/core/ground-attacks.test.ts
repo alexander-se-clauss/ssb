@@ -4,7 +4,7 @@ import { FIGHTER } from './config';
 import { findMove } from './move-data';
 import { moveTiming } from './moves';
 import type { MoveSlot } from './move-slots';
-import { CAPSULE } from './registry';
+import { CAPSULE, STAGES } from './registry';
 import { step } from './simulation';
 import { fighter, inputOf, run, settled, withFighter } from './test-helpers';
 import type { FighterState, MatchState, PlayerInput } from './types';
@@ -223,13 +223,55 @@ describe('ground attack knockback', () => {
     }
   });
 
-  it('KOs from the centre of the stage with a smash at high damage, but not at low damage', () => {
-    for (const id of ['forwardSmash', 'upSmash', 'downSmash']) {
-      const high = firstHit(faceOff(byId(id).targetX, 140), byId(id).input).state;
-      const low = firstHit(faceOff(byId(id).targetX, 40), byId(id).input).state;
-      expect(koFrames(high), id).toBeDefined();
-      expect(koFrames(low), id).toBeUndefined();
+  it.each(STAGES.map((stage) => [stage.id, stage] as const))(
+    'KOs from the centre of %s with a smash at high damage, but not at low damage',
+    (_id, stage) => {
+      const on = (damage: number, id: string) => ({
+        ...faceOff(byId(id).targetX, damage),
+        stage,
+      });
+      for (const id of ['forwardSmash', 'upSmash', 'downSmash']) {
+        expect(koFrames(firstHit(on(140, id), byId(id).input).state), id).toBeDefined();
+        expect(koFrames(firstHit(on(40, id), byId(id).input).state), id).toBeUndefined();
+      }
+    },
+  );
+
+  it('sends a fighter off-stage at mid damage without a KO, so the fight goes on out there', () => {
+    const state = firstHit(
+      faceOff(byId('forwardSmash').targetX, 60),
+      byId('forwardSmash').input,
+    ).state;
+    const edge = Math.max(...state.stage.platforms.map((p) => p.bounds.right));
+    let next = state;
+    let furthest = 0;
+    for (let frame = 0; frame < 120; frame += 1) {
+      next = step(next, [NONE]);
+      furthest = Math.max(furthest, fighter(next, 1).position.x);
     }
+    expect(furthest).toBeGreaterThan(edge + 3);
+    expect(koFrames(state)).toBeUndefined();
+    // Holding back towards the stage and jumping once hitstun ends brings it home.
+    let back = state;
+    while (fighter(back, 1).action === 'hitstun' || fighter(back, 1).hitlagFrames > 0) {
+      back = step(back, [NONE]);
+    }
+    back = step(back, [NONE, inputOf({ x: -1, jump: true })]);
+    for (let frame = 0; frame < 300 && !fighter(back, 1).grounded; frame += 1) {
+      back = step(back, [NONE, inputOf({ x: -1 })]);
+    }
+    expect(fighter(back, 1)).toMatchObject({ grounded: true, falls: 0 });
+  });
+
+  it.each([
+    ['forwardSmash', 90, 120],
+    ['upSmash', 105, 135],
+    ['downSmash', 100, 130],
+  ] as const)('%s KOs from the centre between %i and %i percent', (id, safe, kills) => {
+    const at = (damage: number) =>
+      firstHit(faceOff(byId(id).targetX, damage), byId(id).input).state;
+    expect(koFrames(at(safe))).toBeUndefined();
+    expect(koFrames(at(kills))).toBeDefined();
   });
 
   it('keeps the jab finisher from KOing at the damage where smashes do', () => {

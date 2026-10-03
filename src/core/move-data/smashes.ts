@@ -1,6 +1,7 @@
 /**
  * Standard smash attacks: slow to start, strong enough to KO. Not charged for now (#33); holding
- * attack to charge is parked.
+ * attack to charge is parked. Tuned with the blast zones (#42): from the centre of Battlefield,
+ * without DI, the forward smash KOs at about 105%, the down smash at 115%, the up smash at 120%.
  */
 import type { MoveDef } from '../moves';
 import { POSES } from '../pose-data';
@@ -23,7 +24,7 @@ export const FORWARD_SMASH: MoveDef = {
       damage: 16,
       angle: 38,
       baseKnockback: 0.2,
-      knockbackGrowth: 0.006,
+      knockbackGrowth: 0.0064,
     },
     {
       anchor: { bone: 'lowerArmFront', at: 0.3 },
@@ -34,7 +35,7 @@ export const FORWARD_SMASH: MoveDef = {
       damage: 14,
       angle: 38,
       baseKnockback: 0.2,
-      knockbackGrowth: 0.0055,
+      knockbackGrowth: 0.0059,
     },
     {
       anchor: { bone: 'upperArmFront', at: 1 },
@@ -45,7 +46,7 @@ export const FORWARD_SMASH: MoveDef = {
       damage: 12,
       angle: 38,
       baseKnockback: 0.18,
-      knockbackGrowth: 0.005,
+      knockbackGrowth: 0.0053,
     },
   ],
   poses: [
@@ -76,7 +77,7 @@ export const UP_SMASH: MoveDef = {
       damage: 15,
       angle: 86,
       baseKnockback: 0.15,
-      knockbackGrowth: 0.0034,
+      knockbackGrowth: 0.0041,
     },
     {
       anchor: { bone: 'lowerLegFront', at: 0 },
@@ -87,7 +88,7 @@ export const UP_SMASH: MoveDef = {
       damage: 12,
       angle: 84,
       baseKnockback: 0.12,
-      knockbackGrowth: 0.003,
+      knockbackGrowth: 0.0036,
     },
     {
       anchor: { bone: 'lowerLegFront', at: 1 },
@@ -98,7 +99,7 @@ export const UP_SMASH: MoveDef = {
       damage: 10,
       angle: 80,
       baseKnockback: 0.1,
-      knockbackGrowth: 0.0025,
+      knockbackGrowth: 0.003,
     },
   ],
   poses: [
@@ -129,7 +130,7 @@ export const DOWN_SMASH: MoveDef = {
       damage: 14,
       angle: 25,
       baseKnockback: 0.2,
-      knockbackGrowth: 0.0045,
+      knockbackGrowth: 0.005,
     },
     {
       anchor: { bone: 'lowerLegBack', at: 1 },
@@ -140,7 +141,7 @@ export const DOWN_SMASH: MoveDef = {
       damage: 14,
       angle: 155,
       baseKnockback: 0.2,
-      knockbackGrowth: 0.0045,
+      knockbackGrowth: 0.005,
     },
   ],
   poses: [
