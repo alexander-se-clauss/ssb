@@ -40,6 +40,12 @@ describe('move data', () => {
     expect(() => validateMove({ ...JAB, totalFrames: 0 })).toThrow(/jab/);
   });
 
+  it('refuses a helpless move with cancels, which would let the fighter escape helpless', () => {
+    expect(JAB.cancels.length).toBeGreaterThan(0);
+    expect(() => validateMove({ ...JAB, helpless: true })).toThrow(/helpless/);
+    expect(() => validateMove({ ...JAB, helpless: true, cancels: [] })).not.toThrow();
+  });
+
   it('refuses a hitbox on a bone the skeleton does not have, or off the bone', () => {
     const on = (anchor: unknown): MoveDef => ({
       ...JAB,

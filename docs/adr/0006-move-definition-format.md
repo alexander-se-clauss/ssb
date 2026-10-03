@@ -198,6 +198,18 @@ type MoveDef = AttackMoveDef; // | BlockMoveDef | CounterMoveDef with #6
   it.
 - Weak attacks recover sooner: jab and jab 2 last 14 frames, jab 3 22, the tilts 17 to 18.
 
+### Amendment (2026-10-03, #44)
+
+- **Helpless.** An `AttackMoveDef` may set `helpless: true` (a recovery move). If it ends with
+  the fighter in the air, the fighter enters the `helpless` action instead of `airborne`: it
+  drifts at `HELPLESS.drift` of its air speed and cannot fast-fall, jump, attack or dodge. It
+  ends on landing (with `HELPLESS.landingLagFrames`), on a ledge grab or on a hit. Used on the
+  ground, the move ends as any other.
+- Unlike landing lag, helpless keeps no presses: the buffer is cleared every frame, so nothing
+  pressed while helpless comes out on landing.
+- A helpless move has no cancels (`validateMove` refuses them), so a chain cannot end with full
+  control.
+
 ## Consequences
 
 - New moves are data. Tests, tools and an AI agent can write and check them without new code.

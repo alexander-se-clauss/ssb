@@ -1,6 +1,6 @@
 import { CENTRED_STICK, attackInput, trackStick } from './attack-input';
 import { characterOf } from './character';
-import { DODGE, FIGHTER_RULES, INPUT, LEDGE, STICK } from './config';
+import { DODGE, FIGHTER_RULES, HELPLESS, INPUT, LEDGE, STICK } from './config';
 import { NEUTRAL_INPUT, pressed } from './input';
 import {
   climbPosition,
@@ -361,7 +361,8 @@ export const updateFighter = (
     if (queued && next !== undefined) {
       startMove(next, queued.face);
     } else if (!move || actionFrame >= move.totalFrames) {
-      action = grounded ? 'idle' : 'airborne';
+      // A recovery move that ends in the air leaves the fighter helpless (#44).
+      action = grounded ? 'idle' : move?.helpless ? 'helpless' : 'airborne';
       actionFrame = 0;
       moveId = null;
       hitTargets = [];
@@ -380,6 +381,9 @@ export const updateFighter = (
       action = grounded ? 'idle' : 'airborne';
       actionFrame = 0;
     }
+  } else if (action === 'helpless') {
+    // Helpless (#44): no jump, move or dodge until the fighter lands or grabs a ledge.
+    buffer = null;
   } else if (action === 'jumpsquat') {
     // Crouched to jump, as in Melee: an attack pressed now is still a ground attack, so a stick
     // flicked up for an up smash does not lose it to tap-jump.
@@ -453,6 +457,15 @@ export const updateFighter = (
     const rolling = actionFrame >= moveFrom && actionFrame < moveTo;
     const travel = action === 'forwardRoll' ? facing : -facing;
     vx = rolling ? (travel * distance) / (moveTo - moveFrom) : 0;
+  } else if (action === 'helpless') {
+    // Drifting only, more slowly than under full control.
+    const drift = stats.airSpeed * HELPLESS.drift;
+    vx =
+      Math.abs(vx) > drift
+        ? approach(vx, Math.sign(vx) * drift, FIGHTER_RULES.launchDecay)
+        : Math.abs(input.x) > 0.1
+          ? approach(vx, input.x * drift, stats.airAcceleration)
+          : approach(vx, 0, stats.airFriction);
   } else if (!grounded && Math.abs(vx) > stats.airSpeed) {
     vx = approach(vx, Math.sign(vx) * stats.airSpeed, FIGHTER_RULES.launchDecay);
   } else if (isControllable(action) || inAerial) {
@@ -508,11 +521,13 @@ export const updateFighter = (
       const lag =
         action === 'airborne'
           ? stats.landingLagFrames
-          : action === 'airDodge'
-            ? DODGE.air.landingLag
-            : action === 'attack' && moveId !== null
-              ? findMove(moveId).landingLag
-              : undefined;
+          : action === 'helpless'
+            ? HELPLESS.landingLagFrames
+            : action === 'airDodge'
+              ? DODGE.air.landingLag
+              : action === 'attack' && moveId !== null
+                ? findMove(moveId).landingLag
+                : undefined;
       if (lag !== undefined) {
         landingLagFrames = lag;
         action = 'landing';
@@ -584,7 +599,11 @@ export const updateFighter = (
   // Falling past a free ledge catches it (#40), unless the stick holds down to fall on.
   const regrab = Math.max(fighter.ledgeRegrabFrames - 1, 0);
   const caught =
-    !grounded && action === 'airborne' && vy <= 0 && input.y >= DROP_THRESHOLD && regrab === 0
+    !grounded &&
+    (action === 'airborne' || action === 'helpless') &&
+    vy <= 0 &&
+    input.y >= DROP_THRESHOLD &&
+    regrab === 0
       ? ledgeInReach(stage, character, { x: px, y: py }, ledgesTaken)
       : null;
   const ledge = caught === null ? undefined : stage.ledges[caught];

@@ -98,6 +98,10 @@ Ultimate-style `airDodge` (`DODGE.air`): it carries the fighter the way the stic
 it in place) with gravity paused, then the fighter falls and can act again. It is used once per
 airtime (`FighterState.airDodgeUsed`), and landing or being hit gives it back; landing during it
 costs `DODGE.air.landingLag`, and a buffered air dodge is dropped on landing.
+A move flagged `helpless` in its data (a recovery move, #44) that ends in the air puts the
+fighter in the `helpless` action, Melee's special fall: it only drifts (`HELPLESS.drift`), cannot
+fast-fall, jump, attack or dodge, and it ends on landing (with `HELPLESS.landingLagFrames`), on a
+ledge grab or on a hit.
 Ledges are stage data (`StageDef.ledges`, #40): a fighter falling near a free one snaps to hang
 from it (`ledge.ts` works out where from the character's own hanging pose), with brief
 invulnerability and its air jumps and air dodge back, and lets go after `LEDGE.hangFrames`
