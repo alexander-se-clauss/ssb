@@ -212,6 +212,16 @@ describe('spawned objects (#45)', () => {
     expect(run(nearEdge, 1).objects).toEqual([]);
   });
 
+  it('never appears when it would spawn outside the blast zone', () => {
+    // The shooter just inside the right edge, facing out: the shot would start past it.
+    let state = faceOff(-3, 1, -6.5);
+    const edge = BATTLEFIELD.blastZone.right - SHOT.offset.x / 2;
+    state = withFighter(state, 0, { position: { x: edge, y: 0 }, grounded: false });
+    state = shootUntil(state, SHOT.frame);
+    expect(fighter(state, 0).moveId).toBe('testShot');
+    expect(state.objects).toEqual([]);
+  });
+
   it('keeps flying when its owner is KO-ed', () => {
     let state = shootUntil(faceOff(-3, 1, -6.5), SHOT.frame);
     state = withFighter(state, 0, { position: { x: -30, y: 0 }, grounded: false });

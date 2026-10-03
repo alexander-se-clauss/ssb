@@ -4,7 +4,7 @@ import { resolveCombat } from './combat';
 import { createFighter, updateFighter } from './fighter';
 import { NEUTRAL_INPUT } from './input';
 import { findMove } from './move-data';
-import { moveObjects, resolveObjectHits, spawnObjects } from './objects';
+import { insideZone, moveObjects, resolveObjectHits, spawnObjects } from './objects';
 import { validateCharacter } from './character';
 import { findCharacter, findStage } from './registry';
 import { leader, timeLeftFrames } from './rules';
@@ -183,7 +183,11 @@ export const step = (state: MatchState, inputs: readonly PlayerInput[]): MatchSt
   // Object hits come after hitbox hits, so a fighter struck by both adds both damages and flies
   // with the object's launch.
   const spawned = spawnObjects(state.fighters, moved, state.nextObjectId);
-  const flying = [...moveObjects(state.objects, state.stage.blastZone), ...spawned];
+  const flying = [
+    ...moveObjects(state.objects, state.stage.blastZone),
+    // One spawned past the blast zone is gone before it can hit anything.
+    ...spawned.filter((object) => insideZone(object, state.stage.blastZone)),
+  ];
   const shots = resolveObjectHits(flying, combat.fighters);
   const events = [...combat.events, ...shots.events];
 

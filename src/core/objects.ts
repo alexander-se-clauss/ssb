@@ -55,7 +55,8 @@ export const spawnObjects = (
   return spawned;
 };
 
-const inside = (object: SpawnedObject, zone: Rect): boolean => {
+/** Whether the object is inside the blast zone; outside it, it is gone. */
+export const insideZone = (object: SpawnedObject, zone: Rect): boolean => {
   const { x, y } = object.position;
   return x >= zone.left && x <= zone.right && y >= zone.bottom && y <= zone.top;
 };
@@ -71,7 +72,7 @@ export const moveObjects = (objects: readonly SpawnedObject[], blastZone: Rect):
         y: object.position.y + object.velocity.y,
       },
     }))
-    .filter((object) => object.age < object.lifetime && inside(object, blastZone));
+    .filter((object) => object.age < object.lifetime && insideZone(object, blastZone));
 
 /**
  * Lets each object hit the first fighter it touches (in slot order) that is not its owner and
