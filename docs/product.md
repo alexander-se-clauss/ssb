@@ -123,12 +123,19 @@ a playable build; it is done when that build works, not on a date.
       jumps (#38, done), fighter 1. Epics #7, #8.
 - [ ] **S6 Guard and specials.** Block and counter, spawned objects and projectiles, particle
       effects (fire, hit, KO), side and down specials, fighter 2. Epics #6, #7, #9.
+- [ ] **S7 Movement tuning.** A Melee-near tempo: training mode first, faster air physics,
+      Melee dash with dash dance and pivot, a short hop button, auto-cancel windows and
+      L-cancel, repeated dodges get weaker, dash and landing dust, movement benchmarks as
+      tests. Epic #142.
+- [ ] **S8 Combos and combat feel.** Melee knockback and hitstun, DI, SDI and crouch cancel,
+      stale moves, tech and knockdown, grabs and throws, screen shake and launch trails, each
+      fighter's combos pinned as tests. Epic #143.
 
-Later, not yet planned: screen shake, dash and short hop, charged smashes, rebindable keys, a CPU
+Later, not yet planned: charged smashes, rebindable keys, a CPU
 opponent, glTF models, and online play (authoritative server
 running `src/core` in Node, WebSocket transport behind `GameSession`, then rollback experiments).
 
 ## Open questions
 
-Tracked in #10: dodge stamina, block direction, block and counter in the air, fighter names and
+Tracked in #10: block direction, block and counter in the air, fighter names and
 themes, art direction, and the online model (server-authoritative or peer-to-peer rollback).
