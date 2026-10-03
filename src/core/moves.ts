@@ -82,6 +82,11 @@ export interface AttackMoveDef {
    * many frames. Ground moves leave it out.
    */
   readonly landingLag?: number;
+  /**
+   * A recovery move (#44): if it ends with the fighter in the air, the fighter is helpless until
+   * it lands or grabs a ledge, able only to drift. Such a move has no cancels.
+   */
+  readonly helpless?: true;
 }
 
 /** Block and counter moves join this union with #6. */
@@ -130,6 +135,8 @@ export const validateMove = (move: MoveDef): void => {
         fail(`hitbox ${index} is off its bone (${anchor.at})`);
     }
   });
+  // A cancel would hand the fighter a move that ends with full control, escaping helpless (#44).
+  if (move.helpless && move.cancels.length > 0) fail('a helpless move cannot have cancels');
   const first = move.poses[0];
   if (!first) fail('needs at least one pose keyframe');
   move.poses.forEach((key, index) => {

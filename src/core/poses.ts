@@ -36,6 +36,8 @@ export const poseName = (fighter: FighterState): PoseName | null => {
       return 'airDodge';
     case 'ledge':
       return 'ledge';
+    case 'helpless':
+      return 'fall';
     case 'ledgeStand':
     case 'ledgeAttack':
       // Pulling up onto the stage, knees tucked.

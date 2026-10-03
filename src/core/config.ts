@@ -149,6 +149,13 @@ export const LEDGE = {
   },
 } as const;
 
+/**
+ * The helpless state after a recovery move (#44), as Melee's special fall: the fighter drifts at
+ * `drift` of its air speed, cannot fast-fall, jump, attack or dodge, and lands with
+ * `landingLagFrames` of lag. A ledge grab or a hit ends it.
+ */
+export const HELPLESS = { drift: 0.7, landingLagFrames: 10 } as const;
+
 /** Hitstun frames per unit of launch speed. */
 export const HITSTUN_PER_KNOCKBACK = 40;
 

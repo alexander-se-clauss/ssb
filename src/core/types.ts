@@ -38,6 +38,8 @@ export type FighterAction =
   | 'forwardRoll'
   | 'backRoll'
   | 'airDodge'
+  /** After a recovery move (#44): only drifting until landing or a ledge grab. */
+  | 'helpless'
   /** Hanging on a ledge (#40). */
   | 'ledge'
   /** Climbing from a ledge onto the stage (#41): to stand, to roll on, or to attack. */
