@@ -34,8 +34,8 @@ export const validateCharacter = (character: CharacterDef): void => {
     fail(`height ${stats.height} does not match the skeleton's ${head.toFixed(2)}`);
   }
   if (!(stats.weight > 0)) fail('weight must be above 0');
-  if (!Number.isInteger(stats.totalJumps) || stats.totalJumps < 1) {
-    fail('needs at least the ground jump');
+  if (!Number.isInteger(stats.airJumps) || stats.airJumps < 0) {
+    fail('air jumps must be a whole number, 0 or more');
   }
   // A longer squat would turn a tap-jump flick plus attack into a jump instead of an up smash.
   if (stats.jumpSquatFrames >= STICK.smashWindowFrames) {

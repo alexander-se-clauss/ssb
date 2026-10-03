@@ -285,6 +285,6 @@ describe('dodge input', () => {
 
   it('leaves jumps alone', () => {
     const state = dodge(standing());
-    expect(fighter(state, 0).jumpsRemaining).toBe(FIGHTER.totalJumps);
+    expect(fighter(state, 0).jumpsRemaining).toBe(FIGHTER.airJumps + 1);
   });
 });

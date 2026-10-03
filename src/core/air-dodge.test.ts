@@ -16,7 +16,7 @@ const inTheAir = (patch: Parameters<typeof withFighter>[2] = {}): MatchState => 
     facing: 1,
     grounded: false,
     action: 'airborne',
-    jumpsRemaining: FIGHTER.totalJumps - 1,
+    jumpsRemaining: FIGHTER.airJumps,
     ...patch,
   });
   state = withFighter(state, 1, {
@@ -115,10 +115,7 @@ describe('air dodge', () => {
     expect(fighter(state, 0).action).toBe('airborne');
 
     const jumped = step(state, [inputOf({ jump: true })]);
-    expect(fighter(jumped, 0).velocity.y).toBeCloseTo(
-      FIGHTER.doubleJumpVelocity - FIGHTER.gravity,
-      9,
-    );
+    expect(fighter(jumped, 0).velocity.y).toBeCloseTo(FIGHTER.airJumpVelocity - FIGHTER.gravity, 9);
     const attacked = step(state, [inputOf({ attack: true })]);
     expect(fighter(attacked, 0)).toMatchObject({ action: 'attack', moveId: 'neutralAir' });
   });
@@ -189,7 +186,7 @@ describe('once per airtime', () => {
       position: { x: 3, y: 0 },
       grounded: true,
       action: 'idle',
-      jumpsRemaining: FIGHTER.totalJumps,
+      jumpsRemaining: FIGHTER.airJumps + 1,
     });
     state = step(state, [inputOf({ jump: true })]);
     expect(fighter(state, 0).action).toBe('jumpsquat');
@@ -244,7 +241,7 @@ describe('second jump after air actions', () => {
     state = run(state, DODGE.air.totalFrames - 3, [NONE]);
     state = step(state, [inputOf({ jump: true })]);
     state = run(state, 3, [NONE]);
-    expect(fighter(state, 0).jumpsRemaining).toBe(FIGHTER.totalJumps - 2);
+    expect(fighter(state, 0).jumpsRemaining).toBe(FIGHTER.airJumps - 1);
     expect(fighter(state, 0).velocity.y).toBeGreaterThan(0);
   });
 
@@ -253,7 +250,7 @@ describe('second jump after air actions', () => {
     state = run(state, findMove('neutralAir').totalFrames - 3, [NONE]);
     state = step(state, [inputOf({ jump: true })]);
     state = run(state, 3, [NONE]);
-    expect(fighter(state, 0).jumpsRemaining).toBe(FIGHTER.totalJumps - 2);
+    expect(fighter(state, 0).jumpsRemaining).toBe(FIGHTER.airJumps - 1);
     expect(fighter(state, 0).velocity.y).toBeGreaterThan(0);
   });
 
@@ -262,7 +259,7 @@ describe('second jump after air actions', () => {
     state = run(state, findMove('neutralAir').totalFrames - 3, [NONE]);
     state = step(state, [inputOf({ jump: true, special: true })]);
     state = run(state, 3, [NONE]);
-    expect(fighter(state, 0).jumpsRemaining).toBe(FIGHTER.totalJumps - 2);
+    expect(fighter(state, 0).jumpsRemaining).toBe(FIGHTER.airJumps - 1);
     expect(fighter(state, 0).velocity.y).toBeGreaterThan(0);
   });
 
@@ -271,7 +268,7 @@ describe('second jump after air actions', () => {
       position: { x: 3, y: 0 },
       grounded: true,
       action: 'idle',
-      jumpsRemaining: FIGHTER.totalJumps,
+      jumpsRemaining: FIGHTER.airJumps + 1,
     });
     state = step(state, [inputOf({ jump: true })]);
     state = step(state, [NONE]);
@@ -279,7 +276,7 @@ describe('second jump after air actions', () => {
     state = run(state, 6, [NONE]);
     expect(fighter(state, 0)).toMatchObject({
       action: 'airborne',
-      jumpsRemaining: FIGHTER.totalJumps - 1,
+      jumpsRemaining: FIGHTER.airJumps,
     });
   });
 
@@ -288,7 +285,7 @@ describe('second jump after air actions', () => {
       position: { x: 3, y: 0 },
       grounded: true,
       action: 'idle',
-      jumpsRemaining: FIGHTER.totalJumps,
+      jumpsRemaining: FIGHTER.airJumps + 1,
     });
     state = step(state, [inputOf({ jump: true })]);
     state = step(state, [inputOf({ shield: true })]);
@@ -305,7 +302,7 @@ describe('second jump after air actions', () => {
     state = run(state, 6, [NONE]);
     expect(fighter(state, 0)).toMatchObject({
       action: 'airborne',
-      jumpsRemaining: FIGHTER.totalJumps - 1,
+      jumpsRemaining: FIGHTER.airJumps,
     });
   });
 

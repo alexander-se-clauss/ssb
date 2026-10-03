@@ -37,7 +37,7 @@ export const createFighter = (
     velocity: { x: 0, y: 0 },
     facing: spawn.x > 0 ? -1 : 1,
     grounded: false,
-    jumpsRemaining: stats.totalJumps - 1,
+    jumpsRemaining: stats.airJumps,
     airDodgeUsed: false,
     turnedFrom: null,
     action: 'airborne',
@@ -188,7 +188,7 @@ export const updateFighter = (
   const support = grounded ? stage.platforms.find((p) => standsOn(px, py, p)) : undefined;
   if (grounded && (!support || (support.passThrough && wantsDrop && isControllable(action)))) {
     grounded = false;
-    jumpsRemaining = Math.min(jumpsRemaining, stats.totalJumps - 1);
+    jumpsRemaining = Math.min(jumpsRemaining, stats.airJumps);
     if (support) py -= 0.05; // drop through the platform
     // Sliding off an edge during landing lag ends it: the fighter falls under control.
     if (action === 'landing') {
@@ -284,7 +284,7 @@ export const updateFighter = (
       vy = stats.jumpVelocity;
       // This is the ground jump, also when the fighter slid off an edge while crouched, which
       // has used it up already.
-      jumpsRemaining = Math.min(jumpsRemaining, stats.totalJumps - 1);
+      jumpsRemaining = Math.min(jumpsRemaining, stats.airJumps);
       grounded = false;
       action = 'airborne';
       actionFrame = 0;
@@ -318,7 +318,7 @@ export const updateFighter = (
       action = 'jumpsquat';
       actionFrame = 0;
     } else {
-      vy = stats.doubleJumpVelocity;
+      vy = stats.airJumpVelocity;
       jumpsRemaining -= 1;
     }
   }
@@ -390,7 +390,7 @@ export const updateFighter = (
       py = landing.bounds.top;
       vy = 0;
       grounded = true;
-      jumpsRemaining = stats.totalJumps;
+      jumpsRemaining = stats.airJumps + 1;
       airDodgeUsed = false;
       // An aerial, air dodge or jump press still waiting in the buffer is dropped: none of them
       // was meant for the ground.

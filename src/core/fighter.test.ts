@@ -44,7 +44,7 @@ describe('fighter movement', () => {
     expect(fighter(state, 0)).toMatchObject({ action: 'jumpsquat', grounded: true });
     state = step(state, [inputOf({})]);
     expect(fighter(state, 0)).toMatchObject({ action: 'airborne', grounded: false });
-    expect(fighter(state, 0).jumpsRemaining).toBe(FIGHTER.totalJumps - 1);
+    expect(fighter(state, 0).jumpsRemaining).toBe(FIGHTER.airJumps);
     expect(fighter(state, 0).velocity.y).toBeCloseTo(FIGHTER.jumpVelocity - FIGHTER.gravity);
   });
 
@@ -59,12 +59,12 @@ describe('fighter movement', () => {
     expect(fighter(state, 0).action).toBe('jumpsquat');
     state = run(state, FIGHTER.jumpSquatFrames, [inputOf({})]);
     expect(fighter(state, 0)).toMatchObject({ action: 'airborne', grounded: false });
-    expect(fighter(state, 0).jumpsRemaining).toBe(FIGHTER.totalJumps - 1);
+    expect(fighter(state, 0).jumpsRemaining).toBe(FIGHTER.airJumps);
   });
 
   it('holding jump does not repeat the jump', () => {
     const state = run(settled(), 30, [inputOf({ jump: true })]);
-    expect(fighter(state, 0).jumpsRemaining).toBe(FIGHTER.totalJumps - 1);
+    expect(fighter(state, 0).jumpsRemaining).toBe(FIGHTER.airJumps);
   });
 
   it('drops through a pass-through platform when holding down', () => {
