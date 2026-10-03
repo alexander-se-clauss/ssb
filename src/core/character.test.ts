@@ -77,6 +77,11 @@ describe('character definitions', () => {
       validateCharacter({ ...CAPSULE, ...patch });
     expect(check({ skeleton: { ...CAPSULE.skeleton, bones } })).toThrow(/no bone for lowerArmBack/);
     expect(check({ stats: { ...FIGHTER, height: 2.2 } })).toThrow(/height/);
+    // Longer legs on the same hip height: planted on its feet, the body stands taller.
+    const longLegs = CAPSULE.skeleton.bones.map((bone) =>
+      bone.id.includes('Leg') ? { ...bone, length: bone.length + 0.1 } : bone,
+    );
+    expect(check({ skeleton: { ...CAPSULE.skeleton, bones: longLegs } })).toThrow(/height/);
     expect(check({ stats: { ...FIGHTER, weight: 0 } })).toThrow(/weight/);
     expect(check({ stats: { ...FIGHTER, totalJumps: 0 } })).toThrow(/ground jump/);
     expect(check({ stats: { ...FIGHTER, jumpSquatFrames: 9 } })).toThrow(/jump squat/);

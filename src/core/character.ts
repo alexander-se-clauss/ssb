@@ -1,6 +1,6 @@
 import { STICK } from './config';
 import { findCharacter } from './registry';
-import { BONE_IDS, REST_POSE, boneSegments } from './skeleton';
+import { BONE_IDS, REST_POSE, plantedBoneSegments } from './skeleton';
 import type { CharacterDef } from './types';
 
 /**
@@ -28,7 +28,8 @@ export const validateCharacter = (character: CharacterDef): void => {
   const missing = BONE_IDS.filter((id) => !bones.has(id));
   if (missing.length > 0) fail(`skeleton has no bone for ${missing.join(', ')}`);
   const { stats } = character;
-  const head = boneSegments(character.skeleton, REST_POSE, { x: 0, y: 0 }, 1).head.end.y;
+  // Measured on the planted body, the one hurtboxes use: feet on the ground, whatever `hipHeight`.
+  const head = plantedBoneSegments(character.skeleton, REST_POSE, { x: 0, y: 0 }, 1).head.end.y;
   if (Math.abs(head - stats.height) > HEIGHT_TOLERANCE) {
     fail(`height ${stats.height} does not match the skeleton's ${head.toFixed(2)}`);
   }
