@@ -2,6 +2,9 @@ import * as THREE from 'three';
 import type { Rgb } from './cycles';
 import { jitter } from './noise';
 
+/** Depth of the solid main block of every stage, centred on the stage plane. */
+export const MAIN_BLOCK_DEPTH = 5;
+
 /** A stage's look: platforms, backdrop and lights, animated by the view every frame. */
 export interface Scenery {
   /** `seconds` is match time, so the background pauses with the game. */

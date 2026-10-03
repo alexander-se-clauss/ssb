@@ -34,6 +34,8 @@ export const poseName = (fighter: FighterState): PoseName | null => {
       return fighter.actionFrame < DODGE.roll.moveTo ? 'roll' : 'idle';
     case 'airDodge':
       return 'airDodge';
+    case 'ledge':
+      return 'ledge';
     case 'attack':
       return fighter.moveId === null ? 'idle' : null;
     case 'airborne':

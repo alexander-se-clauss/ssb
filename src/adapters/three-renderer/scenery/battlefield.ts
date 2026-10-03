@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { StageDef } from '../../../core';
 import { skyAt } from './cycles';
-import { addLights, rockGeometry, setRgb, skyDome, type Scenery } from './common';
+import { MAIN_BLOCK_DEPTH, addLights, rockGeometry, setRgb, skyDome, type Scenery } from './common';
 import { seededRandom } from './noise';
 import { rock, stoneTiles, worldUvs } from './textures';
 
@@ -72,7 +72,10 @@ export const battlefieldScenery = (scene: THREE.Scene, stage: StageDef): Scenery
 
     // The floor: stone blocks matching the collision box, then rock tapering far below it.
     const floor = new THREE.Mesh(
-      worldUvs(new THREE.BoxGeometry(width + 0.1, 0.5, 5).translate(middle, top - 0.25, 0), 4),
+      worldUvs(
+        new THREE.BoxGeometry(width + 0.1, 0.5, MAIN_BLOCK_DEPTH).translate(middle, top - 0.25, 0),
+        4,
+      ),
       stone,
     );
     floor.receiveShadow = true;

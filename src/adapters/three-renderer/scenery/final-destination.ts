@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { StageDef } from '../../../core';
 import { destinationAt } from './cycles';
-import { addLights, skyDome, type Scenery } from './common';
+import { MAIN_BLOCK_DEPTH, addLights, skyDome, type Scenery } from './common';
 import { seededRandom } from './noise';
 import { circuitGlow, darkPanels, worldUvs } from './textures';
 
@@ -99,7 +99,7 @@ export const finalDestinationScenery = (scene: THREE.Scene, stage: StageDef): Sc
     const { left, right, bottom, top } = platform.bounds;
     const width = right - left;
     const middle = (left + right) / 2;
-    const depth = platform.passThrough ? 2 : 5;
+    const depth = platform.passThrough ? 2 : MAIN_BLOCK_DEPTH;
 
     const floor = new THREE.Mesh(
       worldUvs(new THREE.BoxGeometry(width, 0.35, depth).translate(middle, top - 0.175, 0), 4),

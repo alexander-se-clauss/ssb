@@ -40,6 +40,7 @@ export type PoseName =
   | 'sidestep'
   | 'roll'
   | 'airDodge'
+  | 'ledge'
   | 'hurt'
   | 'tumble';
 
@@ -498,6 +499,19 @@ export const POSES: Readonly<Record<PoseName, Pose>> = {
     lowerLegFront: 40,
     upperLegBack: 190,
     lowerLegBack: 45,
+  },
+  // Hanging from a ledge: both arms stretched up and forward onto it, legs hanging down.
+  ledge: {
+    torso: 10,
+    head: -15,
+    upperArmFront: 15,
+    lowerArmFront: 0,
+    upperArmBack: 10,
+    lowerArmBack: 0,
+    upperLegFront: 172,
+    lowerLegFront: 12,
+    upperLegBack: 188,
+    lowerLegBack: 15,
   },
   // Flinch: head and chest snap back, the arms trail behind the body.
   hurt: {

@@ -38,6 +38,8 @@ export type FighterAction =
   | 'forwardRoll'
   | 'backRoll'
   | 'airDodge'
+  /** Hanging on a ledge (#40). */
+  | 'ledge'
   | 'hitstun'
   | 'eliminated';
 
@@ -95,6 +97,10 @@ export interface FighterState {
   /** Frames left frozen by a hit (ADR 0006): nothing moves, the move and pose stand still. */
   readonly hitlagFrames: number;
   readonly invulnerableFrames: number;
+  /** Index into the stage's `ledges` of the ledge held while `action` is `'ledge'`, else `null`. */
+  readonly ledge: number | null;
+  /** Frames left before the fighter can grab a ledge again after letting go of one. */
+  readonly ledgeRegrabFrames: number;
   /** Who the current move already hit, per hitbox group, so one swing hits each target once. */
   readonly hitTargets: readonly HitRecord[];
   /** The latest press the fighter has not acted on yet, if any. */
@@ -113,11 +119,22 @@ export interface PlatformDef {
   readonly passThrough: boolean;
 }
 
+/**
+ * A corner of a solid platform a fighter can hang from (#40). `facing` is the way a fighter on it
+ * faces: onto the stage, so 1 on a platform's left corner and -1 on its right one.
+ */
+export interface LedgeDef {
+  readonly position: Vec2;
+  readonly facing: 1 | -1;
+}
+
 export interface StageDef {
   readonly id: string;
   readonly name: string;
   readonly platforms: readonly PlatformDef[];
   readonly spawnPoints: readonly Vec2[];
+  /** Corners of solid platforms fighters can hang from; one fighter per ledge. */
+  readonly ledges: readonly LedgeDef[];
   /** Leaving this rectangle loses a stock. */
   readonly blastZone: Rect;
 }
