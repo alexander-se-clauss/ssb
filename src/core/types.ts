@@ -192,9 +192,9 @@ export interface CharacterStats {
   readonly jumpSquatFrames: number;
   /** Take-off speed of the ground jump and of an air jump; they set the jump heights. */
   readonly jumpVelocity: number;
-  readonly doubleJumpVelocity: number;
-  /** Grounded jump plus air jumps. */
-  readonly totalJumps: number;
+  readonly airJumpVelocity: number;
+  /** Jumps in the air after leaving the ground (Melee's double jump is 1); landing resets them. */
+  readonly airJumps: number;
   /** Knockback is divided by it: heavier characters fly less far. */
   readonly weight: number;
   /** Landing lag after a jump or fall without an aerial running; aerials set their own. */

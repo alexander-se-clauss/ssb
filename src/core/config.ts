@@ -43,8 +43,8 @@ export const FIGHTER = {
   fastFallSpeed: 0.32,
   jumpSquatFrames: 3,
   jumpVelocity: 0.3,
-  doubleJumpVelocity: 0.27,
-  totalJumps: 2,
+  airJumpVelocity: 0.27,
+  airJumps: 1,
   weight: 1,
   landingLagFrames: 4,
 } as const satisfies CharacterStats;

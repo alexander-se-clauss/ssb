@@ -135,7 +135,8 @@ export const resolveCombat = (
 
       const current = next[target.slot] ?? target;
       const damage = current.damage + hitbox.attack.damage;
-      const speed = knockback(hitbox.attack, damage, characterOf(current.characterId).stats.weight);
+      const { stats } = characterOf(current.characterId);
+      const speed = knockback(hitbox.attack, damage, stats.weight);
       const radians = (hitbox.attack.angle * Math.PI) / 180;
       const hitlag = hitlagFrames(hitbox.attack);
 
@@ -144,6 +145,8 @@ export const resolveCombat = (
         damage,
         velocity: { x: Math.cos(radians) * speed * attacker.facing, y: Math.sin(radians) * speed },
         grounded: false,
+        // Launched off the ground, the ground jump is gone; the air jumps stay.
+        jumpsRemaining: Math.min(current.jumpsRemaining, stats.airJumps),
         action: 'hitstun',
         actionFrame: 0,
         // A hit gives the air dodge back, as in Ultimate.

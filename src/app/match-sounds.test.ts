@@ -39,7 +39,7 @@ describe('stateCues', () => {
     const before = ground;
     const walkedOff = withFighter(ground, 0, {
       grounded: false,
-      jumpsRemaining: FIGHTER.totalJumps - 1,
+      jumpsRemaining: FIGHTER.airJumps,
       velocity: { x: 0.1, y: 0 },
     });
     expect(cuesOf(before, walkedOff)).toEqual([]);
@@ -63,7 +63,7 @@ describe('stateCues', () => {
     const launched = withFighter(ground, 0, {
       grounded: false,
       action: 'hitstun',
-      jumpsRemaining: FIGHTER.totalJumps - 1,
+      jumpsRemaining: FIGHTER.airJumps,
       velocity: { x: 0.5, y: 0.5 },
     });
     expect(cuesOf(ground, launched)).toEqual([]);
