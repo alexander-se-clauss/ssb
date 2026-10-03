@@ -130,7 +130,8 @@ type MoveDef = AttackMoveDef; // | BlockMoveDef | CounterMoveDef with #6
   an aerial: landing while it runs ends it, and the fighter enters the `landing` action for that
   many frames, counted down in `FighterState.landingLagFrames`. A move without `landingLag`
   keeps running on landing.
-- Landing from `airborne` costs `FIGHTER.landingLagFrames`; a fighter in hitstun lands without
+- Landing from `airborne` costs `FIGHTER.landingLagFrames` (since #37 the character's
+  `stats.landingLagFrames`); a fighter in hitstun lands without
   lag. Presses during the lag wait in the buffer as usual. Sliding off an edge during the lag
   ends it, and the fighter falls under control.
 - An aerial started on the frame before landing still costs its full landing lag, as in Melee.

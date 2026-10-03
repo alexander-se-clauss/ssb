@@ -119,7 +119,7 @@ a playable build; it is done when that build works, not on a date.
       capsule moveset until they get their own; their overalls and armour plates take the
       player's colour. Character definitions and own movesets stay in S5 and S6.
 - [ ] **S5 Off-stage play.** Ledge grab and getups, larger blast zones in stage data, a camera
-      that follows fighters off-stage, helpless state; character definitions, per-character air
+      that follows fighters off-stage, helpless state; character definitions (#37, done), per-character air
       jumps, fighter 1. Epics #7, #8.
 - [ ] **S6 Guard and specials.** Block and counter, spawned objects and projectiles, particle
       effects (fire, hit, KO), side and down specials, fighter 2. Epics #6, #7, #9.

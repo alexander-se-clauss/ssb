@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { NEUTRAL_INPUT, inputOf, type CharacterDef } from '../core';
+import { CAPSULE, NEUTRAL_INPUT, inputOf, type CharacterDef } from '../core';
 import {
   RULES_CURSOR,
   previewCharacter,
@@ -18,11 +18,11 @@ import {
 } from './character-select';
 
 const ROSTER: CharacterDef[] = [
-  { id: 'a', name: 'A', moves: {} },
-  { id: 'b', name: 'B', moves: {} },
-  { id: 'c', name: 'C', moves: {} },
-  { id: 'd', name: 'D', moves: {} },
-  { id: 'e', name: 'E', moves: {} },
+  { ...CAPSULE, id: 'a', name: 'A', moves: {} },
+  { ...CAPSULE, id: 'b', name: 'B', moves: {} },
+  { ...CAPSULE, id: 'c', name: 'C', moves: {} },
+  { ...CAPSULE, id: 'd', name: 'D', moves: {} },
+  { ...CAPSULE, id: 'e', name: 'E', moves: {} },
 ];
 const COLUMNS = 4;
 

@@ -2,16 +2,20 @@
  * Everything that can be picked in a match, as plain data. Menus list these arrays in order;
  * match configs and game state refer to entries only by id, so they stay serializable.
  */
+import { FIGHTER } from './config';
+import { HUMANOID } from './skeleton';
 import { BATTLEFIELD, FINAL_DESTINATION } from './stages';
 import type { CharacterDef, StageDef } from './types';
 
 /**
- * The first fighter: the capsule body with the tuning in `FIGHTER`. It has its ground
+ * The first fighter: the humanoid body with the stats in `FIGHTER`. It has its ground
  * attacks and aerials; specials are empty until S6.
  */
 export const CAPSULE: CharacterDef = {
   id: 'capsule',
   name: 'Capsule',
+  stats: FIGHTER,
+  skeleton: HUMANOID,
   moves: {
     jab: 'jab',
     forwardTilt: 'forwardTilt',
@@ -28,11 +32,11 @@ export const CAPSULE: CharacterDef = {
   },
 };
 
-/** A handyman on the shared skeleton; he borrows the capsule's moves for now (epic #7). */
-export const RIVET: CharacterDef = { id: 'rivet', name: 'Rivet', moves: CAPSULE.moves };
+/** A handyman; he plays exactly like the capsule for now (epic #7). */
+export const RIVET: CharacterDef = { ...CAPSULE, id: 'rivet', name: 'Rivet' };
 
-/** A bounty hunter in power armour; she borrows the capsule's moves for now (epic #7). */
-export const VELA: CharacterDef = { id: 'vela', name: 'Vela', moves: CAPSULE.moves };
+/** A bounty hunter in power armour; she plays exactly like the capsule for now (epic #7). */
+export const VELA: CharacterDef = { ...CAPSULE, id: 'vela', name: 'Vela' };
 
 export const CHARACTERS: readonly CharacterDef[] = [CAPSULE, RIVET, VELA];
 

@@ -32,6 +32,12 @@ browsers, rendering or networking.
 | Adapters | `src/adapters` | core (via index), ports, libraries | Keyboard, gamepad, local session, Three.js, HUD, Web Audio                      |
 | App      | `src/app`      | everything                         | `main.ts` wiring, screens and menus, debug handle, CSS                          |
 
+A character is plain data too (`CharacterDef` in `types.ts`, registered in `registry.ts`): its
+`stats` (`CharacterStats`: body box, walk and air speed, gravity, fall speeds, jump speeds and
+count, weight, landing lag), its `skeleton` and its `moves`. The capsule's stats are `FIGHTER` in
+`config.ts`; rules every fighter shares are `FIGHTER_RULES`. Core code reads a fighter's
+definition with `characterOf` (`character.ts`), so movement, knockback (divided by the target's
+`weight`), hurtboxes and bone hitboxes follow the character it plays. Looks stay in the view.
 Fighter bodies are core data too (`skeleton.ts`): a 2D skeleton of bones with lengths and parents,
 and poses as joint angles. `boneSegments` turns a pose into world joint positions;
 `plantedBoneSegments` then lowers the body until its feet rest on the fighter's position, so a
@@ -52,12 +58,12 @@ each target once per `group`; when several touch one target, the highest `priori
 (`strikingHitbox`), and `hitTargets` records who each group already hit. Each hitbox sets its
 own damage, angle and knockback. A hit freezes attacker and target for `hitlagFrames`, longer for
 harder hits (`HITLAG` in `config.ts`): nothing moves, and the launch is held until it ends.
-In the air, horizontal speed above `FIGHTER.airSpeed` bleeds off at `FIGHTER.launchDecay`, so a
+In the air, horizontal speed above the character's `airSpeed` bleeds off at `FIGHTER_RULES.launchDecay`, so a
 sideways launch flies a set distance instead of drifting on almost undamped.
 Move data is one file per family in `move-data/` (`jab.ts`, `tilts.ts`, `smashes.ts`,
 `aerials.ts`, each registered in `move-data/index.ts`). A move with a `landingLag` is an aerial:
 landing while it runs ends it and puts the fighter in the `landing` action for that many frames
-(`landingLagFrames`). Landing from a jump or fall without one costs `FIGHTER.landingLagFrames`;
+(`landingLagFrames`). Landing from a jump or fall without one costs the character's `landingLagFrames`;
 a fighter in hitstun lands without lag. An aerial press still in the buffer on landing is
 dropped, and during an aerial the fighter drifts and fast-falls like `airborne`. A
 press of attack or special picks a move slot from the situation and the stick (`move-slots.ts`:
@@ -67,7 +73,7 @@ table fills each slot with a move id or leaves it empty. The press goes into
 `INPUT.bufferFrames` until the fighter can act (presses during hitlag are buffered too, and do not
 age). A move's `cancels` list windows in which a buffered slot starts the next move: the jab
 chains into jab 2 and jab 3.
-A ground jump starts with a short `jumpsquat` (`FIGHTER.jumpSquatFrames`) as in Melee: an attack
+A ground jump starts with a short `jumpsquat` (the character's `jumpSquatFrames`) as in Melee: an attack
 pressed during it is still a ground attack, so flicking the stick up (which tap-jumps) and
 pressing attack plays the up smash. A jump press waits in the buffer like the others, so a double
 jump pressed late in an aerial or air dodge comes out as soon as it ends. A jump never pushes a waiting move or dodge out of the buffer, and it is not

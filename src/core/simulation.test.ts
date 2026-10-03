@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FIGHTER } from './config';
+import { FIGHTER_RULES } from './config';
 import { step } from './simulation';
 import { fighter, inputOf, newMatch, run, settled, withFighter } from './test-helpers';
 import type { PlayerInput } from './types';
@@ -12,7 +12,7 @@ describe('match simulation', () => {
     const p1 = fighter(state, 0);
     expect(p1.stocks).toBe(2);
     expect(p1.damage).toBe(0);
-    expect(p1.invulnerableFrames).toBe(FIGHTER.respawnInvulnerabilityFrames);
+    expect(p1.invulnerableFrames).toBe(FIGHTER_RULES.respawnInvulnerabilityFrames);
     expect(state.events).toContainEqual({ type: 'ko', slot: 0, stocksLeft: 2 });
     expect(state.phase).toBe('playing');
   });

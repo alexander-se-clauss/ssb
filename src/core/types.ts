@@ -6,7 +6,7 @@ import type { Rect, Vec2 } from './math';
 import type { StickTracker } from './attack-input';
 import type { MoveSlot } from './move-slots';
 import type { BufferedAction, MoveId } from './moves';
-import type { Pose } from './skeleton';
+import type { Pose, SkeletonDef } from './skeleton';
 
 /** Index of a player in the match, 0-based. */
 export type PlayerSlot = number;
@@ -165,10 +165,52 @@ export interface MatchState {
   readonly winner: PlayerSlot | null;
 }
 
-/** A pickable fighter. Stats and moves join this as characters get their own (epic #7). */
+/**
+ * How a character moves and how hard it is to launch. Units as in `config.ts`: stage units and
+ * frames. The capsule's are `FIGHTER`; other characters start from them and change what differs.
+ */
+export interface CharacterStats {
+  /** The body box for stage collision, around the feet. */
+  readonly width: number;
+  readonly height: number;
+  /** Top ground speed; the run is the walk at full stick. */
+  readonly walkSpeed: number;
+  readonly groundAcceleration: number;
+  readonly groundFriction: number;
+  /** Top drift speed in the air. */
+  readonly airSpeed: number;
+  readonly airAcceleration: number;
+  readonly airFriction: number;
+  readonly gravity: number;
+  readonly maxFallSpeed: number;
+  readonly fastFallSpeed: number;
+  /**
+   * Frames crouched on the ground before a jump leaves it; a ground attack can start instead.
+   * Keep it below `STICK.smashWindowFrames`, so a stick flicked up (which tap-jumps) and attack
+   * pressed on the last squat frame is still an up smash.
+   */
+  readonly jumpSquatFrames: number;
+  /** Take-off speed of the ground jump and of an air jump; they set the jump heights. */
+  readonly jumpVelocity: number;
+  readonly doubleJumpVelocity: number;
+  /** Grounded jump plus air jumps. */
+  readonly totalJumps: number;
+  /** Knockback is divided by it: heavier characters fly less far. */
+  readonly weight: number;
+  /** Landing lag after a jump or fall without an aerial running; aerials set their own. */
+  readonly landingLagFrames: number;
+}
+
+/**
+ * A pickable fighter, entirely as plain data (#37): its stats, the body its poses, hurtboxes and
+ * bone hitboxes are built on, and the move each slot plays. How it looks is the view's business.
+ */
 export interface CharacterDef {
   readonly id: string;
   readonly name: string;
+  readonly stats: CharacterStats;
+  /** Bone lengths and thickness; every skeleton has every `BoneId`, so poses fit any body. */
+  readonly skeleton: SkeletonDef;
   /** The move each slot plays (`move-slots.ts`); an empty slot does nothing. */
   readonly moves: Readonly<Partial<Record<MoveSlot, MoveId>>>;
 }

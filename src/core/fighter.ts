@@ -1,10 +1,10 @@
 import { CENTRED_STICK, attackInput, trackStick } from './attack-input';
-import { DODGE, FIGHTER, INPUT, STICK } from './config';
+import { characterOf } from './character';
+import { DODGE, FIGHTER_RULES, INPUT, STICK } from './config';
 import { NEUTRAL_INPUT, pressed } from './input';
 import { approach } from './math';
 import { findMove } from './move-data';
 import { isAerialSlot, moveSlot } from './move-slots';
-import { findCharacter } from './registry';
 import { nextPose } from './poses';
 import { REST_POSE } from './skeleton';
 import { isDodge, type BufferedAction, type MoveId } from './moves';
@@ -29,6 +29,7 @@ export const createFighter = (
   stocks: number,
 ): FighterState => {
   const spawn = stage.spawnPoints[slot % stage.spawnPoints.length] ?? { x: 0, y: 3 };
+  const { stats } = characterOf(characterId);
   return {
     slot,
     characterId,
@@ -36,7 +37,7 @@ export const createFighter = (
     velocity: { x: 0, y: 0 },
     facing: spawn.x > 0 ? -1 : 1,
     grounded: false,
-    jumpsRemaining: FIGHTER.totalJumps - 1,
+    jumpsRemaining: stats.totalJumps - 1,
     airDodgeUsed: false,
     turnedFrom: null,
     action: 'airborne',
@@ -90,6 +91,7 @@ export const updateFighter = (
   frame = 0,
 ): FighterState => {
   if (fighter.action === 'eliminated') return { ...fighter, previousInput: input };
+  const { stats, moves } = characterOf(fighter.characterId);
 
   const prev = fighter.previousInput;
   // A press asks for the move in a slot (#28) and waits in the buffer until the fighter can act.
@@ -127,7 +129,7 @@ export const updateFighter = (
     }
     const choice = moveSlot({ grounded, button, attack: attackInput(stick, fighter.facing) });
     // A press for an empty slot does nothing, so a jump pressed with it is buffered instead.
-    if (findCharacter(fighter.characterId)?.moves[choice.slot] === undefined) {
+    if (moves[choice.slot] === undefined) {
       const jump = jumpPress();
       if (jump) return jump;
     }
@@ -186,7 +188,7 @@ export const updateFighter = (
   const support = grounded ? stage.platforms.find((p) => standsOn(px, py, p)) : undefined;
   if (grounded && (!support || (support.passThrough && wantsDrop && isControllable(action)))) {
     grounded = false;
-    jumpsRemaining = Math.min(jumpsRemaining, FIGHTER.totalJumps - 1);
+    jumpsRemaining = Math.min(jumpsRemaining, stats.totalJumps - 1);
     if (support) py -= 0.05; // drop through the platform
     // Sliding off an edge during landing lag ends it: the fighter falls under control.
     if (action === 'landing') {
@@ -201,9 +203,7 @@ export const updateFighter = (
   const kept = fighter.buffer && fighter.buffer.age < INPUT.bufferFrames ? fighter.buffer : null;
   let buffer = latest(press(grounded), kept && { ...kept, age: kept.age + 1 });
   const slotMove = (action: BufferedAction): MoveId | undefined =>
-    isDodge(action) || action === 'jump' || action === 'block'
-      ? undefined
-      : findCharacter(fighter.characterId)?.moves[action];
+    isDodge(action) || action === 'jump' || action === 'block' ? undefined : moves[action];
   /** Starts a move from the buffered press, facing the way the press asked for. */
   const startMove = (id: MoveId, face: 1 | -1): void => {
     buffer = null;
@@ -278,13 +278,13 @@ export const updateFighter = (
     // flicked up for an up smash does not lose it to tap-jump.
     if (buffer && bufferedMove !== undefined) {
       startMove(bufferedMove, buffer.face);
-    } else if (actionFrame >= FIGHTER.jumpSquatFrames || !grounded) {
+    } else if (actionFrame >= stats.jumpSquatFrames || !grounded) {
       // A second press during the squat is not kept for a double jump at take-off.
       if (buffer?.action === 'jump') buffer = null;
-      vy = FIGHTER.jumpVelocity;
+      vy = stats.jumpVelocity;
       // This is the ground jump, also when the fighter slid off an edge while crouched, which
       // has used it up already.
-      jumpsRemaining = Math.min(jumpsRemaining, FIGHTER.totalJumps - 1);
+      jumpsRemaining = Math.min(jumpsRemaining, stats.totalJumps - 1);
       grounded = false;
       action = 'airborne';
       actionFrame = 0;
@@ -318,7 +318,7 @@ export const updateFighter = (
       action = 'jumpsquat';
       actionFrame = 0;
     } else {
-      vy = FIGHTER.doubleJumpVelocity;
+      vy = stats.doubleJumpVelocity;
       jumpsRemaining -= 1;
     }
   }
@@ -346,8 +346,8 @@ export const updateFighter = (
     const rolling = actionFrame >= moveFrom && actionFrame < moveTo;
     const travel = action === 'forwardRoll' ? facing : -facing;
     vx = rolling ? (travel * distance) / (moveTo - moveFrom) : 0;
-  } else if (!grounded && Math.abs(vx) > FIGHTER.airSpeed) {
-    vx = approach(vx, Math.sign(vx) * FIGHTER.airSpeed, FIGHTER.launchDecay);
+  } else if (!grounded && Math.abs(vx) > stats.airSpeed) {
+    vx = approach(vx, Math.sign(vx) * stats.airSpeed, FIGHTER_RULES.launchDecay);
   } else if (isControllable(action) || inAerial) {
     const stickFacing = input.x > 0 ? 1 : -1;
     if (Math.abs(input.x) > FACE_THRESHOLD && grounded && stickFacing !== facing) {
@@ -356,23 +356,20 @@ export const updateFighter = (
       facing = stickFacing;
     }
     if (grounded) {
-      vx = approach(vx, input.x * FIGHTER.walkSpeed, FIGHTER.groundAcceleration);
+      vx = approach(vx, input.x * stats.walkSpeed, stats.groundAcceleration);
     } else if (Math.abs(input.x) > 0.1) {
-      vx = approach(vx, input.x * FIGHTER.airSpeed, FIGHTER.airAcceleration);
+      vx = approach(vx, input.x * stats.airSpeed, stats.airAcceleration);
     } else {
-      vx = approach(vx, 0, FIGHTER.airFriction);
+      vx = approach(vx, 0, stats.airFriction);
     }
   } else {
-    vx = approach(vx, 0, grounded ? FIGHTER.groundFriction : FIGHTER.airFriction);
+    vx = approach(vx, 0, grounded ? stats.groundFriction : stats.airFriction);
   }
 
   // Gravity. Holding down while falling fast-falls.
   if (!grounded && !airDodging) {
     const fastFalling = (isControllable(action) || inAerial) && wantsDrop && vy < 0;
-    vy = Math.max(
-      vy - FIGHTER.gravity,
-      -(fastFalling ? FIGHTER.fastFallSpeed : FIGHTER.maxFallSpeed),
-    );
+    vy = Math.max(vy - stats.gravity, -(fastFalling ? stats.fastFallSpeed : stats.maxFallSpeed));
   }
 
   const nextX = px + vx;
@@ -393,7 +390,7 @@ export const updateFighter = (
       py = landing.bounds.top;
       vy = 0;
       grounded = true;
-      jumpsRemaining = FIGHTER.totalJumps;
+      jumpsRemaining = stats.totalJumps;
       airDodgeUsed = false;
       // An aerial, air dodge or jump press still waiting in the buffer is dropped: none of them
       // was meant for the ground.
@@ -403,7 +400,7 @@ export const updateFighter = (
       // short one. A launched fighter in hitstun lands without lag.
       const lag =
         action === 'airborne'
-          ? FIGHTER.landingLagFrames
+          ? stats.landingLagFrames
           : action === 'airDodge'
             ? DODGE.air.landingLag
             : action === 'attack' && moveId !== null
@@ -434,19 +431,19 @@ export const updateFighter = (
   for (const platform of stage.platforms) {
     if (platform.passThrough) continue;
     const b = platform.bounds;
-    const half = FIGHTER.width / 2;
+    const half = stats.width / 2;
     const overlaps =
       px + half > b.left &&
       px - half < b.right &&
       py < b.top - 1e-6 &&
-      py + FIGHTER.height > b.bottom;
+      py + stats.height > b.bottom;
     if (!overlaps) continue;
     const pushLeft = px + half - b.left;
     const pushRight = b.right - (px - half);
-    const pushDown = py + FIGHTER.height - b.bottom;
+    const pushDown = py + stats.height - b.bottom;
     const smallest = Math.min(pushLeft, pushRight, pushDown);
     if (smallest === pushDown) {
-      py = b.bottom - FIGHTER.height;
+      py = b.bottom - stats.height;
       vy = Math.min(vy, 0);
     } else if (smallest === pushLeft) {
       px = b.left - half;

@@ -1,5 +1,13 @@
 import * as THREE from 'three';
-import { HUMANOID, plantedBoneSegments, vec2, type BoneId, type Pose } from '../../core';
+import {
+  characterOf,
+  plantedBoneSegments,
+  vec2,
+  type BoneDef,
+  type BoneId,
+  type Pose,
+  type SkeletonDef,
+} from '../../core';
 import { bodyParts } from './body-layout';
 import { OVERALLS, rivetParts } from './models/rivet';
 import { PLATES, velaParts } from './models/vela';
@@ -18,11 +26,13 @@ export interface FighterModel {
   readonly parts: ReadonlyMap<BoneId, THREE.Object3D>;
   /** Every material, so the view can flash and tint the whole body. */
   readonly materials: readonly THREE.MeshStandardMaterial[];
+  /** The character's body the parts are built and posed on. */
+  readonly skeleton: SkeletonDef;
 }
 
 /** Builds the meshes of one bone in its local space; `material` makes shared, flashable materials. */
 export type PartBuilder = (
-  bone: (typeof HUMANOID.bones)[number],
+  bone: BoneDef,
   material: (color: number) => THREE.MeshStandardMaterial,
 ) => THREE.Object3D[];
 
@@ -64,11 +74,12 @@ const FAR_SHADE = 0.65;
 /** The actual match body of a character, shared by gameplay, lobby portraits and the podium. */
 export const fighterModel = (characterId: string, color: number): FighterModel => {
   const look = CHARACTER_LOOKS[characterId] ?? CAPSULE_LOOK;
+  const { skeleton } = characterOf(characterId);
   const materials: THREE.MeshStandardMaterial[] = [];
   const playerMaterials: { material: THREE.MeshStandardMaterial; shade: number }[] = [];
   const root = new THREE.Group();
   const parts = new Map<BoneId, THREE.Object3D>();
-  for (const bone of HUMANOID.bones) {
+  for (const bone of skeleton.bones) {
     const shade = bone.id.endsWith('Back') ? FAR_SHADE : 1;
     const cache = new Map<number, THREE.MeshStandardMaterial>();
     const material = (base: number) => {
@@ -97,11 +108,11 @@ export const fighterModel = (characterId: string, color: number): FighterModel =
   for (const { material, shade } of playerMaterials) {
     material.color.setHex(target).multiplyScalar(shade);
   }
-  return { root, parts, materials };
+  return { root, parts, materials, skeleton };
 };
 
 export const poseFighter = (model: FighterModel, pose: Pose): void => {
-  for (const part of bodyParts(plantedBoneSegments(HUMANOID, pose, vec2(0, 0), 1))) {
+  for (const part of bodyParts(plantedBoneSegments(model.skeleton, pose, vec2(0, 0), 1))) {
     const group = model.parts.get(part.bone);
     if (!group) continue;
     group.position.set(part.x, part.y, part.depth);

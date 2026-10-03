@@ -63,7 +63,7 @@ export interface BoneSegment {
   readonly end: Vec2;
 }
 
-/** Head, torso, two-part arms and legs; stands `FIGHTER.height` tall in the rest pose. */
+/** Head, torso, two-part arms and legs; stands the capsule's `FIGHTER.height` tall at rest. */
 export const HUMANOID: SkeletonDef = {
   hipHeight: 0.8,
   bones: [

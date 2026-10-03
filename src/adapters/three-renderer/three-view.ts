@@ -1,15 +1,15 @@
 import * as THREE from 'three';
 import {
-  FIGHTER,
-  HUMANOID,
   TICK_RATE,
   activeHitboxes,
   blendPose,
+  characterOf,
   hurtboxes,
   plantedBoneSegments,
   vec2,
   type BoneId,
   type FighterState,
+  type SkeletonDef,
   type StageDef,
 } from '../../core';
 import type { GameView, SessionView } from '../../ports';
@@ -28,6 +28,7 @@ interface FighterVisual {
   readonly parts: ReadonlyMap<BoneId, THREE.Object3D>;
   /** Every material of the body, flashed while invulnerable and tinted in hitstun. */
   readonly materials: readonly THREE.MeshStandardMaterial[];
+  readonly skeleton: SkeletonDef;
   /** Debug overlay: one sphere per active hitbox, grown as moves need more. */
   readonly hitboxes: THREE.Mesh[];
   /** Debug overlay: one shape per hurtbox, in world space. */
@@ -104,11 +105,11 @@ export class ThreeView implements GameView {
     if (existing) return existing;
 
     const color = PLAYER_COLORS[slot % PLAYER_COLORS.length] ?? 0xffffff;
-    const { root, parts, materials } = fighterModel(characterId, color);
+    const { root, parts, materials, skeleton } = fighterModel(characterId, color);
 
     const hurtboxes = new Map<BoneId, THREE.Mesh>();
     const hurtboxMaterial = overlay(BOX_COLORS.hurtbox);
-    for (const bone of HUMANOID.bones) {
+    for (const bone of skeleton.bones) {
       const geometry =
         bone.shape === 'ball'
           ? new THREE.SphereGeometry(bone.radius, 12, 8)
@@ -131,6 +132,7 @@ export class ThreeView implements GameView {
       root,
       parts,
       materials,
+      skeleton,
       hitboxes: [],
       hurtboxes,
       hurtboxMaterial,
@@ -178,7 +180,7 @@ export class ThreeView implements GameView {
     // Planting keeps the feet on the ground when the stance bends the knees.
     const pose = teleported ? fighter.pose : blendPose(before.pose, fighter.pose, t);
     const position = vec2(x, y);
-    for (const part of bodyParts(plantedBoneSegments(HUMANOID, pose, vec2(0, 0), 1))) {
+    for (const part of bodyParts(plantedBoneSegments(visual.skeleton, pose, vec2(0, 0), 1))) {
       const mesh = visual.parts.get(part.bone);
       mesh?.position.set(part.x, part.y, part.depth);
       mesh?.rotation.set(0, 0, part.angle);
@@ -221,7 +223,7 @@ export class ThreeView implements GameView {
     const alive = fighters.filter((f) => f.action !== 'eliminated');
     if (alive.length > 0) {
       const xs = alive.map((f) => f.position.x);
-      const ys = alive.map((f) => f.position.y + FIGHTER.height / 2);
+      const ys = alive.map((f) => f.position.y + characterOf(f.characterId).stats.height / 2);
       const minX = Math.min(...xs);
       const maxX = Math.max(...xs);
       const minY = Math.min(...ys);
