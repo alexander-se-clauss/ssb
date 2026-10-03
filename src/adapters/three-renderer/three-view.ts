@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {
   TICK_RATE,
+  activeEffects,
   activeHitboxes,
   blendPose,
   characterOf,
@@ -18,6 +19,8 @@ import { disposeScene } from './dispose-scene';
 import { bodyParts } from './body-layout';
 import { dodgeMotion, lerpAngle, ROLL_PIVOT } from './dodge-motion';
 import { BOX_COLORS, hurtboxColor } from './debug-colors';
+import { EffectLayer, type Emitter } from './effect-layer';
+import { ObjectLayer } from './object-layer';
 import { buildScenery, type Scenery } from './scenery';
 
 import { fighterModel, PLAYER_COLORS } from './fighter-model';
@@ -32,6 +35,9 @@ import {
 } from './match-camera';
 
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
+
+/** How far in front of the body an effect on it burns, so the body does not hide it. */
+const EFFECT_DEPTH = 0.35;
 
 export interface ThreeViewOptions {
   /**
@@ -75,6 +81,10 @@ export class ThreeView implements GameView {
   private hudShare = 0;
   private hudCheck: number | null = null;
   private readonly scenery: Scenery;
+  private readonly effects: EffectLayer;
+  private readonly objects: ObjectLayer;
+  /** Reused every drawing, so the render loop makes no garbage for it. */
+  private readonly emitters: Emitter[] = [];
   private showBoxes = false;
 
   constructor(
@@ -90,6 +100,8 @@ export class ThreeView implements GameView {
 
     placeCamera(this.camera, this.cameraFrame);
     this.scenery = buildScenery(this.scene, stage);
+    this.effects = new EffectLayer(this.scene);
+    this.objects = new ObjectLayer(this.scene);
     this.resize(container.clientWidth, container.clientHeight);
   }
 
@@ -98,13 +110,24 @@ export class ThreeView implements GameView {
     // The same in-between moment the fighters are drawn at; stops when the match does.
     const frame = previous.frame + (current.frame - previous.frame) * alpha;
     this.scenery.update(frame / TICK_RATE);
+    const elapsed = this.lastFrame === null ? 0 : Math.max(frame - this.lastFrame, 0);
+    this.lastFrame = frame;
     const bodies: Rect[] = [];
+    const emitters = this.emitters;
+    emitters.length = 0;
     for (const fighter of current.fighters) {
       const before = previous.fighters[fighter.slot] ?? fighter;
-      const body = this.updateFighter(fighter, before, alpha, current.frame);
+      const body = this.updateFighter(fighter, before, alpha, current.frame, emitters);
       if (body) bodies.push(body);
     }
-    this.updateCamera(bodies, frame);
+    this.objects.update(previous.objects, current.objects, alpha);
+    for (const object of current.objects) {
+      const at = object.effect === undefined ? undefined : this.objects.drawnAt(object.id);
+      if (object.effect === undefined || !at) continue;
+      emitters.push({ effect: object.effect, x: at.x, y: at.y, depth: 0 });
+    }
+    this.effects.update(emitters, elapsed);
+    this.updateCamera(bodies, frame, elapsed);
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -122,6 +145,7 @@ export class ThreeView implements GameView {
 
   /** Frees GPU memory and the WebGL context; the app creates a new view for every match. */
   dispose(): void {
+    this.objects.dispose();
     disposeScene(this.scene);
     this.renderer.dispose();
     this.renderer.forceContextLoss();
@@ -174,6 +198,8 @@ export class ThreeView implements GameView {
     before: FighterState,
     alpha: number,
     frame: number,
+    /** Gets the effects the fighter's move shows this moment (#47). */
+    emitters: Emitter[],
   ): Rect | undefined {
     const visual = this.visualFor(fighter.slot, fighter.characterId);
     const eliminated = fighter.action === 'eliminated';
@@ -219,6 +245,11 @@ export class ThreeView implements GameView {
       material.emissive.setHex(fighter.action === 'hitstun' ? 0x662222 : 0x000000);
     }
 
+    // The move's effects burn where core puts them on the in-between body.
+    for (const { effect, position: at } of activeEffects({ ...fighter, position, pose })) {
+      emitters.push({ effect, x: at.x, y: at.y, depth: depth + EFFECT_DEPTH });
+    }
+
     // Core's own hurtboxes for the in-between body, so the overlay sits on what is drawn.
     visual.hurtboxMaterial.color.setHex(hurtboxColor(fighter));
     for (const box of hurtboxes({ ...fighter, position, pose })) {
@@ -254,7 +285,7 @@ export class ThreeView implements GameView {
    * Smash-style camera (`match-camera.ts`): frames every fighter still in the game where it is
    * drawn this moment, and glides there at the same pace whatever the refresh rate.
    */
-  private updateCamera(bodies: readonly Rect[], frame: number): void {
+  private updateCamera(bodies: readonly Rect[], frame: number, elapsed: number): void {
     // Measuring the HUD makes the browser lay out the page, so twice a second is enough.
     const check = Math.floor(frame / 30);
     if (check !== this.hudCheck) {
@@ -263,8 +294,6 @@ export class ThreeView implements GameView {
       this.hudShare = height > 0 ? (this.options.coveredTop?.() ?? 0) / height : 0;
     }
     const target = frameFighters(bodies, this.stage.blastZone, this.camera.aspect, this.hudShare);
-    const elapsed = this.lastFrame === null ? 0 : frame - this.lastFrame;
-    this.lastFrame = frame;
     // Easing by elapsed game frames: a paused match (no frames) holds the camera still.
     // Then backing off at once wherever gliding would lose a fighter launched fast.
     this.cameraFrame = keepInView(

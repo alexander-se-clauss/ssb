@@ -68,6 +68,8 @@ export interface SpawnDef {
   readonly hit: HitDef;
   /** How it moves; `straight` if left out. */
   readonly behavior?: ObjectBehavior;
+  /** A cosmetic effect its object trails while it flies (#47), such as `fire`. */
+  readonly effect?: EffectId;
 }
 
 /** What a press asks for, kept in the input buffer: a move slot or a dodge, later block (#6). */
@@ -90,6 +92,20 @@ export const isDodge = (action: BufferedAction): action is DodgeKind =>
 export interface CancelDef {
   readonly on: BufferedAction;
   readonly into?: MoveId;
+  readonly from: number;
+  readonly to: number;
+}
+
+/** Names a cosmetic effect (#47), such as `fire`; how it looks is up to the view. */
+export type EffectId = string;
+
+/**
+ * A cosmetic effect the move shows on frames `[from, to)`, at an anchor on the body like a
+ * hitbox's. Views draw it; it never changes the game.
+ */
+export interface EffectKey {
+  readonly effect: EffectId;
+  readonly anchor: HitboxAnchor;
   readonly from: number;
   readonly to: number;
 }
@@ -135,6 +151,8 @@ export interface AttackMoveDef {
   readonly motion?: readonly MotionKey[];
   /** Objects the move spawns, such as projectiles (#45). */
   readonly spawns?: readonly SpawnDef[];
+  /** Cosmetic effects on the body while the move plays (#47), such as fire on a fist. */
+  readonly effects?: readonly EffectKey[];
 }
 
 /** Block and counter moves join this union with #6. */
@@ -163,6 +181,16 @@ export const validateMove = (move: MoveDef): void => {
   if (!Number.isInteger(move.totalFrames) || move.totalFrames < 1) {
     fail(`totalFrames must be a positive whole number, got ${move.totalFrames}`);
   }
+  const checkAnchor = (anchor: HitboxAnchor, what: string): void => {
+    if ('bone' in anchor) {
+      if (!HUMANOID.bones.some((bone) => bone.id === anchor.bone)) {
+        fail(`${what} is on an unknown bone "${anchor.bone}"`);
+      }
+      if (!(anchor.at >= 0 && anchor.at <= 1)) fail(`${what} is off its bone (${anchor.at})`);
+    } else if (!(Number.isFinite(anchor.feet.x) && Number.isFinite(anchor.feet.y))) {
+      fail(`${what} has a bad position`);
+    }
+  };
   move.hitboxes.forEach((hitbox, index) => {
     const { from, to } = hitbox;
     if (!Number.isInteger(from) || !Number.isInteger(to) || from < 0 || to <= from) {
@@ -174,14 +202,7 @@ export const validateMove = (move: MoveDef): void => {
     if (!(Number.isFinite(scale) && scale >= 0)) fail(`hitbox ${index} has a bad hitlagScale`);
     const group = hitbox.group ?? 0;
     if (!Number.isInteger(group) || group < 0) fail(`hitbox ${index} has a bad group ${group}`);
-    const { anchor } = hitbox;
-    if ('bone' in anchor) {
-      if (!HUMANOID.bones.some((bone) => bone.id === anchor.bone)) {
-        fail(`hitbox ${index} is on an unknown bone "${anchor.bone}"`);
-      }
-      if (!(anchor.at >= 0 && anchor.at <= 1))
-        fail(`hitbox ${index} is off its bone (${anchor.at})`);
-    }
+    checkAnchor(hitbox.anchor, `hitbox ${index}`);
   });
   // A cancel would hand the fighter a move that ends with full control, escaping helpless (#44).
   if (move.helpless && move.cancels.length > 0) fail('a helpless move cannot have cancels');
@@ -229,6 +250,7 @@ export const validateMove = (move: MoveDef): void => {
     }
     const scale = hit.hitlagScale ?? 1;
     if (!(Number.isFinite(scale) && scale >= 0)) fail(`spawn ${index} has a bad hitlagScale`);
+    if (spawn.effect === '') fail(`spawn ${index} names no effect`);
     const whole = (frames: number): boolean => Number.isInteger(frames) && frames < lifetime;
     const behavior = spawn.behavior ?? { kind: 'straight' };
     if (behavior.kind === 'arc' && !(Number.isFinite(behavior.gravity) && behavior.gravity > 0)) {
@@ -243,6 +265,15 @@ export const validateMove = (move: MoveDef): void => {
     if (behavior.kind === 'return' && !(whole(behavior.turnFrames) && behavior.turnFrames >= 1)) {
       fail(`spawn ${index} must turn on a whole frame within its lifetime`);
     }
+  });
+  (move.effects ?? []).forEach((key, index) => {
+    if (key.effect === '') fail(`effect ${index} has no name`);
+    const { from, to } = key;
+    if (!Number.isInteger(from) || !Number.isInteger(to) || from < 0 || to <= from) {
+      fail(`effect ${index} has an empty or broken window [${from}, ${to})`);
+    }
+    if (to > move.totalFrames) fail(`effect ${index} ends after the move (${to})`);
+    checkAnchor(key.anchor, `effect ${index}`);
   });
   if (
     move.landingLag !== undefined &&

@@ -241,6 +241,14 @@ type MoveDef = AttackMoveDef; // | BlockMoveDef | CounterMoveDef with #6
   where its owner is. A new behaviour is a new case in `ObjectBehavior`, validated in
   `validateMove` and moved in `objects.ts`.
 
+### Amendment (2026-10-03, #47)
+
+- **Effects.** An `AttackMoveDef` may list `effects` (`EffectKey`: an `EffectId`, an anchor, and
+  frames `[from, to)`), and a `SpawnDef` may name an `effect` its object trails. Effect ids are
+  plain strings: core never interprets them, so move data can ask for fire without core
+  depending on how fire is drawn. A test in the view checks that every id the move data names has
+  a look.
+
 ## Consequences
 
 - New moves are data. Tests, tools and an AI agent can write and check them without new code.

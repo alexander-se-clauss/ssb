@@ -5,7 +5,7 @@
 import type { Rect, Vec2 } from './math';
 import type { StickTracker } from './attack-input';
 import type { MoveSlot } from './move-slots';
-import type { BufferedAction, HitDef, MoveId, ObjectBehavior } from './moves';
+import type { BufferedAction, EffectId, HitDef, MoveId, ObjectBehavior } from './moves';
 import type { Pose, SkeletonDef } from './skeleton';
 
 /** Index of a player in the match, 0-based. */
@@ -145,6 +145,8 @@ export interface SpawnedObject {
   readonly hit: HitDef;
   /** How it moves (#46), copied from its spawn. */
   readonly behavior: ObjectBehavior;
+  /** The cosmetic effect it trails (#47), if its spawn names one; for views only. */
+  readonly effect?: EffectId;
 }
 
 export interface PlatformDef {

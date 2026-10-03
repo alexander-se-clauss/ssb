@@ -56,6 +56,7 @@ export const spawnObjects = (
         radius: spawn.radius,
         hit: spawn.hit,
         behavior,
+        ...(spawn.effect !== undefined && { effect: spawn.effect }),
       });
     }
   });

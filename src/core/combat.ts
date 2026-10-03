@@ -2,7 +2,7 @@ import { characterOf } from './character';
 import { HITLAG, HITSTUN_PER_KNOCKBACK } from './config';
 import { circleIntersectsCapsule, type Vec2 } from './math';
 import { findMove } from './move-data';
-import type { HitboxDef, HitDef } from './moves';
+import type { EffectId, HitboxAnchor, HitboxDef, HitDef } from './moves';
 import { plantedBoneSegments, type BoneId } from './skeleton';
 import type { FighterState, GameEvent, PlayerSlot } from './types';
 
@@ -12,6 +12,26 @@ export interface Hitbox {
   readonly attack: HitboxDef;
 }
 
+/** Where an anchor (a bone point, or a spot relative to the feet) is on the fighter's body now. */
+const anchorPoints = (fighter: FighterState): ((anchor: HitboxAnchor) => Vec2) => {
+  // Bone anchors sit on the planted body, the one the view draws and hurtboxes use.
+  const { skeleton } = characterOf(fighter.characterId);
+  const bones = plantedBoneSegments(skeleton, fighter.pose, fighter.position, fighter.facing);
+  return (anchor) => {
+    if ('bone' in anchor) {
+      const { start, end } = bones[anchor.bone];
+      return {
+        x: start.x + (end.x - start.x) * anchor.at,
+        y: start.y + (end.y - start.y) * anchor.at,
+      };
+    }
+    return {
+      x: fighter.position.x + anchor.feet.x * fighter.facing,
+      y: fighter.position.y + anchor.feet.y,
+    };
+  };
+};
+
 /** The hitboxes of the fighter's move that are on this frame. Exported so views can draw them. */
 export const activeHitboxes = (fighter: FighterState): Hitbox[] => {
   if (fighter.action !== 'attack' || fighter.moveId === null) return [];
@@ -20,25 +40,29 @@ export const activeHitboxes = (fighter: FighterState): Hitbox[] => {
     (hitbox) => frame >= hitbox.from && frame < hitbox.to,
   );
   if (on.length === 0) return [];
-  // Bone hitboxes sit on the planted body, the one the view draws and hurtboxes use.
-  const { skeleton } = characterOf(fighter.characterId);
-  const bones = plantedBoneSegments(skeleton, fighter.pose, fighter.position, fighter.facing);
-  return on.map((hitbox) => {
-    const { anchor } = hitbox;
-    if ('bone' in anchor) {
-      const { start, end } = bones[anchor.bone];
-      const center = {
-        x: start.x + (end.x - start.x) * anchor.at,
-        y: start.y + (end.y - start.y) * anchor.at,
-      };
-      return { center, radius: hitbox.radius, attack: hitbox };
-    }
-    const center = {
-      x: fighter.position.x + anchor.feet.x * fighter.facing,
-      y: fighter.position.y + anchor.feet.y,
-    };
-    return { center, radius: hitbox.radius, attack: hitbox };
-  });
+  const at = anchorPoints(fighter);
+  return on.map((hitbox) => ({ center: at(hitbox.anchor), radius: hitbox.radius, attack: hitbox }));
+};
+
+/** A cosmetic effect of the current move, by id, and where on the body it is this frame. */
+export interface ActiveEffect {
+  readonly effect: EffectId;
+  readonly position: Vec2;
+}
+
+/**
+ * The effects the fighter's move shows this frame (#47), such as fire on a fist. Only views read
+ * them: they never feed back into the game, and core knows them only by id.
+ */
+export const activeEffects = (fighter: FighterState): ActiveEffect[] => {
+  if (fighter.action !== 'attack' || fighter.moveId === null) return [];
+  const frame = fighter.actionFrame;
+  const on = (findMove(fighter.moveId).effects ?? []).filter(
+    (key) => frame >= key.from && frame < key.to,
+  );
+  if (on.length === 0) return [];
+  const at = anchorPoints(fighter);
+  return on.map((key) => ({ effect: key.effect, position: at(key.anchor) }));
 };
 
 /**

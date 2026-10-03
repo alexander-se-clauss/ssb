@@ -6,8 +6,8 @@ import type { HitboxDef, MoveDef } from '../moves';
 import { POSES } from '../pose-data';
 
 /**
- * A haymaker: a long wind-up, then a lunge into a punch on frame 18 that hits harder than the
- * forward smash. Usable in the air too, where it does not drift.
+ * A haymaker: a long wind-up with the fist on fire, then a lunge into a punch on frame 18 that
+ * hits harder than the forward smash. Usable in the air too, where it does not drift.
  */
 export const HAYMAKER: MoveDef = {
   kind: 'attack',
@@ -46,6 +46,8 @@ export const HAYMAKER: MoveDef = {
   ],
   cancels: [],
   motion: [{ frame: 16, x: 0.16 }],
+  // The fist catches fire as it winds up and burns through the punch (#47).
+  effects: [{ effect: 'fire', anchor: { bone: 'lowerArmFront', at: 1 }, from: 6, to: 26 }],
 };
 
 /**
