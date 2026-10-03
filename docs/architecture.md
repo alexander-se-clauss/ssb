@@ -110,15 +110,21 @@ recovery move rises; an upward speed takes a grounded fighter into the air. A re
 does not fast-fall, and on its way down it already catches a ledge.
 A move can spawn objects (`spawns` in its data, #45), such as a projectile. On the spawn's frame
 `step` adds a `SpawnedObject` to `MatchState.objects`: plain data with its owner, position,
-velocity, age, lifetime, radius and its own hit (`HitDef`, the damage and launch part of a
+velocity, `launchVelocity`, age, lifetime, radius, `behavior` and its own hit (`HitDef`, the damage and launch part of a
 hitbox), numbered from `MatchState.nextObjectId` so a view can follow it. Each frame
 `objects.ts` moves it by its velocity, and it hits the first fighter its circle touches that is
 not its owner and not invulnerable (`applyHit` in `combat.ts`, shared with hitboxes): the target
-is launched the way the owner faced, only the target freezes, the owner gets the credit, and the
+is launched the way the object flies (its owner's facing when it does not fly sideways), only the target freezes, the owner gets the credit, and the
 object is gone. It is also gone when its lifetime ends or it leaves the blast zone; it outlives
 its owner's move and stock. Spawns come from the frame's snapshot like hitboxes, so a fighter
 hit as it fires still fires; object hits are worked out after hitbox hits, so a fighter struck by
 both on one frame takes both damages and flies with the object's launch.
+How an object moves is data too (`behavior` on the spawn, #46): `straight` flies on, `arc` is
+pulled down by its own gravity and is gone once it lands on a platform, `trap` stays where it
+was set and only hits from `armFrames` on, and `return` slows evenly to a stop at `turnFrames`,
+then flies back at its start speed towards where its owner is now and is gone when it reaches
+them (or when they are out of the match). Platforms stop only an arc, and only from above. A hit
+launches the way the object flies, so a boomerang hits on its way back towards its owner.
 Ledges are stage data (`StageDef.ledges`, #40): a fighter falling near a free one snaps to hang
 from it (`ledge.ts` works out where from the character's own hanging pose), with brief
 invulnerability and its air jumps and air dodge back, and lets go after `LEDGE.hangFrames`
