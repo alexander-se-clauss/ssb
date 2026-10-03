@@ -47,12 +47,14 @@ describe('combat', () => {
     expect(target.velocity.y).toBeGreaterThan(0);
     expect(target.lastHitBy).toBe(0);
     expect(fighter(state, 0).damageDealt).toBe(JAB.damage);
-    expect(state.events).toContainEqual({
-      type: 'hit',
-      attacker: 0,
-      target: 1,
-      damage: JAB.damage,
-    });
+    expect(state.events).toContainEqual(
+      expect.objectContaining({
+        type: 'hit',
+        attacker: 0,
+        target: 1,
+        damage: JAB.damage,
+      }),
+    );
   });
 
   it('one swing hits a target only once', () => {

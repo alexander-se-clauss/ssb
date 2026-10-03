@@ -144,7 +144,7 @@ export const applyHit = (
   hit: HitDef,
   direction: 1 | -1,
   by: PlayerSlot,
-): { target: FighterState; hitlag: number } => {
+): { target: FighterState; hitlag: number; launch: number } => {
   const damage = target.damage + hit.damage;
   const { stats } = characterOf(target.characterId);
   const speed = knockback(hit, damage, stats.weight);
@@ -152,6 +152,7 @@ export const applyHit = (
   const hitlag = hitlagFrames(hit);
   return {
     hitlag,
+    launch: speed,
     target: {
       ...target,
       damage,
@@ -199,12 +200,11 @@ export const resolveCombat = (
       if (!hitbox) continue;
 
       const current = next[target.slot] ?? target;
-      const { target: struck, hitlag } = applyHit(
-        current,
-        hitbox.attack,
-        attacker.facing,
-        attacker.slot,
-      );
+      const {
+        target: struck,
+        hitlag,
+        launch,
+      } = applyHit(current, hitbox.attack, attacker.facing, attacker.slot);
       next[target.slot] = struck;
       const attackerNow = next[attacker.slot] ?? attacker;
       next[attacker.slot] = {
@@ -220,7 +220,9 @@ export const resolveCombat = (
         type: 'hit',
         attacker: attacker.slot,
         target: target.slot,
-        damage: struck.damage,
+        damage: hitbox.attack.damage,
+        position: hitbox.center,
+        launch,
       });
     }
   }

@@ -17,6 +17,7 @@ import { ThreeView } from '../adapters/three-renderer/three-view';
 import { fighterPortrait } from '../adapters/three-renderer/fighter-portrait';
 import { WebAudioOutput } from '../adapters/web-audio/web-audio-output';
 import { RecordingAudioOutput } from '../adapters/recording-audio/recording-audio-output';
+import type { GameView } from '../ports';
 import { App } from './app';
 import { installDebugHandle } from './debug';
 import './fonts.css';
@@ -68,12 +69,20 @@ const app = new App(container, {
     })),
   ],
   createSession: (config) => new LocalGameSession(createMatch(config)),
-  createViews: (root, stage) => {
+  createViews: (root, session) => {
+    const { stage } = session.view().current;
     // The camera keeps fighters below the HUD plates, whatever their size on this screen. The HUD
     // is made after the view so its plates stack above the canvas.
     const huds: DomHud[] = [];
     view = new ThreeView(root, stage, { coveredTop: () => huds[0]?.coveredHeight() ?? 0 });
     view.setShowBoxes(showBoxes);
+    // Hits and KOs show as particles. The listener goes when the views do, at the match's end.
+    const effects = view;
+    const listening: GameView = {
+      render: () => {},
+      resize: () => {},
+      dispose: session.onEvent((event) => effects.handleEvent(event)),
+    };
     const portrait = (id: string) => {
       const character = findCharacter(id);
       // A portrait needs a spare WebGL context; without one the plate keeps an empty diamond.
@@ -85,7 +94,7 @@ const app = new App(container, {
     };
     const hud = new DomHud(root, { portrait });
     huds.push(hud);
-    return [view, hud];
+    return [view, hud, listening];
   },
   controls: [
     { device: 'Left keys', labels: describeKeys(PLAYER_ONE_KEYS) },

@@ -58,7 +58,9 @@ describe('time rule', () => {
 
   it('respawns a knocked-out fighter however often, counting a fall', () => {
     const state = step(withFighter(timeMatch(), 0, { ...offStage, stocks: 1 }), []);
-    expect(state.events).toContainEqual({ type: 'ko', slot: 0, stocksLeft: null });
+    expect(state.events).toContainEqual(
+      expect.objectContaining({ type: 'ko', slot: 0, stocksLeft: null }),
+    );
     const p1 = fighter(state, 0);
     expect(p1.action).not.toBe('eliminated');
     expect(p1.falls).toBe(1);

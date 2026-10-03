@@ -133,7 +133,10 @@ frame, not stored; a spawned object carries its `effect` id in `MatchState` for 
 view turns the ids into particles: `particles.ts` holds a look (`EffectPreset`) per id and a
 fixed-size `ParticlePool` per look, stepped by elapsed game frames so a pause freezes them, and
 seeded so the same frame pacing gives the same flames; `effect-layer.ts` draws each pool as one
-cloud of points.
+cloud of points. Hit sparks and KO bursts (#48) come from session events, not from the state:
+`hit-effects.ts` turns a `hit` event into sparks at its `position`, more and faster the harder it
+`launch`ed, and a `ko` event into a burst where the fighter left the blast zone. The camera
+lingers on a KO burst for a moment, since the fighter respawns at once.
 `object-layer.ts` draws spawned objects as balls in their owner's colour.
 Ledges are stage data (`StageDef.ledges`, #40): a fighter falling near a free one snaps to hang
 from it (`ledge.ts` works out where from the character's own hanging pose), with brief
@@ -181,8 +184,10 @@ comes from the composition root (`ThreeViewOptions.coveredTop` in `main.ts`), no
    `step()` that many times. Rendering speed never changes game speed.
 3. Each `GameView` renders `session.view()`: previous state, current state and `alpha`, so
    visuals interpolate smoothly on 120/144 Hz screens.
-4. Events from `step()` (`hit`, `ko`, `match-end`) go to `session.onEvent` listeners
-   (future: sound, particles, rumble).
+4. Events from `step()` (`hit`, `ko`, `match-end`) go to `session.onEvent` listeners (sound,
+   particles; future: rumble). A `hit` carries that hit's own `damage`, where it landed and its
+   `launch` speed; a `ko` carries where the fighter left the blast zone. `main.ts` gives
+   `createViews` the session so the Three.js view can listen.
 
 ## Sound
 
@@ -317,7 +322,8 @@ The seam is `GameSession`. The plan for online play (see "Later" in the product 
    sends inputs over a WebSocket; `update` applies received snapshots and predicts locally with
    the same `step()`.
 3. Change one line in `src/app/main.ts` to pick the remote session. Views and inputs stay as
-   they are.
+   they are. Sound, hit sparks and KO bursts come from session events, so the remote session
+   must report each `hit` and `ko` exactly once, even when a rollback replays predicted frames.
 
 Other logic follows the same pattern: define a port first, implement locally, swap later.
 

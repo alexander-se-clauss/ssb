@@ -7,7 +7,6 @@ import {
   type MatchConfig,
   type MatchRules,
   type MatchState,
-  type StageDef,
 } from '../core';
 import type {
   AudioChannel,
@@ -103,7 +102,8 @@ export interface AppAdapters {
   readonly devices: readonly InputDevice[];
   /** Starts a match: locally today, on a server later. */
   readonly createSession: (config: MatchConfig) => GameSession;
-  readonly createViews: (container: HTMLElement, stage: StageDef) => readonly GameView[];
+  /** Views for a match; they may listen to the session's events, such as hits for sparks. */
+  readonly createViews: (container: HTMLElement, session: GameSession) => readonly GameView[];
   /** Button names per kind of device, for the controls screen. */
   readonly controls: readonly ControlColumn[];
   /** Sound effects and music. */
@@ -648,7 +648,7 @@ export class App {
       players,
       rules: this.rules,
     });
-    const views = this.adapters.createViews(this.container, session.view().current.stage);
+    const views = this.adapters.createViews(this.container, session);
     // Drop key taps made in the menus, so the match does not start with a stray jump.
     for (const device of this.adapters.devices) device.source.sample();
     this.eliminations = [];

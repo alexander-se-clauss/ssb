@@ -1,8 +1,12 @@
 import * as THREE from 'three';
 import type { EffectId } from '../../core';
 import { glowTexture } from './firelit-set';
+import type { Burst } from './hit-effects';
 import { EFFECTS, ParticlePool } from './particles';
 import { seededRandom } from './scenery/noise';
+
+/** Bursts (hits, KOs) show in front of the fighters, not inside their bodies. */
+const BURST_DEPTH = 0.6;
 
 /** One place an effect is burning this moment: where, and how far towards the camera. */
 export interface Emitter {
@@ -56,9 +60,15 @@ export class EffectLayer {
     }
   }
 
-  /** Steps every pool by `frames` elapsed game frames, then feeds it from `emitters`. */
-  update(emitters: readonly Emitter[], frames: number): void {
+  /**
+   * Steps every pool by `frames` elapsed game frames, then feeds it from `emitters` and the
+   * one-off `bursts`.
+   */
+  update(emitters: readonly Emitter[], bursts: readonly Burst[], frames: number): void {
     for (const { pool } of this.clouds) pool.step(frames);
+    for (const { effect, x, y, count, power } of bursts) {
+      this.byId.get(effect)?.emit(x, y, BURST_DEPTH, count, power);
+    }
     for (const emitter of emitters) {
       this.byId.get(emitter.effect)?.emitFor(emitter.x, emitter.y, emitter.depth, frames);
     }
