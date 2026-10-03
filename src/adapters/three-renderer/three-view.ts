@@ -25,6 +25,7 @@ import {
   CAMERA,
   followCamera,
   frameFighters,
+  keepInView,
   placeCamera,
   restingFrame,
   type CameraFrame,
@@ -265,7 +266,13 @@ export class ThreeView implements GameView {
     const elapsed = this.lastFrame === null ? 0 : frame - this.lastFrame;
     this.lastFrame = frame;
     // Easing by elapsed game frames: a paused match (no frames) holds the camera still.
-    this.cameraFrame = followCamera(this.cameraFrame, target, elapsed);
+    // Then backing off at once wherever gliding would lose a fighter launched fast.
+    this.cameraFrame = keepInView(
+      followCamera(this.cameraFrame, target, elapsed),
+      bodies,
+      this.camera.aspect,
+      this.hudShare,
+    );
     placeCamera(this.camera, this.cameraFrame);
   }
 }

@@ -112,7 +112,8 @@ stage sit behind the fighters' plane, so they never look solid where fighters ca
 The match camera (`three-renderer/match-camera.ts`, pure math and tested) frames the drawn
 bodies of every fighter still in the game, off-stage too, below the HUD, backing off no further
 than the stage's `blastZone` (widened by any body reaching past it). It eases by elapsed game
-frames, so it glides the same at any refresh rate and holds still in a pause. The HUD height
+frames, so it glides the same at any refresh rate and holds still in a pause, and backs off at
+once where gliding would lose a fighter launched fast. The HUD height
 comes from the composition root (`ThreeViewOptions.coveredTop` in `main.ts`), not a port.
 
 **Enforced:** ESLint `no-restricted-imports` per folder (`eslint.config.js`) and a separate

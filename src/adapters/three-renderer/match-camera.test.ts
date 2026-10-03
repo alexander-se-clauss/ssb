@@ -1,7 +1,14 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { BATTLEFIELD, FINAL_DESTINATION, type Rect } from '../../core';
-import { CAMERA, followCamera, frameFighters, placeCamera, type CameraFrame } from './match-camera';
+import {
+  CAMERA,
+  followCamera,
+  frameFighters,
+  keepInView,
+  placeCamera,
+  type CameraFrame,
+} from './match-camera';
 
 const ASPECT = 16 / 9;
 /** The HUD plates across the top cover about this much of a 720p screen. */
@@ -134,5 +141,27 @@ describe('match camera motion', () => {
     for (let i = 1; i < xs.length; i += 1) {
       expect(xs[i] ?? 0).toBeGreaterThanOrEqual((xs[i - 1] ?? 0) - 1e-9);
     }
+  });
+
+  it('backs off at once rather than lose a fighter launched faster than it glides', () => {
+    // One fighter stays in the middle, the other flies sideways at launch speed until the zone.
+    for (const { blastZone: zone } of [BATTLEFIELD, FINAL_DESTINATION]) {
+      for (const aspect of [ASPECT, 9 / 16]) {
+        const still = body(0, 0);
+        let frame = frameFighters([still, body(1, 0)], zone, aspect, HUD);
+        for (let x = 1; x < zone.right; x += 0.8) {
+          const fighters = [still, body(x, 1 + x * 0.3)];
+          const target = frameFighters(fighters, zone, aspect, HUD);
+          frame = keepInView(followCamera(frame, target, 1), fighters, aspect, HUD);
+          for (const box of fighters) expect(visible(frame, aspect, box)).toBe(true);
+        }
+      }
+    }
+  });
+
+  it('leaves a frame alone that already shows every fighter', () => {
+    const fighters = [body(-2, 0), body(2, 0)];
+    const frame = frameFighters(fighters, BATTLEFIELD.blastZone, ASPECT, HUD);
+    expect(keepInView(frame, fighters, ASPECT, HUD)).toEqual(frame);
   });
 });

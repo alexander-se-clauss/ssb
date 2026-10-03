@@ -114,6 +114,34 @@ export const followCamera = (
   };
 };
 
+/**
+ * `frame`, backed off just far enough that every body box (with its margin) shows below the HUD.
+ * Gliding lags behind a fighter launched faster than the camera eases, so this keeps it in view:
+ * the camera zooms out at once and glides back in once things calm down.
+ */
+export const keepInView = (
+  frame: CameraFrame,
+  bodies: readonly Rect[],
+  aspect: number,
+  hudShare = 0,
+): CameraFrame => {
+  if (bodies.length === 0) return frame;
+  const hud = Math.min(Math.max(hudShare, 0), CAMERA.maxHudShare);
+  // The view reaches `halfHeight` below the frame's point and `(1 - 2 * hud)` of it above, to
+  // the HUD's lower edge; `halfHeight * aspect` to either side.
+  const halfHeight = Math.max(
+    ...bodies.map((b) =>
+      Math.max(
+        (Math.max(frame.x - b.left, b.right - frame.x) + CAMERA.margin) / aspect,
+        frame.y - b.bottom + CAMERA.margin,
+        (b.top + CAMERA.margin - frame.y) / (1 - 2 * hud),
+      ),
+    ),
+  );
+  const distance = halfHeight / tanHalfFov();
+  return distance > frame.distance ? { ...frame, distance } : frame;
+};
+
 /** Points a Three.js camera at a frame: a little above it, looking down at the stage plane. */
 export const placeCamera = (camera: THREE.PerspectiveCamera, frame: CameraFrame): void => {
   if (camera.fov !== CAMERA.fov) {
