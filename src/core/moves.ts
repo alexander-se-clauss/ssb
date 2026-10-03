@@ -4,7 +4,7 @@
  * serializable.
  */
 import type { Vec2 } from './math';
-import type { MoveSlot } from './move-slots';
+import type { PressSlot } from './move-slots';
 import { HUMANOID, type BoneId, type Pose } from './skeleton';
 
 export type MoveId = string;
@@ -37,7 +37,7 @@ export interface HitboxDef {
 }
 
 /** What a press asks for, kept in the input buffer: a move slot or a dodge, later block (#6). */
-export type BufferedAction = MoveSlot | DodgeKind | 'jump' | 'block';
+export type BufferedAction = PressSlot | DodgeKind | 'jump' | 'block';
 
 /**
  * The ground dodges (#35): a sidestep into the background or out towards the camera, or a roll

@@ -1,4 +1,4 @@
-import type { FighterState, GameEvent, MatchState } from '../core';
+import { isLedgeClimb, type FighterState, type GameEvent, type MatchState } from '../core';
 import type { SoundCue } from '../ports';
 
 /** A cue to play, with how heavy it should sound (0 to 1). */
@@ -27,7 +27,9 @@ const fighterCues = (before: FighterState, after: FighterState): FightCue[] => {
   const cues: FightCue[] = [];
   // Fighters drop in at the start and on respawn, so those landings are heard too, and so is a
   // launched fighter hitting the floor.
-  if (after.grounded && !before.grounded) cues.push({ cue: 'land' });
+  // Climbing up from a ledge is not a landing.
+  if (after.grounded && !before.grounded && !isLedgeClimb(before.action))
+    cues.push({ cue: 'land' });
   if (after.action === 'hitstun') return cues;
   // A move started: a new move id, or the same move again after a cancel restarted it.
   if (
@@ -39,6 +41,10 @@ const fighterCues = (before: FighterState, after: FighterState): FightCue[] => {
   // Walking off a ledge also uses up the ground jump, but only a jump pushes upwards (even one
   // stopped at once by a platform above).
   if (after.jumpsRemaining < before.jumpsRemaining && after.velocity.y > before.velocity.y) {
+    cues.push({ cue: 'jump' });
+  }
+  // A jump from a ledge keeps the air jumps.
+  if (before.action === 'ledge' && after.action === 'airborne' && after.velocity.y > 0) {
     cues.push({ cue: 'jump' });
   }
   return cues;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AttackDirection, AttackStrength } from './attack-input';
 import { MOVES } from './move-data';
-import { MOVE_SLOTS, moveSlot, type MoveSlot, type SlotChoice } from './move-slots';
+import { PRESS_SLOTS, moveSlot, type PressSlot, type SlotChoice } from './move-slots';
 import { CHARACTERS, findCharacter } from './registry';
 import { fighter, inputOf, run, settled, withFighter } from './test-helpers';
 
@@ -10,7 +10,7 @@ type Row = readonly [
   button: 'attack' | 'special',
   direction: AttackDirection,
   strength: AttackStrength,
-  slot: MoveSlot,
+  slot: PressSlot,
   turnAround: boolean,
 ];
 
@@ -53,7 +53,7 @@ describe('move slots', () => {
   );
 
   it('covers every slot in the table', () => {
-    expect(new Set(TABLE.map((row) => row[4]))).toEqual(new Set(MOVE_SLOTS));
+    expect(new Set(TABLE.map((row) => row[4]))).toEqual(new Set(PRESS_SLOTS));
   });
 
   it('maps every character slot to a move that exists', () => {

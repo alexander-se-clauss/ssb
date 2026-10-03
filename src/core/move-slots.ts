@@ -4,7 +4,8 @@
  */
 import type { AttackDirection, AttackStrength } from './attack-input';
 
-export const MOVE_SLOTS = [
+/** The slots a button press can ask for. */
+export const PRESS_SLOTS = [
   'jab',
   'forwardTilt',
   'upTilt',
@@ -23,6 +24,10 @@ export const MOVE_SLOTS = [
   'downSpecial',
 ] as const;
 
+/** Every slot: the press slots, and the attack from the ledge (#41), which climbing starts. */
+export const MOVE_SLOTS = [...PRESS_SLOTS, 'ledgeAttack'] as const;
+
+export type PressSlot = (typeof PRESS_SLOTS)[number];
 export type MoveSlot = (typeof MOVE_SLOTS)[number];
 
 export interface SlotSituation {
@@ -32,12 +37,12 @@ export interface SlotSituation {
 }
 
 export interface SlotChoice {
-  readonly slot: MoveSlot;
+  readonly slot: PressSlot;
   /** The move is aimed behind the fighter, which turns around before it starts. */
   readonly turnAround: boolean;
 }
 
-const GROUND_TILTS: Readonly<Record<AttackDirection, MoveSlot>> = {
+const GROUND_TILTS: Readonly<Record<AttackDirection, PressSlot>> = {
   neutral: 'jab',
   forward: 'forwardTilt',
   back: 'forwardTilt',
@@ -45,7 +50,7 @@ const GROUND_TILTS: Readonly<Record<AttackDirection, MoveSlot>> = {
   down: 'downTilt',
 };
 
-const GROUND_SMASHES: Readonly<Record<AttackDirection, MoveSlot>> = {
+const GROUND_SMASHES: Readonly<Record<AttackDirection, PressSlot>> = {
   neutral: 'jab',
   forward: 'forwardSmash',
   back: 'forwardSmash',
@@ -53,7 +58,7 @@ const GROUND_SMASHES: Readonly<Record<AttackDirection, MoveSlot>> = {
   down: 'downSmash',
 };
 
-const AERIALS: Readonly<Record<AttackDirection, MoveSlot>> = {
+const AERIALS: Readonly<Record<AttackDirection, PressSlot>> = {
   neutral: 'neutralAir',
   forward: 'forwardAir',
   back: 'backAir',
@@ -61,7 +66,7 @@ const AERIALS: Readonly<Record<AttackDirection, MoveSlot>> = {
   down: 'downAir',
 };
 
-const SPECIALS: Readonly<Record<AttackDirection, MoveSlot>> = {
+const SPECIALS: Readonly<Record<AttackDirection, PressSlot>> = {
   neutral: 'neutralSpecial',
   forward: 'sideSpecial',
   back: 'sideSpecial',

@@ -40,6 +40,10 @@ export type FighterAction =
   | 'airDodge'
   /** Hanging on a ledge (#40). */
   | 'ledge'
+  /** Climbing from a ledge onto the stage (#41): to stand, to roll on, or to attack. */
+  | 'ledgeStand'
+  | 'ledgeRoll'
+  | 'ledgeAttack'
   | 'hitstun'
   | 'eliminated';
 
@@ -97,7 +101,10 @@ export interface FighterState {
   /** Frames left frozen by a hit (ADR 0006): nothing moves, the move and pose stand still. */
   readonly hitlagFrames: number;
   readonly invulnerableFrames: number;
-  /** Index into the stage's `ledges` of the ledge held while `action` is `'ledge'`, else `null`. */
+  /**
+   * Index into the stage's `ledges` of the ledge the fighter hangs from (`'ledge'`) or climbs
+   * from (`'ledgeStand'`, `'ledgeRoll'`, `'ledgeAttack'`), else `null`.
+   */
   readonly ledge: number | null;
   /** Frames left before the fighter can grab a ledge again after letting go of one. */
   readonly ledgeRegrabFrames: number;

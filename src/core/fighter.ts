@@ -2,7 +2,14 @@ import { CENTRED_STICK, attackInput, trackStick } from './attack-input';
 import { characterOf } from './character';
 import { DODGE, FIGHTER_RULES, INPUT, LEDGE, STICK } from './config';
 import { NEUTRAL_INPUT, pressed } from './input';
-import { hangPosition, ledgeInReach } from './ledge';
+import {
+  climbPosition,
+  hangPosition,
+  isLedgeClimb,
+  ledgeInReach,
+  ledgeOption,
+  type LedgeClimb,
+} from './ledge';
 import { approach } from './math';
 import { findMove } from './move-data';
 import { isAerialSlot, moveSlot } from './move-slots';
@@ -162,8 +169,8 @@ export const updateFighter = (
     };
   }
 
-  // Hanging from a ledge (#40): the fighter holds still, presses are not kept, and after
-  // `LEDGE.hangFrames` it lets go and falls. Getting up from the ledge comes with #41.
+  // Hanging from a ledge (#40): the fighter holds still and presses are not kept. From
+  // `LEDGE.waitFrames` on, what it holds picks an option (#41); after `LEDGE.hangFrames` it lets go.
   if (fighter.action === 'ledge') {
     const actionFrame = fighter.actionFrame + 1;
     const held: FighterState = {
@@ -174,16 +181,84 @@ export const updateFighter = (
       stick,
       previousInput: input,
     };
+    const option =
+      actionFrame >= LEDGE.waitFrames ? ledgeOption(input, prev, fighter.facing) : null;
+    const ledge = fighter.ledge === null ? undefined : stage.ledges[fighter.ledge];
+    /** Off the ledge into the air, beside the stage's wall rather than in it. */
+    const letGo = (vy: number, invulnerableFrames: number): FighterState => ({
+      ...held,
+      position: {
+        x: (ledge?.position.x ?? fighter.position.x) - fighter.facing * (stats.width / 2 + 0.01),
+        y: fighter.position.y,
+      },
+      velocity: { x: 0, y: vy },
+      action: 'airborne',
+      actionFrame: 0,
+      ledge: null,
+      ledgeRegrabFrames: LEDGE.regrabFrames,
+      invulnerableFrames: Math.max(held.invulnerableFrames, invulnerableFrames),
+    });
+    const climb = (action: LedgeClimb, invulnerableFrames: number): FighterState => ({
+      ...held,
+      action,
+      actionFrame: 0,
+      invulnerableFrames: Math.max(held.invulnerableFrames, invulnerableFrames),
+    });
+    const { getup } = LEDGE;
     const next: FighterState =
-      actionFrame >= LEDGE.hangFrames
-        ? {
-            ...held,
-            action: 'airborne',
-            actionFrame: 0,
-            ledge: null,
-            ledgeRegrabFrames: LEDGE.regrabFrames,
-          }
-        : held;
+      option === 'jump'
+        ? letGo(stats.jumpVelocity, getup.jump.invulnerableFrames)
+        : option === 'drop' || actionFrame >= LEDGE.hangFrames
+          ? letGo(0, 0)
+          : option === 'stand'
+            ? climb('ledgeStand', getup.stand.invulnerableFrames)
+            : option === 'roll'
+              ? climb('ledgeRoll', getup.roll.invulnerableFrames)
+              : option === 'attack'
+                ? climb('ledgeAttack', getup.attack.invulnerableFrames)
+                : held;
+    return { ...next, pose: nextPose(next, frame) };
+  }
+
+  // Climbing from a ledge onto the stage (#41) along a fixed path, as presses are not kept. It
+  // ends standing on the stage, or with the character's attack from the ledge.
+  if (isLedgeClimb(fighter.action)) {
+    const actionFrame = fighter.actionFrame + 1;
+    const ledge = fighter.ledge === null ? undefined : stage.ledges[fighter.ledge];
+    const climbing: FighterState = {
+      ...fighter,
+      position: ledge
+        ? climbPosition(fighter.action, actionFrame, ledge, character)
+        : fighter.position,
+      velocity: { x: 0, y: 0 },
+      actionFrame,
+      buffer: null,
+      invulnerableFrames: Math.max(fighter.invulnerableFrames - 1, 0),
+      stick,
+      previousInput: input,
+    };
+    const { getup } = LEDGE;
+    const attackMove = moves.ledgeAttack;
+    const done =
+      fighter.action === 'ledgeStand'
+        ? actionFrame >= getup.stand.totalFrames
+        : fighter.action === 'ledgeRoll'
+          ? actionFrame >= getup.roll.totalFrames
+          : actionFrame >= getup.attack.climbFrames;
+    const onStage: FighterState = {
+      ...climbing,
+      grounded: true,
+      jumpsRemaining: stats.airJumps + 1,
+      airDodgeUsed: false,
+      ledge: null,
+      actionFrame: 0,
+      action: 'idle',
+    };
+    const next: FighterState = !done
+      ? climbing
+      : fighter.action === 'ledgeAttack' && attackMove !== undefined
+        ? { ...onStage, action: 'attack', moveId: attackMove, hitTargets: [] }
+        : onStage;
     return { ...next, pose: nextPose(next, frame) };
   }
 

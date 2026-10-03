@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DODGE, type FighterAction } from '../../core';
+import { DODGE, LEDGE, type FighterAction } from '../../core';
 import { DODGE_DEPTH, LEDGE_DEPTH, dodgeMotion, lerpAngle } from './dodge-motion';
 import { MAIN_BLOCK_DEPTH } from './scenery/common';
 
@@ -60,6 +60,17 @@ describe('ledge motion', () => {
   it('draws a fighter hanging from a ledge in front of the stage block, not hidden beside it', () => {
     expect(at('ledge', 0)).toEqual({ depth: LEDGE_DEPTH, spin: 0, yaw: 0 });
     expect(LEDGE_DEPTH).toBeGreaterThan(MAIN_BLOCK_DEPTH / 2);
+  });
+
+  it('brings a climbing fighter back onto the stage plane, and rolls a ledge roll once over', () => {
+    for (const action of ['ledgeStand', 'ledgeRoll', 'ledgeAttack'] as const) {
+      expect(at(action, 0).depth).toBeCloseTo(LEDGE_DEPTH, 9);
+      expect(at(action, 20).depth).toBeCloseTo(0, 9);
+    }
+    const { climbFrames, rollTo } = LEDGE.getup.roll;
+    expect(at('ledgeRoll', climbFrames, -1).spin).toBeCloseTo(0, 9);
+    expect(wrap(at('ledgeRoll', rollTo, -1).spin)).toBeCloseTo(0, 9);
+    expect(at('ledgeRoll', rollTo, -1).spin).toBeCloseTo(TURN, 9);
   });
 });
 
