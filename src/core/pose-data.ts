@@ -42,7 +42,11 @@ export type PoseName =
   | 'airDodge'
   | 'ledge'
   | 'hurt'
-  | 'tumble';
+  | 'tumble'
+  | 'haymakerWindup'
+  | 'haymaker'
+  | 'springJackStart'
+  | 'springJack';
 
 /**
  * Melee-style key poses. Angles are relative to the parent bone (0 = straight on, positive turns
@@ -538,5 +542,58 @@ export const POSES: Readonly<Record<PoseName, Pose>> = {
     lowerLegFront: 40,
     upperLegBack: 240,
     lowerLegBack: -30,
+  },
+  // Rivet's neutral special (#39): the fist swung far back over the shoulder, weight on the back
+  // foot.
+  haymakerWindup: {
+    torso: -15,
+    head: 5,
+    upperArmFront: 230,
+    lowerArmFront: 130,
+    upperArmBack: 90,
+    lowerArmBack: -60,
+    upperLegFront: 135,
+    lowerLegFront: 40,
+    upperLegBack: 210,
+    lowerLegBack: 20,
+  },
+  // ...then thrown with the whole body in a long lunge.
+  haymaker: {
+    torso: 45,
+    head: -35,
+    upperArmFront: 45,
+    lowerArmFront: -5,
+    upperArmBack: 170,
+    lowerArmBack: -20,
+    upperLegFront: 120,
+    lowerLegFront: 30,
+    upperLegBack: 225,
+    lowerLegBack: 10,
+  },
+  // Rivet's up special (#39): crouched with the fist low, about to spring.
+  springJackStart: {
+    torso: 30,
+    head: -20,
+    upperArmFront: 160,
+    lowerArmFront: -40,
+    upperArmBack: 150,
+    lowerArmBack: -90,
+    upperLegFront: 140,
+    lowerLegFront: 70,
+    upperLegBack: 205,
+    lowerLegBack: 35,
+  },
+  // ...then rising, the fist straight up overhead and the legs trailing.
+  springJack: {
+    torso: 10,
+    head: -5,
+    upperArmFront: -10,
+    lowerArmFront: 0,
+    upperArmBack: 200,
+    lowerArmBack: -30,
+    upperLegFront: 170,
+    lowerLegFront: 40,
+    upperLegBack: 200,
+    lowerLegBack: 50,
   },
 };

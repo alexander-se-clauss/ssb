@@ -136,6 +136,32 @@ export const HUMANOID: SkeletonDef = {
   ],
 };
 
+/** Every bone of `HUMANOID` with a new length and thickness, by id. */
+const reshaped = (
+  hipHeight: number,
+  shape: Readonly<Record<BoneId, { readonly length: number; readonly radius: number }>>,
+): SkeletonDef => ({
+  hipHeight,
+  bones: HUMANOID.bones.map((bone) => ({ ...bone, ...shape[bone.id] })),
+});
+
+/**
+ * Short legs, a broad chest and a big head (#39): Rivet's body, 1.42 tall. The legs are as long
+ * as `hipHeight`, so the feet stay on the ground.
+ */
+export const STOCKY: SkeletonDef = reshaped(0.64, {
+  torso: { length: 0.48, radius: 0.23 },
+  head: { length: 0.3, radius: 0.19 },
+  upperArmFront: { length: 0.27, radius: 0.09 },
+  lowerArmFront: { length: 0.27, radius: 0.08 },
+  upperArmBack: { length: 0.27, radius: 0.09 },
+  lowerArmBack: { length: 0.27, radius: 0.08 },
+  upperLegFront: { length: 0.32, radius: 0.11 },
+  lowerLegFront: { length: 0.32, radius: 0.1 },
+  upperLegBack: { length: 0.32, radius: 0.11 },
+  lowerLegBack: { length: 0.32, radius: 0.1 },
+});
+
 /** Standing straight, arms and legs hanging down. */
 export const REST_POSE: Pose = {
   torso: 0,

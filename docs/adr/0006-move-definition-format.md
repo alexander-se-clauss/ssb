@@ -210,6 +210,19 @@ type MoveDef = AttackMoveDef; // | BlockMoveDef | CounterMoveDef with #6
 - A helpless move has no cancels (`validateMove` refuses them), so a chain cannot end with full
   control.
 
+### Amendment (2026-10-03, #39)
+
+- **Motion.** An `AttackMoveDef` may list `motion` keys: on a key's `frame` the runner sets the
+  fighter's speed, `x` the way it faces and `y` upward, and leaves a part the key leaves out
+  alone. Physics carries on from there (friction, gravity, and drift for a move with
+  `landingLag`). An upward speed takes a grounded fighter off the ground, using up its ground
+  jump; a downward one is ignored on the ground. Keys sit in order on frames 1 to
+  `totalFrames - 1`, since frame 0 is the frame the move starts. This is what lets a special
+  lunge or rise; Rivet's haymaker and spring jack use it.
+- **Recovery moves in the air.** A `helpless` move with `landingLag` drifts like an aerial but
+  does not fast-fall, and once falling it catches a free ledge before it ends, as up specials
+  snap to ledges in Smash.
+
 ## Consequences
 
 - New moves are data. Tests, tools and an AI agent can write and check them without new code.
@@ -226,7 +239,7 @@ type MoveDef = AttackMoveDef; // | BlockMoveDef | CounterMoveDef with #6
 - More state per fighter, all plain data: the move, hit targets per group, hitlag and the buffer.
 - Once moves land, the "Terms" paragraph in `docs/architecture.md` must be updated:
   `activeHitbox` becomes a list of bone hitboxes, and `'jab'` leaves `FighterAction`.
-- Not covered yet: movement during a move (lunges), armour, clashes and projectiles.
+- Not covered yet: armour, clashes and projectiles.
   They come as optional fields or new kinds when a move needs them.
 
 ## Alternatives considered

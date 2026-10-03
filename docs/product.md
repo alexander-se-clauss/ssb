@@ -80,6 +80,15 @@ Smash meets Monster Hunter: defense is about commitment and timing, not a panic 
   (projectiles, traps) with their own hitbox, movement, lifetime and damage.
 - Air jumps are per character (default one). Blast zones are large enough for off-stage combat.
 
+## Fighters
+
+- **Rivet** (fighter 1, #39), a stocky handyman and the all-rounder: medium weight and speed on
+  a short-legged body. Neutral special _Haymaker_, a slow lunging punch that hits harder than
+  his forward smash. Up special _Spring Jack_, a rising uppercut that carries a target up with
+  four hits and launches it with a fifth, then leaves him helpless; it is his recovery.
+- **Vela**, a bounty hunter in power armour with an arm cannon: plays like the capsule until she
+  becomes fighter 2 in S6.
+
 ## Non-goals (for now)
 
 - Using Nintendo characters, names, music or assets. All content is original.
@@ -117,10 +126,11 @@ a playable build; it is done when that build works, not on a date.
 - [x] **Fighter looks** (beside S4). Rivet, a handyman, and Vela, a bounty hunter in power armour
       with an arm cannon, built from primitives on the shared skeleton and playable with the
       capsule moveset until they get their own; their overalls and armour plates take the
-      player's colour. Character definitions and own movesets stay in S5 and S6.
-- [ ] **S5 Off-stage play.** Ledge grab (#40, done) and getups (#41, done), larger blast zones in stage data (#42, done), a camera
-      that follows fighters off-stage (#43, done), helpless state (#44, done); character definitions (#37, done), per-character air
-      jumps (#38, done), fighter 1. Epics #7, #8.
+      player's colour. Character definitions and own movesets stay in S5 and S6 (Rivet's body
+      and specials since #39).
+- [x] **S5 Off-stage play.** Ledge grab (#40) and getups (#41), larger blast zones in stage
+      data (#42), a camera that follows fighters off-stage (#43), helpless state (#44); character
+      definitions (#37), per-character air jumps (#38), and fighter 1: Rivet (#39). Epics #7, #8.
 - [ ] **S6 Guard and specials.** Block and counter, spawned objects and projectiles, particle
       effects (fire, hit, KO), side and down specials, fighter 2. Epics #6, #7, #9.
 

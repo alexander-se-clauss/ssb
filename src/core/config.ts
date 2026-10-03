@@ -49,6 +49,16 @@ export const FIGHTER = {
   landingLagFrames: 4,
 } as const satisfies CharacterStats;
 
+/**
+ * Rivet, fighter 1 (#39): the all-rounder, as heavy and as fast as the capsule, on a shorter and
+ * broader body (`STOCKY` in `skeleton.ts`).
+ */
+export const RIVET_STATS = {
+  ...FIGHTER,
+  width: 0.85,
+  height: 1.42,
+} as const satisfies CharacterStats;
+
 /** Rules every fighter shares, whatever its character. */
 export const FIGHTER_RULES = {
   /**

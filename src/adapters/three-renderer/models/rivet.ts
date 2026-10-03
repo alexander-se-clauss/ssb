@@ -1,10 +1,12 @@
 /**
- * Rivet, a stocky handyman in a work cap, overalls and a tool belt, built from primitives on the
- * shared humanoid skeleton. Every bone gets rigid pieces only, so poses, hurtboxes and moves stay core's.
+ * Rivet, a stocky handyman in a work cap, overalls and a tool belt, built from primitives on his
+ * own short-legged skeleton (`STOCKY`, #39). Every bone gets rigid pieces only, so poses, hurtboxes
+ * and moves stay core's.
  * Head and torso point up in their bone space (+x is the facing side); hanging limbs point down,
  * so there the facing side is -x.
  */
 import * as THREE from 'three';
+import type { BoneDef } from '../../../core';
 import type { PartBuilder } from '../fighter-model';
 import { ball, capsule, type Material } from './shapes';
 
@@ -107,45 +109,67 @@ const head = (m: Material): THREE.Object3D[] => {
   return [scaled];
 };
 
-const upperArm = (m: Material): THREE.Object3D[] => [capsule(m(ORANGE), 0.085, 0.32)];
+// Limbs follow the bone they hang on (#39): Rivet's own body is shorter than the capsule's.
+const upperArm = (m: Material, bone: BoneDef): THREE.Object3D[] => [
+  capsule(m(ORANGE), bone.radius + 0.005, bone.length + 0.02),
+];
 
-const lowerArm = (m: Material): THREE.Object3D[] => {
+const lowerArm = (m: Material, bone: BoneDef): THREE.Object3D[] => {
+  const half = bone.length / 2;
   const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.07, 0.07, 14), m(GLOVE));
-  cuff.position.y = 0.08;
+  cuff.position.y = half - 0.07;
   return [
-    capsule(m(ORANGE), 0.075, 0.2, -0.05),
+    capsule(m(ORANGE), bone.radius + 0.005, bone.length - 0.1, -0.05),
     cuff,
     // A big work-gloved fist.
-    ball(m(GLOVE), 0.085, [0, 0.14, 0], [1, 1.05, 1]),
+    ball(m(GLOVE), 0.085, [0, half - 0.01, 0], [1, 1.05, 1]),
   ];
 };
 
-const upperLeg = (m: Material): THREE.Object3D[] => [capsule(m(OVERALLS), 0.105, 0.42)];
-
-const lowerLeg = (m: Material): THREE.Object3D[] => [
-  capsule(m(OVERALLS), 0.095, 0.34, -0.03),
-  // Heavy work boot, longer than wide and pointing the way the fighter faces.
-  ball(m(BOOT), 0.11, [-0.06, 0.17, 0], [1.6, 0.75, 1.05]),
-  ball(m(SOLE), 0.1, [-0.02, 0.22, 0], [1.6, 0.3, 1.1]),
+const upperLeg = (m: Material, bone: BoneDef): THREE.Object3D[] => [
+  capsule(m(OVERALLS), bone.radius + 0.005, bone.length + 0.02),
 ];
+
+const lowerLeg = (m: Material, bone: BoneDef): THREE.Object3D[] => {
+  const half = bone.length / 2;
+  return [
+    capsule(m(OVERALLS), bone.radius + 0.005, bone.length - 0.06, -0.03),
+    // Heavy work boot, longer than wide and pointing the way the fighter faces.
+    ball(m(BOOT), 0.11, [-0.06, half - 0.03, 0], [1.6, 0.75, 1.05]),
+    ball(m(SOLE), 0.1, [-0.02, half + 0.02, 0], [1.6, 0.3, 1.1]),
+  ];
+};
+
+/** Torso and head are modelled for a bone of `radius` and `length`; scaled to the actual one. */
+const fitted = (
+  parts: THREE.Object3D[],
+  bone: BoneDef,
+  radius: number,
+  length: number,
+): THREE.Object3D[] => {
+  const group = new THREE.Group();
+  group.scale.set(bone.radius / radius, bone.length / length, bone.radius / radius);
+  group.add(...parts);
+  return [group];
+};
 
 export const rivetParts: PartBuilder = (bone, material) => {
   switch (bone.id) {
     case 'torso':
-      return torso(material);
+      return fitted(torso(material), bone, 0.2, 0.5);
     case 'head':
-      return head(material);
+      return fitted(head(material), bone, 0.17, 0.3);
     case 'upperArmFront':
     case 'upperArmBack':
-      return upperArm(material);
+      return upperArm(material, bone);
     case 'lowerArmFront':
     case 'lowerArmBack':
-      return lowerArm(material);
+      return lowerArm(material, bone);
     case 'upperLegFront':
     case 'upperLegBack':
-      return upperLeg(material);
+      return upperLeg(material, bone);
     case 'lowerLegFront':
     case 'lowerLegBack':
-      return lowerLeg(material);
+      return lowerLeg(material, bone);
   }
 };

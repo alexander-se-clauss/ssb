@@ -35,7 +35,9 @@ browsers, rendering or networking.
 A character is plain data too (`CharacterDef` in `types.ts`, registered in `registry.ts`): its
 `stats` (`CharacterStats`: body box, walk and air speed, gravity, fall speeds, jump speeds,
 `airJumps`, weight, landing lag), its `skeleton` and its `moves`. The capsule's stats are `FIGHTER` in
-`config.ts`; rules every fighter shares are `FIGHTER_RULES`. `FighterState.jumpsRemaining`
+`config.ts`, and other characters' stats sit beside them (`RIVET_STATS`); rules every fighter
+shares are `FIGHTER_RULES`. Rivet (#39) has his own `STOCKY` skeleton in `skeleton.ts` and his
+specials in `move-data/rivet.ts`. `FighterState.jumpsRemaining`
 counts the ground jump plus `airJumps` on the ground, and only the air jumps once airborne;
 landing gives them all back. Core code reads a fighter's
 definition with `characterOf` (`character.ts`), so movement, knockback (divided by the target's
@@ -102,6 +104,10 @@ A move flagged `helpless` in its data (a recovery move, #44) that ends in the ai
 fighter in the `helpless` action, Melee's special fall: it only drifts (`HELPLESS.drift`), cannot
 fast-fall, jump, attack or dodge, and it ends on landing (with `HELPLESS.landingLagFrames`), on a
 ledge grab or on a hit.
+A move can also set the fighter's speed on given frames (`motion` in its data, #39): `x` the way
+it faces and `y` upward, a part left out keeping its speed. That is how a punch lunges and a
+recovery move rises; an upward speed takes a grounded fighter into the air. A recovery move
+does not fast-fall, and on its way down it already catches a ledge.
 Ledges are stage data (`StageDef.ledges`, #40): a fighter falling near a free one snaps to hang
 from it (`ledge.ts` works out where from the character's own hanging pose), with brief
 invulnerability and its air jumps and air dodge back, and lets go after `LEDGE.hangFrames`
