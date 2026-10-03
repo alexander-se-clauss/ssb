@@ -233,6 +233,14 @@ type MoveDef = AttackMoveDef; // | BlockMoveDef | CounterMoveDef with #6
 - Objects live in `MatchState.objects`, not in a fighter, since they outlive the move and even
   the owner's stock. They never hit their owner; a hit uses them up and freezes only the target.
 
+### Amendment (2026-10-03, #46)
+
+- **Behaviours.** A spawn may set `behavior`: `straight` (the default), `arc` with its own
+  `gravity`, `trap` with `armFrames`, or `return` with `turnFrames`. The object keeps a copy, and
+  its `launchVelocity`, so each frame follows from its own data plus, for a returning object,
+  where its owner is. A new behaviour is a new case in `ObjectBehavior`, validated in
+  `validateMove` and moved in `objects.ts`.
+
 ## Consequences
 
 - New moves are data. Tests, tools and an AI agent can write and check them without new code.

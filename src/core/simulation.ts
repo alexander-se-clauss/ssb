@@ -184,7 +184,7 @@ export const step = (state: MatchState, inputs: readonly PlayerInput[]): MatchSt
   // with the object's launch.
   const spawned = spawnObjects(state.fighters, moved, state.nextObjectId);
   const flying = [
-    ...moveObjects(state.objects, state.stage.blastZone),
+    ...moveObjects(state.objects, combat.fighters, state.stage),
     // One spawned past the blast zone is gone before it can hit anything.
     ...spawned.filter((object) => insideZone(object, state.stage.blastZone)),
   ];

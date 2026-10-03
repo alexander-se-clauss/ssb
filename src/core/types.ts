@@ -5,7 +5,7 @@
 import type { Rect, Vec2 } from './math';
 import type { StickTracker } from './attack-input';
 import type { MoveSlot } from './move-slots';
-import type { BufferedAction, HitDef, MoveId } from './moves';
+import type { BufferedAction, HitDef, MoveId, ObjectBehavior } from './moves';
 import type { Pose, SkeletonDef } from './skeleton';
 
 /** Index of a player in the match, 0-based. */
@@ -134,13 +134,17 @@ export interface SpawnedObject {
   /** The centre of its circle. */
   readonly position: Vec2;
   readonly velocity: Vec2;
-  /** The way its owner faced when it spawned; its hit launches that way. */
+  /** Its speed when it spawned; a returning object slows down from it and flies back at it. */
+  readonly launchVelocity: Vec2;
+  /** The way its owner faced when it spawned; it launches that way when not flying sideways. */
   readonly facing: 1 | -1;
   /** Frames since it spawned; it is gone once `age` reaches `lifetime`. */
   readonly age: number;
   readonly lifetime: number;
   readonly radius: number;
   readonly hit: HitDef;
+  /** How it moves (#46), copied from its spawn. */
+  readonly behavior: ObjectBehavior;
 }
 
 export interface PlatformDef {

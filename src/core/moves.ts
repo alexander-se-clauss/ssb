@@ -41,6 +41,20 @@ export interface HitboxDef extends HitDef {
 }
 
 /**
+ * How a spawned object moves (#46), chosen by data:
+ * - `straight`: on at its speed.
+ * - `arc`: pulled down by its own `gravity` each frame; gone once it lands on a platform.
+ * - `trap`: stays where it was set (its spawn has no speed); hits only from `armFrames` on.
+ * - `return`: slows evenly to a stop at `turnFrames`, then flies back to its owner at its start
+ *   speed, following the owner, and is gone when it reaches them or they are out of the match.
+ */
+export type ObjectBehavior =
+  | { readonly kind: 'straight' }
+  | { readonly kind: 'arc'; readonly gravity: number }
+  | { readonly kind: 'trap'; readonly armFrames: number }
+  | { readonly kind: 'return'; readonly turnFrames: number };
+
+/**
  * An object the move spawns on its `frame` (#45), such as a fireball: it starts at `offset` from
  * the feet and flies at `velocity` (both with x the way the fighter faces), hits the first other
  * fighter its circle touches, and is gone after `lifetime` frames.
@@ -52,6 +66,8 @@ export interface SpawnDef {
   readonly lifetime: number;
   readonly radius: number;
   readonly hit: HitDef;
+  /** How it moves; `straight` if left out. */
+  readonly behavior?: ObjectBehavior;
 }
 
 /** What a press asks for, kept in the input buffer: a move slot or a dodge, later block (#6). */
@@ -195,7 +211,8 @@ export const validateMove = (move: MoveDef): void => {
       fail(`motion ${index} has a bad speed`);
     }
   });
-  (move.spawns ?? []).forEach(({ frame, offset, velocity, lifetime, radius, hit }, index) => {
+  (move.spawns ?? []).forEach((spawn, index) => {
+    const { frame, offset, velocity, lifetime, radius, hit } = spawn;
     // Like motion, a spawn on the start frame would never come out: the runner plays from 1 on.
     if (!Number.isInteger(frame) || frame < 1 || frame >= move.totalFrames) {
       fail(`spawn ${index} is outside the move (${frame})`);
@@ -212,6 +229,20 @@ export const validateMove = (move: MoveDef): void => {
     }
     const scale = hit.hitlagScale ?? 1;
     if (!(Number.isFinite(scale) && scale >= 0)) fail(`spawn ${index} has a bad hitlagScale`);
+    const whole = (frames: number): boolean => Number.isInteger(frames) && frames < lifetime;
+    const behavior = spawn.behavior ?? { kind: 'straight' };
+    if (behavior.kind === 'arc' && !(Number.isFinite(behavior.gravity) && behavior.gravity > 0)) {
+      fail(`spawn ${index} needs a positive gravity to arc`);
+    }
+    if (behavior.kind === 'trap' && !(whole(behavior.armFrames) && behavior.armFrames >= 0)) {
+      fail(`spawn ${index} must arm on a whole frame within its lifetime`);
+    }
+    if (behavior.kind === 'trap' && (velocity.x !== 0 || velocity.y !== 0)) {
+      fail(`spawn ${index} is a trap and cannot move`);
+    }
+    if (behavior.kind === 'return' && !(whole(behavior.turnFrames) && behavior.turnFrames >= 1)) {
+      fail(`spawn ${index} must turn on a whole frame within its lifetime`);
+    }
   });
   if (
     move.landingLag !== undefined &&
