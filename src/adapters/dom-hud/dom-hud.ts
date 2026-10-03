@@ -52,7 +52,7 @@ export class DomHud implements GameView {
   private readonly plates = new Map<number, Plate>();
 
   constructor(
-    container: HTMLElement,
+    private readonly container: HTMLElement,
     private readonly options: DomHudOptions,
   ) {
     this.root = element('div', 'hud');
@@ -79,6 +79,12 @@ export class DomHud implements GameView {
   }
 
   resize(): void {}
+
+  /** How far down from the top of the screen the plates reach, in pixels. */
+  coveredHeight(): number {
+    const plates = this.root.getBoundingClientRect();
+    return plates.height > 0 ? plates.bottom - this.container.getBoundingClientRect().top : 0;
+  }
 
   dispose(): void {
     this.root.remove();

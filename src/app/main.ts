@@ -69,7 +69,10 @@ const app = new App(container, {
   ],
   createSession: (config) => new LocalGameSession(createMatch(config)),
   createViews: (root, stage) => {
-    view = new ThreeView(root, stage);
+    // The camera keeps fighters below the HUD plates, whatever their size on this screen. The HUD
+    // is made after the view so its plates stack above the canvas.
+    const huds: DomHud[] = [];
+    view = new ThreeView(root, stage, { coveredTop: () => huds[0]?.coveredHeight() ?? 0 });
     view.setShowBoxes(showBoxes);
     const portrait = (id: string) => {
       const character = findCharacter(id);
@@ -80,7 +83,9 @@ const app = new App(container, {
         return undefined;
       }
     };
-    return [view, new DomHud(root, { portrait })];
+    const hud = new DomHud(root, { portrait });
+    huds.push(hud);
+    return [view, hud];
   },
   controls: [
     { device: 'Left keys', labels: describeKeys(PLAYER_ONE_KEYS) },

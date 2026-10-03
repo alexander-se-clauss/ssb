@@ -9,6 +9,7 @@ import {
   vec2,
   type BoneId,
   type FighterState,
+  type Rect,
   type SkeletonDef,
   type StageDef,
 } from '../../core';
@@ -20,8 +21,24 @@ import { BOX_COLORS, hurtboxColor } from './debug-colors';
 import { buildScenery, type Scenery } from './scenery';
 
 import { fighterModel, PLAYER_COLORS } from './fighter-model';
+import {
+  CAMERA,
+  followCamera,
+  frameFighters,
+  placeCamera,
+  restingFrame,
+  type CameraFrame,
+} from './match-camera';
 
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
+
+export interface ThreeViewOptions {
+  /**
+   * How many pixels at the top of the screen something drawn over the match covers (the HUD).
+   * The camera keeps the fighters below it.
+   */
+  readonly coveredTop?: () => number;
+}
 
 interface FighterVisual {
   readonly root: THREE.Group;
@@ -48,22 +65,29 @@ const overlay = (color: number): THREE.MeshBasicMaterial =>
 export class ThreeView implements GameView {
   private readonly renderer: THREE.WebGLRenderer;
   private readonly scene = new THREE.Scene();
-  private readonly camera = new THREE.PerspectiveCamera(40, 16 / 9, 0.1, 200);
+  private readonly camera = new THREE.PerspectiveCamera(CAMERA.fov, 16 / 9, 0.1, 200);
   private readonly fighters = new Map<number, FighterVisual>();
-  private readonly cameraTarget = new THREE.Vector3(0, 2, 22);
+  private cameraFrame: CameraFrame;
+  /** The (fractional) match frame of the last drawing, to ease the camera by elapsed time. */
+  private lastFrame: number | null = null;
+  /** Share of the screen height the HUD covers, and the half second it was last measured in. */
+  private hudShare = 0;
+  private hudCheck: number | null = null;
   private readonly scenery: Scenery;
   private showBoxes = false;
 
   constructor(
     private readonly container: HTMLElement,
-    stage: StageDef,
+    private readonly stage: StageDef,
+    private readonly options: ThreeViewOptions = {},
   ) {
+    this.cameraFrame = restingFrame(stage.blastZone);
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
     container.appendChild(this.renderer.domElement);
 
-    this.camera.position.copy(this.cameraTarget);
+    placeCamera(this.camera, this.cameraFrame);
     this.scenery = buildScenery(this.scene, stage);
     this.resize(container.clientWidth, container.clientHeight);
   }
@@ -73,11 +97,13 @@ export class ThreeView implements GameView {
     // The same in-between moment the fighters are drawn at; stops when the match does.
     const frame = previous.frame + (current.frame - previous.frame) * alpha;
     this.scenery.update(frame / TICK_RATE);
+    const bodies: Rect[] = [];
     for (const fighter of current.fighters) {
       const before = previous.fighters[fighter.slot] ?? fighter;
-      this.updateFighter(fighter, before, alpha, current.frame);
+      const body = this.updateFighter(fighter, before, alpha, current.frame);
+      if (body) bodies.push(body);
     }
-    this.updateCamera(current.fighters);
+    this.updateCamera(bodies, frame);
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -87,6 +113,7 @@ export class ThreeView implements GameView {
   }
 
   resize(width: number, height: number): void {
+    this.hudCheck = null;
     this.camera.aspect = width / Math.max(height, 1);
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
@@ -146,7 +173,7 @@ export class ThreeView implements GameView {
     before: FighterState,
     alpha: number,
     frame: number,
-  ): void {
+  ): Rect | undefined {
     const visual = this.visualFor(fighter.slot, fighter.characterId);
     const eliminated = fighter.action === 'eliminated';
     visual.root.visible = !eliminated;
@@ -156,8 +183,8 @@ export class ThreeView implements GameView {
       return;
     }
 
-    // Do not interpolate across a respawn teleport.
-    const teleported = Math.abs(fighter.position.y - before.position.y) > 2;
+    // Do not interpolate across a respawn teleport: a KO counted a fall in between.
+    const teleported = fighter.falls !== before.falls;
     const t = teleported ? 1 : alpha;
     const x = lerp(before.position.x, fighter.position.x, t);
     const y = lerp(before.position.y, fighter.position.y, t);
@@ -216,26 +243,29 @@ export class ThreeView implements GameView {
       mesh.position.set(hitbox.center.x, hitbox.center.y, 0);
       mesh.scale.setScalar(hitbox.radius);
     });
+
+    // The body box where it is drawn, for the camera.
+    const { width, height } = characterOf(fighter.characterId).stats;
+    return { left: x - width / 2, right: x + width / 2, bottom: y, top: y + height };
   }
 
-  /** Smash-style camera: frame every fighter still in the game, zooming out as they spread. */
-  private updateCamera(fighters: readonly FighterState[]): void {
-    const alive = fighters.filter((f) => f.action !== 'eliminated');
-    if (alive.length > 0) {
-      const xs = alive.map((f) => f.position.x);
-      const ys = alive.map((f) => f.position.y + characterOf(f.characterId).stats.height / 2);
-      const minX = Math.min(...xs);
-      const maxX = Math.max(...xs);
-      const minY = Math.min(...ys);
-      const maxY = Math.max(...ys);
-      const spread = Math.max(maxX - minX, (maxY - minY) * 1.6, 8);
-      this.cameraTarget.set(
-        THREE.MathUtils.clamp((minX + maxX) / 2, -8, 8),
-        THREE.MathUtils.clamp((minY + maxY) / 2 + 1, -1, 7),
-        THREE.MathUtils.clamp(spread * 1.3 + 6, 16, 40),
-      );
+  /**
+   * Smash-style camera (`match-camera.ts`): frames every fighter still in the game where it is
+   * drawn this moment, and glides there at the same pace whatever the refresh rate.
+   */
+  private updateCamera(bodies: readonly Rect[], frame: number): void {
+    // Measuring the HUD makes the browser lay out the page, so twice a second is enough.
+    const check = Math.floor(frame / 30);
+    if (check !== this.hudCheck) {
+      this.hudCheck = check;
+      const height = this.container.clientHeight;
+      this.hudShare = height > 0 ? (this.options.coveredTop?.() ?? 0) / height : 0;
     }
-    this.camera.position.lerp(this.cameraTarget, 0.08);
-    this.camera.lookAt(this.camera.position.x, this.camera.position.y - 1, 0);
+    const target = frameFighters(bodies, this.stage.blastZone, this.camera.aspect, this.hudShare);
+    const elapsed = this.lastFrame === null ? 0 : frame - this.lastFrame;
+    this.lastFrame = frame;
+    // Easing by elapsed game frames: a paused match (no frames) holds the camera still.
+    this.cameraFrame = followCamera(this.cameraFrame, target, elapsed);
+    placeCamera(this.camera, this.cameraFrame);
   }
 }
