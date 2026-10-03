@@ -108,6 +108,17 @@ A move can also set the fighter's speed on given frames (`motion` in its data, #
 it faces and `y` upward, a part left out keeping its speed. That is how a punch lunges and a
 recovery move rises; an upward speed takes a grounded fighter into the air. A recovery move
 does not fast-fall, and on its way down it already catches a ledge.
+A move can spawn objects (`spawns` in its data, #45), such as a projectile. On the spawn's frame
+`step` adds a `SpawnedObject` to `MatchState.objects`: plain data with its owner, position,
+velocity, age, lifetime, radius and its own hit (`HitDef`, the damage and launch part of a
+hitbox), numbered from `MatchState.nextObjectId` so a view can follow it. Each frame
+`objects.ts` moves it by its velocity, and it hits the first fighter its circle touches that is
+not its owner and not invulnerable (`applyHit` in `combat.ts`, shared with hitboxes): the target
+is launched the way the owner faced, only the target freezes, the owner gets the credit, and the
+object is gone. It is also gone when its lifetime ends or it leaves the blast zone; it outlives
+its owner's move and stock. Spawns come from the frame's snapshot like hitboxes, so a fighter
+hit as it fires still fires; object hits are worked out after hitbox hits, so a fighter struck by
+both on one frame takes both damages and flies with the object's launch.
 Ledges are stage data (`StageDef.ledges`, #40): a fighter falling near a free one snaps to hang
 from it (`ledge.ts` works out where from the character's own hanging pose), with brief
 invulnerability and its air jumps and air dodge back, and lets go after `LEDGE.hangFrames`

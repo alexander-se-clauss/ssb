@@ -15,7 +15,19 @@ export type MoveId = string;
  */
 export type HitboxAnchor = { readonly bone: BoneId; readonly at: number } | { readonly feet: Vec2 };
 
-export interface HitboxDef {
+/** What a hit does to its target: damage and launch. Hitboxes and spawned objects share it. */
+export interface HitDef {
+  readonly damage: number;
+  /** Launch angle in degrees, 0 = straight forward, 90 = straight up. */
+  readonly angle: number;
+  readonly baseKnockback: number;
+  /** Extra knockback per percent of the target's damage. */
+  readonly knockbackGrowth: number;
+  /** Multiplies this hit's hitlag (`HITLAG` in config); default 1. */
+  readonly hitlagScale?: number;
+}
+
+export interface HitboxDef extends HitDef {
   readonly anchor: HitboxAnchor;
   readonly radius: number;
   /** First active frame of the move. */
@@ -26,14 +38,20 @@ export interface HitboxDef {
   readonly group?: number;
   /** When several hitboxes touch a target on one frame, the highest wins, then list order. */
   readonly priority: number;
-  readonly damage: number;
-  /** Launch angle in degrees, 0 = straight forward, 90 = straight up. */
-  readonly angle: number;
-  readonly baseKnockback: number;
-  /** Extra knockback per percent of the target's damage. */
-  readonly knockbackGrowth: number;
-  /** Multiplies this hit's hitlag (`HITLAG` in config); default 1. */
-  readonly hitlagScale?: number;
+}
+
+/**
+ * An object the move spawns on its `frame` (#45), such as a fireball: it starts at `offset` from
+ * the feet and flies at `velocity` (both with x the way the fighter faces), hits the first other
+ * fighter its circle touches, and is gone after `lifetime` frames.
+ */
+export interface SpawnDef {
+  readonly frame: number;
+  readonly offset: Vec2;
+  readonly velocity: Vec2;
+  readonly lifetime: number;
+  readonly radius: number;
+  readonly hit: HitDef;
 }
 
 /** What a press asks for, kept in the input buffer: a move slot or a dodge, later block (#6). */
@@ -99,6 +117,8 @@ export interface AttackMoveDef {
   readonly helpless?: true;
   /** Speeds the move sets on its frames, such as a lunge or the rise of a recovery move. */
   readonly motion?: readonly MotionKey[];
+  /** Objects the move spawns, such as projectiles (#45). */
+  readonly spawns?: readonly SpawnDef[];
 }
 
 /** Block and counter moves join this union with #6. */
@@ -174,6 +194,24 @@ export const validateMove = (move: MoveDef): void => {
     if ([x, y].some((speed) => speed !== undefined && !Number.isFinite(speed))) {
       fail(`motion ${index} has a bad speed`);
     }
+  });
+  (move.spawns ?? []).forEach(({ frame, offset, velocity, lifetime, radius, hit }, index) => {
+    // Like motion, a spawn on the start frame would never come out: the runner plays from 1 on.
+    if (!Number.isInteger(frame) || frame < 1 || frame >= move.totalFrames) {
+      fail(`spawn ${index} is outside the move (${frame})`);
+    }
+    if (!Number.isInteger(lifetime) || lifetime < 1) {
+      fail(`spawn ${index} needs a lifetime of at least one whole frame`);
+    }
+    if (!(radius > 0)) fail(`spawn ${index} needs a positive radius`);
+    const { damage, angle, baseKnockback, knockbackGrowth } = hit;
+    const numbers = [offset.x, offset.y, velocity.x, velocity.y];
+    if (!numbers.every(Number.isFinite)) fail(`spawn ${index} has a bad position or speed`);
+    if (![damage, angle, baseKnockback, knockbackGrowth].every(Number.isFinite)) {
+      fail(`spawn ${index} has a bad hit number`);
+    }
+    const scale = hit.hitlagScale ?? 1;
+    if (!(Number.isFinite(scale) && scale >= 0)) fail(`spawn ${index} has a bad hitlagScale`);
   });
   if (
     move.landingLag !== undefined &&
