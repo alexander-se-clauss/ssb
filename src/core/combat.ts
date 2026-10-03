@@ -2,9 +2,9 @@ import { characterOf } from './character';
 import { HITLAG, HITSTUN_PER_KNOCKBACK } from './config';
 import { circleIntersectsCapsule, type Vec2 } from './math';
 import { findMove } from './move-data';
-import type { HitboxDef } from './moves';
+import type { HitboxDef, HitDef } from './moves';
 import { plantedBoneSegments, type BoneId } from './skeleton';
-import type { FighterState, GameEvent } from './types';
+import type { FighterState, GameEvent, PlayerSlot } from './types';
 
 export interface Hitbox {
   readonly center: Vec2;
@@ -74,9 +74,10 @@ export const hurtboxes = (fighter: FighterState): Hurtbox[] => {
   });
 };
 
-const hitsBody = (hitbox: Hitbox, target: FighterState): boolean =>
+/** Whether a circle (a hitbox, a spawned object) touches any of the target's hurtboxes. */
+export const touchesBody = (center: Vec2, radius: number, target: FighterState): boolean =>
   hurtboxes(target).some((box) =>
-    circleIntersectsCapsule(hitbox.center, hitbox.radius, box.start, box.end, box.radius),
+    circleIntersectsCapsule(center, radius, box.start, box.end, box.radius),
   );
 
 /**
@@ -92,23 +93,63 @@ export const strikingHitbox = (
   for (const hitbox of hitboxes) {
     if (groupsAlreadyHit.includes(hitbox.attack.group ?? 0)) continue;
     if (best && hitbox.attack.priority <= best.attack.priority) continue;
-    if (hitsBody(hitbox, target)) best = hitbox;
+    if (touchesBody(hitbox.center, hitbox.radius, target)) best = hitbox;
   }
   return best;
 };
 
 /** Launch speed in units per frame. Grows with the target's damage after the hit. */
 export const knockback = (
-  attack: Pick<HitboxDef, 'baseKnockback' | 'knockbackGrowth'>,
+  attack: Pick<HitDef, 'baseKnockback' | 'knockbackGrowth'>,
   damageAfterHit: number,
   weight: number,
 ): number => (attack.baseKnockback + damageAfterHit * attack.knockbackGrowth) / weight;
 
 /** How long a hit freezes attacker and target: longer for harder hits. */
-export const hitlagFrames = (attack: Pick<HitboxDef, 'damage' | 'hitlagScale'>): number =>
+export const hitlagFrames = (attack: Pick<HitDef, 'damage' | 'hitlagScale'>): number =>
   Math.floor(
     (HITLAG.baseFrames + attack.damage / HITLAG.damagePerFrame) * (attack.hitlagScale ?? 1),
   );
+
+/**
+ * `target` struck by `hit`, launched with `direction` as forward, and credited to `by`; with the
+ * freeze the hit causes. A fighter's hitbox and a spawned object (#45) hit the same way.
+ */
+export const applyHit = (
+  target: FighterState,
+  hit: HitDef,
+  direction: 1 | -1,
+  by: PlayerSlot,
+): { target: FighterState; hitlag: number } => {
+  const damage = target.damage + hit.damage;
+  const { stats } = characterOf(target.characterId);
+  const speed = knockback(hit, damage, stats.weight);
+  const radians = (hit.angle * Math.PI) / 180;
+  const hitlag = hitlagFrames(hit);
+  return {
+    hitlag,
+    target: {
+      ...target,
+      damage,
+      velocity: { x: Math.cos(radians) * speed * direction, y: Math.sin(radians) * speed },
+      grounded: false,
+      // Launched off the ground, the ground jump is gone; the air jumps stay.
+      jumpsRemaining: Math.min(target.jumpsRemaining, stats.airJumps),
+      action: 'hitstun',
+      actionFrame: 0,
+      // Knocked off a ledge it held.
+      ledge: null,
+      // A hit gives the air dodge back, as in Ultimate.
+      airDodgeUsed: false,
+      moveId: null,
+      hitstunFrames: Math.round(speed * HITSTUN_PER_KNOCKBACK),
+      // The launch is set now but held until the freeze ends.
+      hitlagFrames: Math.max(target.hitlagFrames, hitlag),
+      hitTargets: [],
+      lastHitBy: by,
+    },
+  };
+};
 
 /**
  * Resolves all hits for this frame. Hits are computed from the same snapshot,
@@ -134,32 +175,13 @@ export const resolveCombat = (
       if (!hitbox) continue;
 
       const current = next[target.slot] ?? target;
-      const damage = current.damage + hitbox.attack.damage;
-      const { stats } = characterOf(current.characterId);
-      const speed = knockback(hitbox.attack, damage, stats.weight);
-      const radians = (hitbox.attack.angle * Math.PI) / 180;
-      const hitlag = hitlagFrames(hitbox.attack);
-
-      next[target.slot] = {
-        ...current,
-        damage,
-        velocity: { x: Math.cos(radians) * speed * attacker.facing, y: Math.sin(radians) * speed },
-        grounded: false,
-        // Launched off the ground, the ground jump is gone; the air jumps stay.
-        jumpsRemaining: Math.min(current.jumpsRemaining, stats.airJumps),
-        action: 'hitstun',
-        actionFrame: 0,
-        // Knocked off a ledge it held.
-        ledge: null,
-        // A hit gives the air dodge back, as in Ultimate.
-        airDodgeUsed: false,
-        moveId: null,
-        hitstunFrames: Math.round(speed * HITSTUN_PER_KNOCKBACK),
-        // The launch is set now but held until the freeze ends.
-        hitlagFrames: Math.max(current.hitlagFrames, hitlag),
-        hitTargets: [],
-        lastHitBy: attacker.slot,
-      };
+      const { target: struck, hitlag } = applyHit(
+        current,
+        hitbox.attack,
+        attacker.facing,
+        attacker.slot,
+      );
+      next[target.slot] = struck;
       const attackerNow = next[attacker.slot] ?? attacker;
       next[attacker.slot] = {
         ...attackerNow,
@@ -170,7 +192,12 @@ export const resolveCombat = (
         damageDealt: attackerNow.damageDealt + hitbox.attack.damage,
         hitlagFrames: Math.max(attackerNow.hitlagFrames, hitlag),
       };
-      events.push({ type: 'hit', attacker: attacker.slot, target: target.slot, damage });
+      events.push({
+        type: 'hit',
+        attacker: attacker.slot,
+        target: target.slot,
+        damage: struck.damage,
+      });
     }
   }
 

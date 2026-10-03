@@ -223,6 +223,16 @@ type MoveDef = AttackMoveDef; // | BlockMoveDef | CounterMoveDef with #6
   does not fast-fall, and once falling it catches a free ledge before it ends, as up specials
   snap to ledges in Smash.
 
+### Amendment (2026-10-03, #45)
+
+- **Spawns.** An `AttackMoveDef` may list `spawns`: on a spawn's `frame` (1 to
+  `totalFrames - 1`, like motion) an object starts at `offset` from the feet with `velocity`,
+  both mirrored by facing, and lives for `lifetime` frames. It carries a copy of its `hit`
+  (`HitDef`: damage, angle, knockback, hitlag scale), so the object needs no reference back to
+  the move and stays valid after the move ends. `HitboxDef` extends the same `HitDef`.
+- Objects live in `MatchState.objects`, not in a fighter, since they outlive the move and even
+  the owner's stock. They never hit their owner; a hit uses them up and freezes only the target.
+
 ## Consequences
 
 - New moves are data. Tests, tools and an AI agent can write and check them without new code.
@@ -239,7 +249,7 @@ type MoveDef = AttackMoveDef; // | BlockMoveDef | CounterMoveDef with #6
 - More state per fighter, all plain data: the move, hit targets per group, hitlag and the buffer.
 - Once moves land, the "Terms" paragraph in `docs/architecture.md` must be updated:
   `activeHitbox` becomes a list of bone hitboxes, and `'jab'` leaves `FighterAction`.
-- Not covered yet: armour, clashes and projectiles.
+- Not covered yet: armour and clashes (projectiles came with #45).
   They come as optional fields or new kinds when a move needs them.
 
 ## Alternatives considered

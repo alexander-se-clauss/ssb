@@ -4,6 +4,7 @@ import { resolveCombat } from './combat';
 import { createFighter, updateFighter } from './fighter';
 import { NEUTRAL_INPUT } from './input';
 import { findMove } from './move-data';
+import { insideZone, moveObjects, resolveObjectHits, spawnObjects } from './objects';
 import { validateCharacter } from './character';
 import { findCharacter, findStage } from './registry';
 import { leader, timeLeftFrames } from './rules';
@@ -61,6 +62,8 @@ export const createMatch = (config: MatchConfig): MatchState => {
     fighters: config.players.map((player, slot) =>
       createFighter(slot, player.characterId, stage, stocks),
     ),
+    objects: [],
+    nextObjectId: 0,
     events: [],
     winner: null,
   };
@@ -174,12 +177,24 @@ export const step = (state: MatchState, inputs: readonly PlayerInput[]): MatchSt
     return [...done, update(fighter, [...done, ...later].flatMap(heldLedge))];
   }, []);
   const combat = resolveCombat(moved);
-  const events = [...combat.events];
 
-  const fallen = combat.fighters.filter(
+  // Objects already out fly on; new ones start where their move put them and can hit at once.
+  // Like hitboxes, spawns come from the frame's snapshot: a fighter hit as it fires still fires.
+  // Object hits come after hitbox hits, so a fighter struck by both adds both damages and flies
+  // with the object's launch.
+  const spawned = spawnObjects(state.fighters, moved, state.nextObjectId);
+  const flying = [
+    ...moveObjects(state.objects, state.stage.blastZone),
+    // One spawned past the blast zone is gone before it can hit anything.
+    ...spawned.filter((object) => insideZone(object, state.stage.blastZone)),
+  ];
+  const shots = resolveObjectHits(flying, combat.fighters);
+  const events = [...combat.events, ...shots.events];
+
+  const fallen = shots.fighters.filter(
     (f) => f.action !== 'eliminated' && isOutsideBlastZone(f, state),
   );
-  const afterKos = combat.fighters.map((fighter) =>
+  const afterKos = shots.fighters.map((fighter) =>
     fallen.includes(fighter) ? handleKo(fighter, state, events) : fighter,
   );
   const fighters = creditKos(afterKos, fallen);
@@ -192,6 +207,8 @@ export const step = (state: MatchState, inputs: readonly PlayerInput[]): MatchSt
     frame: state.frame + 1,
     phase: finished ? 'finished' : 'playing',
     fighters,
+    objects: shots.objects,
+    nextObjectId: state.nextObjectId + spawned.length,
     events,
     winner,
   };

@@ -5,7 +5,7 @@
 import type { Rect, Vec2 } from './math';
 import type { StickTracker } from './attack-input';
 import type { MoveSlot } from './move-slots';
-import type { BufferedAction, MoveId } from './moves';
+import type { BufferedAction, HitDef, MoveId } from './moves';
 import type { Pose, SkeletonDef } from './skeleton';
 
 /** Index of a player in the match, 0-based. */
@@ -122,6 +122,27 @@ export interface FighterState {
   readonly pose: Pose;
 }
 
+/**
+ * Something a move spawned that lives on its own (#45), such as a projectile. Plain data: it
+ * carries its own hit, so it stays valid when its owner's move ends, or its owner is KO-ed.
+ */
+export interface SpawnedObject {
+  /** Unique within the match, in spawn order, so views can follow an object frame to frame. */
+  readonly id: number;
+  /** Who spawned it: it never hits them, and they get the credit for its hits. */
+  readonly owner: PlayerSlot;
+  /** The centre of its circle. */
+  readonly position: Vec2;
+  readonly velocity: Vec2;
+  /** The way its owner faced when it spawned; its hit launches that way. */
+  readonly facing: 1 | -1;
+  /** Frames since it spawned; it is gone once `age` reaches `lifetime`. */
+  readonly age: number;
+  readonly lifetime: number;
+  readonly radius: number;
+  readonly hit: HitDef;
+}
+
 export interface PlatformDef {
   readonly bounds: Rect;
   /** Pass-through platforms can be jumped through from below and dropped through by holding down. */
@@ -186,6 +207,10 @@ export interface MatchState {
   readonly stage: StageDef;
   readonly rules: MatchRules;
   readonly fighters: readonly FighterState[];
+  /** Objects moves spawned that are still around (#45), in spawn order. */
+  readonly objects: readonly SpawnedObject[];
+  /** The id the next spawned object gets. */
+  readonly nextObjectId: number;
   /** Events produced by the most recent step only. */
   readonly events: readonly GameEvent[];
   readonly winner: PlayerSlot | null;
