@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { CharacterDef } from '../core';
+import { CAPSULE, type CharacterDef } from '../core';
 import {
   createSelect,
   reduceSelect,
@@ -9,8 +9,8 @@ import {
 import { screenMusic, selectCue } from './menu-sounds';
 
 const ROSTER: CharacterDef[] = [
-  { id: 'a', name: 'A', moves: {} },
-  { id: 'b', name: 'B', moves: {} },
+  { ...CAPSULE, id: 'a', name: 'A', moves: {} },
+  { ...CAPSULE, id: 'b', name: 'B', moves: {} },
 ];
 
 const apply = (state: SelectState, ...actions: SelectAction[]): SelectState =>

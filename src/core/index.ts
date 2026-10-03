@@ -8,6 +8,7 @@ export * from './skeleton';
 export { POSES, blendPose, movePose, poseName, targetPose, type PoseName } from './poses';
 export * from './stages';
 export * from './registry';
+export { characterOf, validateCharacter } from './character';
 export { createMatch, step } from './simulation';
 export { leader, playedFrames, score, timeLeftFrames } from './rules';
 export { activeHitboxes, hurtboxes, knockback, type Hitbox, type Hurtbox } from './combat';

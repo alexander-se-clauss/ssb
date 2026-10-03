@@ -1,8 +1,9 @@
-import { FIGHTER, HITLAG, HITSTUN_PER_KNOCKBACK } from './config';
+import { characterOf } from './character';
+import { HITLAG, HITSTUN_PER_KNOCKBACK } from './config';
 import { circleIntersectsCapsule, type Vec2 } from './math';
 import { findMove } from './move-data';
 import type { HitboxDef } from './moves';
-import { HUMANOID, plantedBoneSegments, type BoneId } from './skeleton';
+import { plantedBoneSegments, type BoneId } from './skeleton';
 import type { FighterState, GameEvent } from './types';
 
 export interface Hitbox {
@@ -20,7 +21,8 @@ export const activeHitboxes = (fighter: FighterState): Hitbox[] => {
   );
   if (on.length === 0) return [];
   // Bone hitboxes sit on the planted body, the one the view draws and hurtboxes use.
-  const bones = plantedBoneSegments(HUMANOID, fighter.pose, fighter.position, fighter.facing);
+  const { skeleton } = characterOf(fighter.characterId);
+  const bones = plantedBoneSegments(skeleton, fighter.pose, fighter.position, fighter.facing);
   return on.map((hitbox) => {
     const { anchor } = hitbox;
     if ('bone' in anchor) {
@@ -55,8 +57,9 @@ export interface Hurtbox {
  * exactly what it looks like it dodges.
  */
 export const hurtboxes = (fighter: FighterState): Hurtbox[] => {
-  const segments = plantedBoneSegments(HUMANOID, fighter.pose, fighter.position, fighter.facing);
-  return HUMANOID.bones.map((bone) => {
+  const { skeleton } = characterOf(fighter.characterId);
+  const segments = plantedBoneSegments(skeleton, fighter.pose, fighter.position, fighter.facing);
+  return skeleton.bones.map((bone) => {
     const { start, end } = segments[bone.id];
     const middle = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
     // A capsule's round ends stay within its joints, as drawn: the core segment is inset by the
@@ -132,7 +135,7 @@ export const resolveCombat = (
 
       const current = next[target.slot] ?? target;
       const damage = current.damage + hitbox.attack.damage;
-      const speed = knockback(hitbox.attack, damage, FIGHTER.weight);
+      const speed = knockback(hitbox.attack, damage, characterOf(current.characterId).stats.weight);
       const radians = (hitbox.attack.angle * Math.PI) / 180;
       const hitlag = hitlagFrames(hitbox.attack);
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FIGHTER } from './config';
+import { FIGHTER, FIGHTER_RULES } from './config';
 import { step } from './simulation';
 import { fighter, inputOf, newMatch, run, settled, withFighter } from './test-helpers';
 
@@ -94,9 +94,9 @@ describe('fighter movement', () => {
       hitstunFrames: 60,
     });
     const after = (frames: number) => fighter(run(launched, frames), 0);
-    expect(after(1).velocity.x).toBeCloseTo(0.6 - FIGHTER.launchDecay, 9);
+    expect(after(1).velocity.x).toBeCloseTo(0.6 - FIGHTER_RULES.launchDecay, 9);
     // The launch is gone well before it would carry the fighter across the stage.
-    const frames = Math.ceil((0.6 - FIGHTER.airSpeed) / FIGHTER.launchDecay);
+    const frames = Math.ceil((0.6 - FIGHTER.airSpeed) / FIGHTER_RULES.launchDecay);
     expect(after(frames).velocity.x).toBeCloseTo(FIGHTER.airSpeed, 9);
     expect(after(frames).position.x).toBeLessThan(12.5);
     // Below air speed only the usual air friction applies.

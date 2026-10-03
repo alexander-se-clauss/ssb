@@ -1,9 +1,10 @@
-import { COUNTDOWN, FIGHTER, RULE_LIMITS } from './config';
+import { COUNTDOWN, FIGHTER_RULES, RULE_LIMITS } from './config';
 import { trackStick } from './attack-input';
 import { resolveCombat } from './combat';
 import { createFighter, updateFighter } from './fighter';
 import { NEUTRAL_INPUT } from './input';
 import { findMove } from './move-data';
+import { validateCharacter } from './character';
 import { findCharacter, findStage } from './registry';
 import { leader, timeLeftFrames } from './rules';
 import type {
@@ -41,6 +42,7 @@ export const createMatch = (config: MatchConfig): MatchState => {
   for (const player of config.players) {
     const character = findCharacter(player.characterId);
     if (!character) throw new Error(`Unknown character "${player.characterId}"`);
+    validateCharacter(character);
     // Fails at match start, not mid-match, if a slot names a move that does not exist.
     for (const moveId of Object.values(character.moves)) findMove(moveId);
   }
@@ -95,7 +97,7 @@ const handleKo = (fighter: FighterState, state: MatchState, events: GameEvent[])
     kos: fighter.kos,
     falls,
     damageDealt: fighter.damageDealt,
-    invulnerableFrames: FIGHTER.respawnInvulnerabilityFrames,
+    invulnerableFrames: FIGHTER_RULES.respawnInvulnerabilityFrames,
     previousInput: fighter.previousInput,
   };
 };
