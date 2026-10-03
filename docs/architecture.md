@@ -125,6 +125,16 @@ was set and only hits from `armFrames` on, and `return` slows evenly to a stop a
 then flies back at its start speed towards where its owner is now and is gone when it reaches
 them (or when they are out of the match). Platforms stop only an arc, and only from above. A hit
 launches the way the object flies, so a boomerang hits on its way back towards its owner.
+Effects are cosmetic and stay out of the game (#47). Core knows them only by id: a move lists
+`effects` (an id such as `fire`, an anchor like a hitbox's, and a frame window), a spawn may name
+the `effect` its object trails, and `activeEffects` in `combat.ts` says which are on this frame
+and where, the way `activeHitboxes` does. A move's effects are derived from the move and its
+frame, not stored; a spawned object carries its `effect` id in `MatchState` for views only. The
+view turns the ids into particles: `particles.ts` holds a look (`EffectPreset`) per id and a
+fixed-size `ParticlePool` per look, stepped by elapsed game frames so a pause freezes them, and
+seeded so the same frame pacing gives the same flames; `effect-layer.ts` draws each pool as one
+cloud of points.
+`object-layer.ts` draws spawned objects as balls in their owner's colour.
 Ledges are stage data (`StageDef.ledges`, #40): a fighter falling near a free one snaps to hang
 from it (`ledge.ts` works out where from the character's own hanging pose), with brief
 invulnerability and its air jumps and air dodge back, and lets go after `LEDGE.hangFrames`
