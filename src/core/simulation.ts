@@ -159,12 +159,19 @@ export const step = (state: MatchState, inputs: readonly PlayerInput[]): MatchSt
   if (state.phase === 'finished') return { ...state, events: [] };
   if (state.phase === 'countdown') return countdownStep(state, inputs);
 
-  // In slot order: each fighter sees the ledges held by lower slots this frame and by higher ones
-  // at its start, so of two fighters reaching a free ledge together the lower slot gets it.
-  const moved = state.fighters.reduce<FighterState[]>((done, fighter) => {
-    const taken = [...done, ...state.fighters.slice(done.length + 1)].flatMap(heldLedge);
-    const input = inputs[fighter.slot] ?? NEUTRAL_INPUT;
-    return [...done, updateFighter(fighter, input, state.stage, state.frame, taken)];
+  // Fighters on a ledge go first: whether they hold on, climb or let go decides which ledges are
+  // free this frame. The others follow in slot order, each seeing the ledges held after those
+  // updates, so of two fighters reaching a free ledge together the lower slot gets it.
+  const update = (fighter: FighterState, taken: readonly number[]): FighterState =>
+    updateFighter(fighter, inputs[fighter.slot] ?? NEUTRAL_INPUT, state.stage, state.frame, taken);
+  const holders = state.fighters.map((fighter) =>
+    fighter.action === 'ledge' ? update(fighter, []) : null,
+  );
+  const moved = state.fighters.reduce<FighterState[]>((done, fighter, index) => {
+    const held = holders[index];
+    if (held) return [...done, held];
+    const later = holders.slice(index + 1).filter((f): f is FighterState => f !== null);
+    return [...done, update(fighter, [...done, ...later].flatMap(heldLedge))];
   }, []);
   const combat = resolveCombat(moved);
   const events = [...combat.events];

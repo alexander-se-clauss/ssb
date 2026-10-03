@@ -347,6 +347,19 @@ describe('getting up from a ledge (#41)', () => {
     }
   });
 
+  it('frees the ledge for a lower slot on the very frame a higher slot starts to climb', () => {
+    const two = settled(newMatch(2));
+    const hangingP2 = run(inAir(two, 1, HANG.x, HANG.y + 0.1), LEDGE.invulnerableFrames);
+    expect(fighter(hangingP2, 1).action).toBe('ledge');
+    // P1 reaches the ledge on the same frame P2 climbs off it.
+    const both = run(inAir(hangingP2, 0, HANG.x, HANG.y + 0.1), 1, [
+      inputOf({}),
+      inputOf({ x: TOWARDS }),
+    ]);
+    expect(fighter(both, 1).action).toBe('ledgeStand');
+    expect(fighter(both, 0).action).toBe('ledge');
+  });
+
   it('frees the ledge as soon as the fighter starts to climb', () => {
     const two = settled(newMatch(2));
     const climbing = run(run(inAir(two, 0, HANG.x, HANG.y + 0.1), LEDGE.waitFrames), 1, [

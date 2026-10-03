@@ -106,8 +106,9 @@ let go; held input does not count. Climbing follows a fixed path, `climbPosition
 not physics: the fighter stays `grounded: false` until it is on the stage, and the ledge is free
 for others from the first climbing frame. The attack is the character's `ledgeAttack` move slot,
 which no button press resolves to (`PRESS_SLOTS` vs `MOVE_SLOTS`)). One
-fighter per ledge: `step` updates fighters in slot order and hands each the ledges held by the
-others, so of two reaching a ledge on the same frame the lower slot gets it.
+fighter per ledge: `step` updates the fighters on a ledge first, so a ledge let go of or climbed
+from is free on that same frame, then the others in slot order, each handed the ledges held by
+the rest, so of two reaching a ledge on the same frame the lower slot gets it.
 Each fighter carries its current `pose` in `FighterState`: `step` eases it a little each frame towards
 the pose of its movement state, with idle breathing and a running stride (`poses.ts`), and the
 view interpolates it between frames like the position. A move has pose keyframes instead: the
