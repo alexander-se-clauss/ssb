@@ -2,8 +2,8 @@
  * Everything that can be picked in a match, as plain data. Menus list these arrays in order;
  * match configs and game state refer to entries only by id, so they stay serializable.
  */
-import { FIGHTER } from './config';
-import { HUMANOID } from './skeleton';
+import { FIGHTER, RIVET_STATS } from './config';
+import { HUMANOID, STOCKY } from './skeleton';
 import { BATTLEFIELD, FINAL_DESTINATION } from './stages';
 import type { CharacterDef, StageDef } from './types';
 
@@ -33,8 +33,17 @@ export const CAPSULE: CharacterDef = {
   },
 };
 
-/** A handyman; he plays exactly like the capsule for now (epic #7). */
-export const RIVET: CharacterDef = { ...CAPSULE, id: 'rivet', name: 'Rivet' };
+/**
+ * Fighter 1 (#39): Rivet, a stocky handyman and the all-rounder. The capsule's ground attacks and
+ * aerials, plus a lunging haymaker as neutral special and a rising uppercut that recovers.
+ */
+export const RIVET: CharacterDef = {
+  id: 'rivet',
+  name: 'Rivet',
+  stats: RIVET_STATS,
+  skeleton: STOCKY,
+  moves: { ...CAPSULE.moves, neutralSpecial: 'haymaker', upSpecial: 'springJack' },
+};
 
 /** A bounty hunter in power armour; she plays exactly like the capsule for now (epic #7). */
 export const VELA: CharacterDef = { ...CAPSULE, id: 'vela', name: 'Vela' };

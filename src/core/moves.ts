@@ -65,6 +65,16 @@ export interface PoseKey {
   readonly pose: Pose;
 }
 
+/**
+ * On `frame` of its move, the fighter's speed is set (#39): `x` the way it faces, `y` upward. A
+ * part left out keeps its speed. An upward speed takes a grounded fighter off the ground.
+ */
+export interface MotionKey {
+  readonly frame: number;
+  readonly x?: number;
+  readonly y?: number;
+}
+
 export interface AttackMoveDef {
   readonly kind: 'attack';
   readonly id: MoveId;
@@ -87,6 +97,8 @@ export interface AttackMoveDef {
    * it lands or grabs a ledge, able only to drift. Such a move has no cancels.
    */
   readonly helpless?: true;
+  /** Speeds the move sets on its frames, such as a lunge or the rise of a recovery move. */
+  readonly motion?: readonly MotionKey[];
 }
 
 /** Block and counter moves join this union with #6. */
@@ -151,6 +163,17 @@ export const validateMove = (move: MoveDef): void => {
       fail(`cancel ${index} has an empty or broken window [${from}, ${to})`);
     }
     if (to > move.totalFrames) fail(`cancel ${index} ends after the move (${to})`);
+  });
+  // The frame a move starts on is its frame 0; the runner plays it from frame 1 on.
+  (move.motion ?? []).forEach(({ frame, x, y }, index, keys) => {
+    if (!Number.isInteger(frame) || frame < 1 || frame >= move.totalFrames) {
+      fail(`motion ${index} is outside the move (${frame})`);
+    }
+    const before = keys[index - 1];
+    if (before && frame <= before.frame) fail(`motion ${index} is out of order`);
+    if ([x, y].some((speed) => speed !== undefined && !Number.isFinite(speed))) {
+      fail(`motion ${index} has a bad speed`);
+    }
   });
   if (
     move.landingLag !== undefined &&

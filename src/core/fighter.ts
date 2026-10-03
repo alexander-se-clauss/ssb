@@ -434,6 +434,21 @@ export const updateFighter = (
     }
   }
 
+  // A move can set the fighter's speed on its frames (#39): a lunge, or the rise of a recovery.
+  const motion =
+    action === 'attack' && moveId !== null
+      ? findMove(moveId).motion?.find((key) => key.frame === actionFrame)
+      : undefined;
+  if (motion) {
+    if (motion.x !== undefined) vx = facing * motion.x;
+    // The ground holds a grounded fighter up, so a downward speed only counts in the air.
+    if (motion.y !== undefined && !(grounded && motion.y < 0)) vy = motion.y;
+    if (grounded && vy > 0) {
+      grounded = false;
+      jumpsRemaining = Math.min(jumpsRemaining, stats.airJumps);
+    }
+  }
+
   // An aerial drifts and fast-falls like a fighter in the air without an attack, as in Melee.
   // Only aerials: a ground move that slides off an edge keeps its locked movement.
   const inAerial =
@@ -486,9 +501,11 @@ export const updateFighter = (
     vx = approach(vx, 0, grounded ? stats.groundFriction : stats.airFriction);
   }
 
-  // Gravity. Holding down while falling fast-falls.
+  // Gravity. Holding down while falling fast-falls, but not in a recovery move (#44).
+  const inRecovery = action === 'attack' && moveId !== null && findMove(moveId).helpless === true;
   if (!grounded && !airDodging) {
-    const fastFalling = (isControllable(action) || inAerial) && wantsDrop && vy < 0;
+    const fastFalling =
+      (isControllable(action) || (inAerial && !inRecovery)) && wantsDrop && vy < 0;
     vy = Math.max(vy - stats.gravity, -(fastFalling ? stats.fastFallSpeed : stats.maxFallSpeed));
   }
 
@@ -596,11 +613,12 @@ export const updateFighter = (
     actionFrame >= dodge.invulnerableFrom &&
     actionFrame < dodge.invulnerableTo;
 
-  // Falling past a free ledge catches it (#40), unless the stick holds down to fall on.
+  // Falling past a free ledge catches it (#40), unless the stick holds down to fall on. A
+  // recovery move catches one on its way down too (#39), as up specials snap to ledges in Smash.
   const regrab = Math.max(fighter.ledgeRegrabFrames - 1, 0);
   const caught =
     !grounded &&
-    (action === 'airborne' || action === 'helpless') &&
+    (action === 'airborne' || action === 'helpless' || inRecovery) &&
     vy <= 0 &&
     input.y >= DROP_THRESHOLD &&
     regrab === 0
@@ -614,6 +632,9 @@ export const updateFighter = (
     facing = ledge.facing;
     action = 'ledge';
     actionFrame = 0;
+    // A recovery move caught on its way down ends here.
+    moveId = null;
+    hitTargets = [];
     turnedFrom = null;
     buffer = null;
     // Holding on gives the air jumps and the air dodge back, as in Ultimate.

@@ -10,7 +10,10 @@ import type * as Registry from './registry';
 import type { MoveDef } from './moves';
 import type { CharacterDef, LedgeDef, MatchState } from './types';
 
-/** A recovery move for the tests: 20 frames, no hitbox, leaves the fighter helpless (#44). */
+/**
+ * A recovery move for the tests: 20 frames, no hitbox, leaves the fighter helpless (#44); it drifts
+ * like an aerial and has its own landing lag.
+ */
 const RECOVERY_FRAMES = 20;
 
 vi.mock('./move-data', async (importOriginal) => {
@@ -24,6 +27,7 @@ vi.mock('./move-data', async (importOriginal) => {
     poses: [{ frame: 0, pose: POSES.jump }],
     cancels: [],
     helpless: true,
+    landingLag: 12,
   };
   const moves = { ...real.MOVES, [recovery.id]: recovery };
   return {
@@ -181,6 +185,34 @@ describe('helpless after a recovery move (#44)', () => {
     expect(fighter(next, 0).action).toBe('airborne');
     const jumped = run(next, 1, [inputOf({ jump: true })]);
     expect(fighter(jumped, 0).velocity.y).toBeGreaterThan(0);
+  });
+
+  it('catches a ledge on the way down while the move still runs (#39)', () => {
+    const ledge = BATTLEFIELD.ledges[1] as LedgeDef;
+    const hang = hangPosition(ledge, CAPSULE);
+    const falling = withFighter(recovering(), 0, {
+      position: { x: hang.x, y: hang.y + 0.1 },
+      velocity: { x: 0, y: 0 },
+    });
+    expect(fighter(falling, 0).action).toBe('attack');
+    const caught = fighter(run(falling, 1), 0);
+    expect(caught.action).toBe('ledge');
+    expect(caught.moveId).toBeNull();
+    // Still rising, it does not: up specials snap to a ledge only once they fall.
+    const rising = withFighter(recovering(), 0, {
+      position: { x: hang.x, y: hang.y - 0.3 },
+      velocity: { x: 0, y: 0.2 },
+    });
+    expect(fighter(run(rising, 1), 0).action).toBe('attack');
+  });
+
+  it('does not fast-fall during the recovery move, though it drifts like an aerial (#39)', () => {
+    const falling = withFighter(recovering(), 0, { velocity: { x: 0, y: -0.05 } });
+    const down = fighter(run(falling, 15, [inputOf({ y: -1 })]), 0);
+    expect(down.action).toBe('attack');
+    expect(down.velocity.y).toBeGreaterThanOrEqual(-CAPSULE.stats.maxFallSpeed);
+    const drifted = fighter(run(falling, 15, [inputOf({ x: -1 })]), 0);
+    expect(drifted.velocity.x).toBeLessThan(-0.05);
   });
 
   it('does not follow the recovery move used on the ground', () => {
