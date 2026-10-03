@@ -149,6 +149,8 @@ export const resolveCombat = (
         jumpsRemaining: Math.min(current.jumpsRemaining, stats.airJumps),
         action: 'hitstun',
         actionFrame: 0,
+        // Knocked off a ledge it held.
+        ledge: null,
         // A hit gives the air dodge back, as in Ultimate.
         airDodgeUsed: false,
         moveId: null,

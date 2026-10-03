@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DODGE, type FighterAction } from '../../core';
-import { DODGE_DEPTH, dodgeMotion, lerpAngle } from './dodge-motion';
+import { DODGE_DEPTH, LEDGE_DEPTH, dodgeMotion, lerpAngle } from './dodge-motion';
+import { MAIN_BLOCK_DEPTH } from './scenery/common';
 
 const TURN = 2 * Math.PI;
 const at = (action: FighterAction, actionFrame: number, facing: 1 | -1 = 1) =>
@@ -52,6 +53,13 @@ describe('dodge motion', () => {
     expect(at('airDodge', back / 2).yaw).toBeCloseTo(Math.PI, 9);
     expect(wrap(at('airDodge', back).yaw)).toBeCloseTo(0, 9);
     expect(at('airDodge', 10).depth).toBe(0);
+  });
+});
+
+describe('ledge motion', () => {
+  it('draws a fighter hanging from a ledge in front of the stage block, not hidden beside it', () => {
+    expect(at('ledge', 0)).toEqual({ depth: LEDGE_DEPTH, spin: 0, yaw: 0 });
+    expect(LEDGE_DEPTH).toBeGreaterThan(MAIN_BLOCK_DEPTH / 2);
   });
 });
 

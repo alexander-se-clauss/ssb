@@ -1,7 +1,13 @@
 import { DODGE, type FighterState } from '../../core';
+import { MAIN_BLOCK_DEPTH } from './scenery/common';
 
 /** How far a sidestep moves the body out of the stage plane, in stage units. */
 export const DODGE_DEPTH = 0.9;
+/**
+ * How far towards the camera a body hanging from a ledge is drawn: just in front of the stage's
+ * main block, so it hangs at the ledge's front corner instead of hiding beside it.
+ */
+export const LEDGE_DEPTH = MAIN_BLOCK_DEPTH / 2 + 0.2;
 /** Height above the feet of the point a rolling body turns around. */
 export const ROLL_PIVOT = 0.45;
 
@@ -47,6 +53,8 @@ export const dodgeMotion = (
     }
     case 'airDodge':
       return { ...STILL, yaw: TURN * progress(frame, 0, DODGE.air.invulnerableTo - 1) };
+    case 'ledge':
+      return { ...STILL, depth: LEDGE_DEPTH };
     default:
       return STILL;
   }

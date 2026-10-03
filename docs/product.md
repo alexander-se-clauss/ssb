@@ -118,7 +118,7 @@ a playable build; it is done when that build works, not on a date.
       with an arm cannon, built from primitives on the shared skeleton and playable with the
       capsule moveset until they get their own; their overalls and armour plates take the
       player's colour. Character definitions and own movesets stay in S5 and S6.
-- [ ] **S5 Off-stage play.** Ledge grab and getups, larger blast zones in stage data (#42, done), a camera
+- [ ] **S5 Off-stage play.** Ledge grab (#40, done) and getups, larger blast zones in stage data (#42, done), a camera
       that follows fighters off-stage (#43, done), helpless state; character definitions (#37, done), per-character air
       jumps (#38, done), fighter 1. Epics #7, #8.
 - [ ] **S6 Guard and specials.** Block and counter, spawned objects and projectiles, particle

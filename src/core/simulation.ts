@@ -66,6 +66,10 @@ export const createMatch = (config: MatchConfig): MatchState => {
   };
 };
 
+/** The ledge a fighter holds, as a list of zero or one index. */
+const heldLedge = (fighter: FighterState): number[] =>
+  fighter.action === 'ledge' && fighter.ledge !== null ? [fighter.ledge] : [];
+
 const isOutsideBlastZone = (fighter: FighterState, state: MatchState): boolean => {
   const zone = state.stage.blastZone;
   const { x, y } = fighter.position;
@@ -155,9 +159,13 @@ export const step = (state: MatchState, inputs: readonly PlayerInput[]): MatchSt
   if (state.phase === 'finished') return { ...state, events: [] };
   if (state.phase === 'countdown') return countdownStep(state, inputs);
 
-  const moved = state.fighters.map((fighter) =>
-    updateFighter(fighter, inputs[fighter.slot] ?? NEUTRAL_INPUT, state.stage, state.frame),
-  );
+  // In slot order: each fighter sees the ledges held by lower slots this frame and by higher ones
+  // at its start, so of two fighters reaching a free ledge together the lower slot gets it.
+  const moved = state.fighters.reduce<FighterState[]>((done, fighter) => {
+    const taken = [...done, ...state.fighters.slice(done.length + 1)].flatMap(heldLedge);
+    const input = inputs[fighter.slot] ?? NEUTRAL_INPUT;
+    return [...done, updateFighter(fighter, input, state.stage, state.frame, taken)];
+  }, []);
   const combat = resolveCombat(moved);
   const events = [...combat.events];
 

@@ -1,7 +1,8 @@
 import { CENTRED_STICK, attackInput, trackStick } from './attack-input';
 import { characterOf } from './character';
-import { DODGE, FIGHTER_RULES, INPUT, STICK } from './config';
+import { DODGE, FIGHTER_RULES, INPUT, LEDGE, STICK } from './config';
 import { NEUTRAL_INPUT, pressed } from './input';
+import { hangPosition, ledgeInReach } from './ledge';
 import { approach } from './math';
 import { findMove } from './move-data';
 import { isAerialSlot, moveSlot } from './move-slots';
@@ -53,6 +54,8 @@ export const createFighter = (
     landingLagFrames: 0,
     hitlagFrames: 0,
     invulnerableFrames: 0,
+    ledge: null,
+    ledgeRegrabFrames: 0,
     hitTargets: [],
     buffer: null,
     stick: CENTRED_STICK,
@@ -89,9 +92,12 @@ export const updateFighter = (
   stage: StageDef,
   /** The match frame, for the idle breathing. */
   frame = 0,
+  /** Ledges other fighters hold (#40); a fighter cannot grab one of them. */
+  ledgesTaken: readonly number[] = [],
 ): FighterState => {
   if (fighter.action === 'eliminated') return { ...fighter, previousInput: input };
-  const { stats, moves } = characterOf(fighter.characterId);
+  const character = characterOf(fighter.characterId);
+  const { stats, moves } = character;
 
   const prev = fighter.previousInput;
   // A press asks for the move in a slot (#28) and waits in the buffer until the fighter can act.
@@ -156,6 +162,31 @@ export const updateFighter = (
     };
   }
 
+  // Hanging from a ledge (#40): the fighter holds still, presses are not kept, and after
+  // `LEDGE.hangFrames` it lets go and falls. Getting up from the ledge comes with #41.
+  if (fighter.action === 'ledge') {
+    const actionFrame = fighter.actionFrame + 1;
+    const held: FighterState = {
+      ...fighter,
+      actionFrame,
+      buffer: null,
+      invulnerableFrames: Math.max(fighter.invulnerableFrames - 1, 0),
+      stick,
+      previousInput: input,
+    };
+    const next: FighterState =
+      actionFrame >= LEDGE.hangFrames
+        ? {
+            ...held,
+            action: 'airborne',
+            actionFrame: 0,
+            ledge: null,
+            ledgeRegrabFrames: LEDGE.regrabFrames,
+          }
+        : held;
+    return { ...next, pose: nextPose(next, frame) };
+  }
+
   let { x: px, y: py } = fighter.position;
   let { x: vx, y: vy } = fighter.velocity;
   let {
@@ -164,13 +195,14 @@ export const updateFighter = (
     jumpsRemaining,
     airDodgeUsed,
     turnedFrom,
-    action,
     actionFrame,
     moveId,
     hitstunFrames,
     landingLagFrames,
     hitTargets,
   } = fighter;
+  // Widened again: the fighter can grab a ledge this frame, though it held none before.
+  let action: FighterAction = fighter.action;
   turnedFrom =
     turnedFrom && turnedFrom.age < DODGE.turnGraceFrames
       ? { ...turnedFrom, age: turnedFrom.age + 1 }
@@ -474,6 +506,27 @@ export const updateFighter = (
     actionFrame >= dodge.invulnerableFrom &&
     actionFrame < dodge.invulnerableTo;
 
+  // Falling past a free ledge catches it (#40), unless the stick holds down to fall on.
+  const regrab = Math.max(fighter.ledgeRegrabFrames - 1, 0);
+  const caught =
+    !grounded && action === 'airborne' && vy <= 0 && input.y >= DROP_THRESHOLD && regrab === 0
+      ? ledgeInReach(stage, character, { x: px, y: py }, ledgesTaken)
+      : null;
+  const ledge = caught === null ? undefined : stage.ledges[caught];
+  if (ledge) {
+    ({ x: px, y: py } = hangPosition(ledge, character));
+    vx = 0;
+    vy = 0;
+    facing = ledge.facing;
+    action = 'ledge';
+    actionFrame = 0;
+    turnedFrom = null;
+    buffer = null;
+    // Holding on gives the air jumps and the air dodge back, as in Ultimate.
+    jumpsRemaining = stats.airJumps;
+    airDodgeUsed = false;
+  }
+
   const moved: FighterState = {
     ...fighter,
     position: { x: px, y: py },
@@ -490,7 +543,13 @@ export const updateFighter = (
     landingLagFrames,
     hitTargets,
     buffer,
-    invulnerableFrames: Math.max(fighter.invulnerableFrames - 1, dodgeInvulnerable ? 1 : 0),
+    invulnerableFrames: Math.max(
+      fighter.invulnerableFrames - 1,
+      dodgeInvulnerable ? 1 : 0,
+      ledge ? LEDGE.invulnerableFrames : 0,
+    ),
+    ledge: ledge ? caught : null,
+    ledgeRegrabFrames: regrab,
     stick,
     previousInput: input,
   };

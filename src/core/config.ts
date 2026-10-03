@@ -110,6 +110,20 @@ export const DODGE = {
   },
 } as const;
 
+/**
+ * Ledges (#40). A fighter falling near a ledge snaps to it: within `snap` of where it would hang
+ * (`ledge.ts`), sideways, above and below. Holding on gives brief invulnerability, the air jumps
+ * and the air dodge back; after `hangFrames` the fighter lets go, and can grab a ledge again
+ * `regrabFrames` later. Only a fighter falling under control (`airborne`) grabs: an aerial or an
+ * air dodge sails past, as in Melee. Getting up or letting go early comes with #41.
+ */
+export const LEDGE = {
+  snap: { x: 1, above: 0.6, below: 1.2 },
+  invulnerableFrames: 30,
+  hangFrames: 300,
+  regrabFrames: 30,
+} as const;
+
 /** Hitstun frames per unit of launch speed. */
 export const HITSTUN_PER_KNOCKBACK = 40;
 

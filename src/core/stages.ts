@@ -16,6 +16,10 @@ export const BATTLEFIELD: StageDef = {
     { x: -1, y: 5 },
     { x: 1, y: 5 },
   ],
+  ledges: [
+    { position: { x: -7, y: 0 }, facing: 1 },
+    { position: { x: 7, y: 0 }, facing: -1 },
+  ],
   // Melee-like room past the ledges to fight and recover off-stage (#42).
   blastZone: { left: -22, right: 22, bottom: -11, top: 20 },
 };
@@ -30,6 +34,10 @@ export const FINAL_DESTINATION: StageDef = {
     { x: 4, y: 2 },
     { x: -1.5, y: 2 },
     { x: 1.5, y: 2 },
+  ],
+  ledges: [
+    { position: { x: -9, y: 0 }, facing: 1 },
+    { position: { x: 9, y: 0 }, facing: -1 },
   ],
   blastZone: { left: -26, right: 26, bottom: -13, top: 20 },
 };

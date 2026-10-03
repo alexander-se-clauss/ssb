@@ -98,6 +98,12 @@ Ultimate-style `airDodge` (`DODGE.air`): it carries the fighter the way the stic
 it in place) with gravity paused, then the fighter falls and can act again. It is used once per
 airtime (`FighterState.airDodgeUsed`), and landing or being hit gives it back; landing during it
 costs `DODGE.air.landingLag`, and a buffered air dodge is dropped on landing.
+Ledges are stage data (`StageDef.ledges`, #40): a fighter falling near a free one snaps to hang
+from it (`ledge.ts` works out where from the character's own hanging pose), with brief
+invulnerability and its air jumps and air dodge back, and lets go after `LEDGE.hangFrames`
+(getting up or letting go early comes with #41). One
+fighter per ledge: `step` updates fighters in slot order and hands each the ledges held by the
+others, so of two reaching a ledge on the same frame the lower slot gets it.
 Each fighter carries its current `pose` in `FighterState`: `step` eases it a little each frame towards
 the pose of its movement state, with idle breathing and a running stride (`poses.ts`), and the
 view interpolates it between frames like the position. A move has pose keyframes instead: the
