@@ -35,9 +35,10 @@ browsers, rendering or networking.
 A character is plain data too (`CharacterDef` in `types.ts`, registered in `registry.ts`): its
 `stats` (`CharacterStats`: body box, walk and air speed, gravity, fall speeds, jump speeds,
 `airJumps`, weight, landing lag), its `skeleton` and its `moves`. The capsule's stats are `FIGHTER` in
-`config.ts`, and other characters' stats sit beside them (`RIVET_STATS`); rules every fighter
+`config.ts`, and other characters' stats sit beside them (`RIVET_STATS`, `VELA_STATS`); rules every fighter
 shares are `FIGHTER_RULES`. Rivet (#39) has his own `STOCKY` skeleton in `skeleton.ts` and his
-specials in `move-data/rivet.ts`. `FighterState.jumpsRemaining`
+specials in `move-data/rivet.ts`; Vela (#53) plays on `HUMANOID` with her specials in
+`move-data/vela.ts`. `FighterState.jumpsRemaining`
 counts the ground jump plus `airJumps` on the ground, and only the air jumps once airborne;
 landing gives them all back. Core code reads a fighter's
 definition with `characterOf` (`character.ts`), so movement, knockback (divided by the target's
@@ -65,7 +66,7 @@ harder hits (`HITLAG` in `config.ts`): nothing moves, and the launch is held unt
 In the air, horizontal speed above the character's `airSpeed` bleeds off at `FIGHTER_RULES.launchDecay`, so a
 sideways launch flies a set distance instead of drifting on almost undamped.
 Move data is one file per family in `move-data/` (`jab.ts`, `tilts.ts`, `smashes.ts`,
-`aerials.ts`, `ledge.ts`, each registered in `move-data/index.ts`). A move with a `landingLag` is an aerial:
+`aerials.ts`, `ledge.ts`, and a file of specials per character, `rivet.ts` and `vela.ts`, each registered in `move-data/index.ts`). A move with a `landingLag` is an aerial:
 landing while it runs ends it and puts the fighter in the `landing` action for that many frames
 (`landingLagFrames`). Landing from a jump or fall without one costs the character's `landingLagFrames`;
 a fighter in hitstun lands without lag. An aerial press still in the buffer on landing is

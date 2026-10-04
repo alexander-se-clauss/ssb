@@ -59,6 +59,26 @@ export const RIVET_STATS = {
   height: 1.42,
 } as const satisfies CharacterStats;
 
+/**
+ * Vela, fighter 2 (#53): the contrast to Rivet. Light, quick on the ground and in the air, and
+ * floaty, with a second air jump: hard to pin down, but launched further by the same hit.
+ */
+export const VELA_STATS = {
+  ...FIGHTER,
+  width: 0.75,
+  walkSpeed: 0.17,
+  groundAcceleration: 0.026,
+  airSpeed: 0.12,
+  airAcceleration: 0.01,
+  gravity: 0.0105,
+  maxFallSpeed: 0.19,
+  fastFallSpeed: 0.28,
+  jumpVelocity: 0.29,
+  airJumpVelocity: 0.25,
+  airJumps: 2,
+  weight: 0.82,
+} as const satisfies CharacterStats;
+
 /** Rules every fighter shares, whatever its character. */
 export const FIGHTER_RULES = {
   /**

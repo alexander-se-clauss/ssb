@@ -6,7 +6,7 @@ import { LEDGE_ATTACK } from './ledge';
 import { HAYMAKER, IRON_GUARD, SPRING_JACK } from './rivet';
 import { DOWN_SMASH, FORWARD_SMASH, UP_SMASH } from './smashes';
 import { DOWN_TILT, FORWARD_TILT, UP_TILT } from './tilts';
-import { RIPOSTE, RIPOSTE_BLAST } from './vela';
+import { PULSE_SHOT, RIPOSTE, RIPOSTE_BLAST, THRUSTER } from './vela';
 
 const ALL: readonly MoveDef[] = [
   JAB,
@@ -29,6 +29,8 @@ const ALL: readonly MoveDef[] = [
   IRON_GUARD,
   RIPOSTE,
   RIPOSTE_BLAST,
+  PULSE_SHOT,
+  THRUSTER,
 ];
 
 /** Checks each move, and that every move a cancel goes into is in the same list. */

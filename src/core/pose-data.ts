@@ -49,7 +49,8 @@ export type PoseName =
   | 'springJack'
   | 'guard'
   | 'counterStance'
-  | 'counterStrike';
+  | 'counterStrike'
+  | 'thruster';
 
 /**
  * Melee-style key poses. Angles are relative to the parent bone (0 = straight on, positive turns
@@ -637,5 +638,18 @@ export const POSES: Readonly<Record<PoseName, Pose>> = {
     lowerLegFront: 35,
     upperLegBack: 220,
     lowerLegBack: 30,
+  },
+  // Thruster (#53): leaning into the boost, arms swept back, legs trailing behind.
+  thruster: {
+    torso: 35,
+    head: -20,
+    upperArmFront: 205,
+    lowerArmFront: 15,
+    upperArmBack: 215,
+    lowerArmBack: 15,
+    upperLegFront: 195,
+    lowerLegFront: 25,
+    upperLegBack: 210,
+    lowerLegBack: 35,
   },
 };
