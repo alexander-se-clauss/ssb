@@ -148,6 +148,9 @@ export const trackTraining = (prev: MatchState, next: MatchState): MatchState =>
   let updated: TrainingState;
   if (lastHit) {
     const attacker = next.fighters[lastHit.attacker];
+    // A hitbox freezes its attacker too; an object's hit does not, so a fighter whose projectile
+    // lands is measured from what it is doing now, not from an unrelated move.
+    const byHitbox = attacker !== undefined && attacker.hitlagFrames > 0;
     const base = training.comboActive ? training : { comboHits: 0, comboDamage: 0 };
     updated = {
       ...training,
@@ -156,7 +159,7 @@ export const trackTraining = (prev: MatchState, next: MatchState): MatchState =>
       comboActive: true,
       watch: {
         attacker: lastHit.attacker,
-        moveId: attacker?.action === 'attack' ? attacker.moveId : null,
+        moveId: byHitbox && attacker.action === 'attack' ? attacker.moveId : null,
         moveFrame: attacker?.actionFrame ?? 0,
         frames: 0,
         attackerFree: null,

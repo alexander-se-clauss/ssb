@@ -188,7 +188,8 @@ test('training: one player against a dummy, with a readout and a pause panel', a
   await tap(page, 'KeyF');
   await expect.poll(async () => (await characterSelect(page))?.devices).toContain(0);
   await tap(page, 'KeyF');
-  await expect.poll(() => picks(page)).toEqual(['capsule', null, null, null]);
+  // Three slots: the fourth is the dummy's.
+  await expect.poll(() => picks(page)).toEqual(['capsule', null, null]);
   for (const next of ['stage-select', 'match']) {
     await page.keyboard.press('Enter');
     await expect.poll(() => screen(page)).toBe(next);

@@ -3,7 +3,7 @@
  * the last hit's frame advantage and the first player's current (or last) move with its frames.
  * Frames are counted from 1, as frame data usually is.
  */
-import { findMove, moveTiming, type MatchState } from '../../core';
+import { findMove, moveTiming, type MatchState, type MoveDef } from '../../core';
 
 export type MovePhase = 'startup' | 'active' | 'endlag';
 
@@ -35,8 +35,28 @@ export const moveName = (id: string): string => {
   return words.charAt(0).toUpperCase() + words.slice(1);
 };
 
+/**
+ * Startup and active frames: from the hitboxes, or for a move without any from what it does
+ * instead: its guard or counter window, or the frame it spawns its object.
+ */
+export const frameData = (
+  move: MoveDef,
+): { startupFrames: number; activeFrames: number; totalFrames: number } => {
+  const timing = moveTiming(move);
+  if (move.hitboxes.length > 0) return timing;
+  const window = move.guard ?? move.counter;
+  if (window)
+    return { ...timing, startupFrames: window.from, activeFrames: window.to - window.from };
+  const spawns = (move.spawns ?? []).map((spawn) => spawn.frame);
+  if (spawns.length > 0) {
+    const first = Math.min(...spawns);
+    return { ...timing, startupFrames: first, activeFrames: Math.max(...spawns) - first + 1 };
+  }
+  return timing;
+};
+
 export const phaseOf = (moveId: string, actionFrame: number): MovePhase => {
-  const { startupFrames, activeFrames } = moveTiming(findMove(moveId));
+  const { startupFrames, activeFrames } = frameData(findMove(moveId));
   if (actionFrame < startupFrames) return 'startup';
   return actionFrame < startupFrames + activeFrames ? 'active' : 'endlag';
 };
@@ -50,12 +70,13 @@ const moveReadout = (
   const playing = player?.action === 'attack' ? player.moveId : null;
   const id = playing ?? lastMove;
   if (!id) return null;
-  const timing = moveTiming(findMove(id));
+  const timing = frameData(findMove(id));
   const frame = playing && player ? player.actionFrame : null;
   return {
     name: moveName(id),
     frame: frame === null ? null : frame + 1,
-    phase: frame === null ? null : phaseOf(id, frame),
+    // A move that does nothing measurable (no hitbox, guard, counter or spawn) has no phases.
+    phase: frame === null || timing.activeFrames === 0 ? null : phaseOf(id, frame),
     active:
       timing.activeFrames > 0
         ? [timing.startupFrames + 1, timing.startupFrames + timing.activeFrames]

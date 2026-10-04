@@ -8,7 +8,7 @@ import {
   type MatchState,
   type TrainingState,
 } from '../../core';
-import { moveName, phaseOf, trainingReadout } from './training-readout';
+import { frameData, moveName, phaseOf, trainingReadout } from './training-readout';
 
 const match = (): MatchState =>
   createMatch({
@@ -71,6 +71,20 @@ describe('phaseOf', () => {
     expect(phaseOf('jab', JAB.startupFrames - 1)).toBe('startup');
     expect(phaseOf('jab', JAB.startupFrames)).toBe('active');
     expect(phaseOf('jab', JAB.startupFrames + JAB.activeFrames)).toBe('endlag');
+  });
+});
+
+describe('frameData', () => {
+  it('times a move without hitboxes by its spawn, guard or counter window', () => {
+    const pulse = findMove('pulseShot');
+    const spawn = pulse.spawns?.[0]?.frame ?? -1;
+    expect(frameData(pulse)).toMatchObject({ startupFrames: spawn, activeFrames: 1 });
+    const guard = findMove('ironGuard').guard;
+    expect(frameData(findMove('ironGuard'))).toMatchObject({
+      startupFrames: guard?.from,
+      activeFrames: (guard?.to ?? 0) - (guard?.from ?? 0),
+    });
+    expect(phaseOf('pulseShot', spawn + 1)).toBe('endlag');
   });
 });
 

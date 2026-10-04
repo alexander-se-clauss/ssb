@@ -191,6 +191,36 @@ describe('training mode', () => {
     });
   });
 
+  it("measures a projectile's hit from what its owner does now, not from an unrelated move", () => {
+    let state = faceOff(training());
+    state = withFighter(state, 0, { position: { x: -4, y: 0 } });
+    // P1 starts a jab far away while its own shot is about to reach the dummy.
+    state = step(state, [ATTACK]);
+    state = {
+      ...state,
+      objects: [
+        {
+          id: 0,
+          owner: 0,
+          moveId: 'pulseShot',
+          position: { x: 0.8, y: 0.8 },
+          velocity: { x: 0, y: 0 },
+          launchVelocity: { x: 0.3, y: 0 },
+          facing: 1,
+          age: 0,
+          lifetime: 60,
+          radius: 0.4,
+          hit: { damage: 5, angle: 30, baseKnockback: 0.3, knockbackGrowth: 0.01 },
+          behavior: { kind: 'straight' },
+        },
+      ],
+    };
+    state = step(state, [NONE]);
+    expect(trainingOf(state).comboHits).toBe(1);
+    expect(fighter(state, 0).moveId).toBe('jab');
+    expect(trainingOf(state).watch?.moveId).toBeNull();
+  });
+
   it('remembers the last move of the first player for its frame data', () => {
     const state = run(jab(faceOff(training())), 60, [NONE]);
     expect(trainingOf(state).lastMove).toBe('jab');

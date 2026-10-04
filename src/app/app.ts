@@ -25,7 +25,6 @@ import {
   canStart,
   createSelect,
   menuActions,
-  MIN_PLAYERS,
   reduceSelect,
   requestsStart,
   requestsBack,
@@ -326,7 +325,9 @@ export class App {
     }
     if (screen === 'character-select') {
       this.lobbyScene = new LobbyScene(this.characterSelect.stage);
-      this.select = createSelect(MAX_PLAYERS, this.mode === 'training' ? 1 : MIN_PLAYERS);
+      // Training keeps one of the four slots for the dummy.
+      this.select =
+        this.mode === 'training' ? createSelect(MAX_PLAYERS - 1, 1) : createSelect(MAX_PLAYERS);
       // Start press detection from the current state, so a held button doesn't join at once.
       this.previousInputs = this.adapters.devices.map((device) => device.source.sample());
       this.characterSelect.render(this.select, false, this.rules);
