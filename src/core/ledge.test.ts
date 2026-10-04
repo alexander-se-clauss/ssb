@@ -126,8 +126,14 @@ describe('ledge grab (#40)', () => {
     /** P2 drops past the hanging P1 with a neutral air, facing it; P1's state after. */
     const nairPast = (state: MatchState) => {
       const p2 = withFighter(inAir(state, 1, HANG.x + 0.6, HANG.y + 1), 1, { facing: -1 });
-      const pressed = run(p2, 1, [inputOf({}), inputOf({ attack: true })]);
-      return run(pressed, 20, [inputOf({}), inputOf({})]);
+      let next = run(p2, 1, [inputOf({}), inputOf({ attack: true })]);
+      // Up to the frame after the hit: falling back, P1 may soon grab the ledge again.
+      for (let frame = 0; frame < 20; frame += 1) {
+        const hit = next.events.some((e) => e.type === 'hit' && e.target === 0);
+        next = run(next, 1, [inputOf({}), inputOf({})]);
+        if (hit) break;
+      }
+      return next;
     };
     const two = settled(newMatch(2));
     const grabbed = run(inAir(two, 0, HANG.x, HANG.y + 0.1), 1);
@@ -136,7 +142,7 @@ describe('ledge grab (#40)', () => {
     expect(fighter(early, 0).action).toBe('ledge');
     expect(fighter(early, 0).damage).toBe(0);
     const late = nairPast(run(grabbed, LEDGE.invulnerableFrames));
-    // Hit and launched (its short hitstun may be over by now): off the ledge, which is free again.
+    // Hit and launched: off the ledge, which is free again.
     expect(fighter(late, 0).damage).toBeGreaterThan(0);
     expect(fighter(late, 0).action).not.toBe('ledge');
     expect(fighter(late, 0).ledge).toBeNull();

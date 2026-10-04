@@ -538,7 +538,9 @@ export const updateFighter = (
   if (!grounded && !airDodging) {
     const fastFalling =
       (isControllable(action) || (inAerial && !inRecovery)) && wantsDrop && vy < 0;
-    vy = Math.max(vy - stats.gravity, -(fastFalling ? stats.fastFallSpeed : stats.maxFallSpeed));
+    // While down is held, a fast fall drops at full fast-fall speed at once, as in Melee, instead
+    // of speeding up to it.
+    vy = fastFalling ? -stats.fastFallSpeed : Math.max(vy - stats.gravity, -stats.maxFallSpeed);
   }
 
   const nextX = px + vx;

@@ -156,7 +156,7 @@ describe('aerials of the first fighter', () => {
   it('plays out in the air and hands control back', () => {
     const { timing } = byId('neutralAir');
     // Off to the side, clear of the platforms, so it does not land before the end.
-    const clear = withFighter(inTheAir(), 0, { position: { x: 6, y: 8 } });
+    const clear = withFighter(inTheAir(), 0, { position: { x: 6, y: 14 } });
     let state = step(clear, [inputOf({ attack: true })]);
     state = run(state, timing[2] - 1, [NONE]);
     expect(fighter(state, 0)).toMatchObject({ action: 'attack', moveId: 'neutralAir' });
@@ -224,6 +224,7 @@ describe('aerial knockback', () => {
   });
 
   it.each([
+    // Still true with the Melee-near air physics (#145); the up air was strengthened for it.
     ['backAir', 110, 140],
     ['forwardAir', 115, 145],
     ['upAir', 110, 140],

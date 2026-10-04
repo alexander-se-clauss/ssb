@@ -111,7 +111,7 @@ export const SPRING_JACK: MoveDef = {
   cancels: [],
   landingLag: 14,
   helpless: true,
-  motion: [{ frame: 4, x: 0.04, y: 0.34 }],
+  motion: [{ frame: 4, x: 0.04, y: 0.42 }],
 };
 
 /**
