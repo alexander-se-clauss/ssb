@@ -226,3 +226,11 @@ export const POSE = {
   /** Launch speed from which a hit fighter tumbles instead of flinching. */
   tumbleSpeed: 0.4,
 } as const;
+
+/** Training mode (#144): the dummy's percent range and how far one press in the panel moves it. */
+export const TRAINING = {
+  maxPercent: 999,
+  percentStep: 10,
+  /** A hit's frame advantage is dropped if either side is still busy after this many frames. */
+  maxWatchFrames: 300,
+} as const;

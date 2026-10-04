@@ -36,6 +36,10 @@ describe('screen state machine', () => {
     expect(canGo('stage-select', 'character-select')).toBe(true);
   });
 
+  it('lets training be left from the match to the main menu', () => {
+    expect(canGo('match', 'main-menu')).toBe(true);
+  });
+
   it('offers a rematch from results', () => {
     expect(canGo('results', 'match')).toBe(true);
   });
@@ -43,7 +47,6 @@ describe('screen state machine', () => {
   it('rejects skipping screens', () => {
     expect(canGo('title', 'match')).toBe(false);
     expect(canGo('character-select', 'match')).toBe(false);
-    expect(canGo('match', 'main-menu')).toBe(false);
     expect(() => go('title', 'results')).toThrow(/title -> results/);
   });
 
@@ -75,12 +78,17 @@ describe('options', () => {
 });
 
 describe('main menu', () => {
-  it('offers VS. Mode and Options', () => {
-    expect(MAIN_MENU.map((entry) => entry.label)).toEqual(['VS. Mode', 'Options']);
+  it('offers VS. Mode, Training and Options', () => {
+    expect(MAIN_MENU.map((entry) => entry.label)).toEqual(['VS. Mode', 'Training', 'Options']);
   });
 
-  it('leads to character select and options', () => {
-    expect(MAIN_MENU.map((entry) => entry.to)).toEqual(['character-select', 'options']);
+  it('leads to character select (versus or training) and options', () => {
+    expect(MAIN_MENU.map((entry) => entry.to)).toEqual([
+      'character-select',
+      'character-select',
+      'options',
+    ]);
+    expect(MAIN_MENU.map((entry) => entry.mode)).toEqual(['versus', 'training', undefined]);
     for (const entry of MAIN_MENU) expect(canGo('main-menu', entry.to)).toBe(true);
   });
 });

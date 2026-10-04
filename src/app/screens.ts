@@ -27,8 +27,8 @@ const TRANSITIONS: Readonly<Record<Screen, readonly Screen[]>> = {
   controls: ['options'],
   'character-select': ['stage-select', 'main-menu'],
   'stage-select': ['match', 'character-select'],
-  // Leaving a match early (pause menu) comes later; for now a match always ends in results.
-  match: ['results'],
+  // A versus match always ends in results; training (#144) is left from its panel.
+  match: ['results', 'main-menu'],
   results: ['match', 'main-menu'],
 };
 
@@ -42,14 +42,20 @@ export const go = (from: Screen, to: Screen): Screen => {
   return to;
 };
 
+/** Versus: two to four players fight. Training (#144): one player against a dummy. */
+export type PlayMode = 'versus' | 'training';
+
 export interface MenuEntry {
   readonly label: string;
   readonly to: Screen;
+  /** For entries that lead to a match, which kind. */
+  readonly mode?: PlayMode;
 }
 
 /** The main menu, top to bottom. Escape goes back to the title screen. */
 export const MAIN_MENU: readonly MenuEntry[] = [
-  { label: 'VS. Mode', to: 'character-select' },
+  { label: 'VS. Mode', to: 'character-select', mode: 'versus' },
+  { label: 'Training', to: 'character-select', mode: 'training' },
   { label: 'Options', to: 'options' },
 ];
 
