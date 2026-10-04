@@ -81,7 +81,8 @@ landing within `L_CANCEL.windowFrames` of it counts; a new press only counts onc
 a fighter in hitstun lands without lag. An aerial press still in the buffer on landing is
 dropped, and during an aerial the fighter drifts and fast-falls like `airborne`. As in Melee,
 holding down while falling drops at once (for as long as it is held) at the character's `fastFallSpeed` (#145), instead of
-speeding up to it; `air-physics.test.ts` pins each fighter's full hop and fast fall. On the
+speeding up to it; `air-physics.test.ts` pins each fighter's full hop and fast fall. `movement-benchmarks.test.ts` (#152)
+collects the numbers that define the movement feel per fighter, all measured through `step`. On the
 ground the fighter moves as in Melee (#146, `ground-movement.ts`): a slowly pushed stick walks
 (`walk`), a sideways flick dashes (`dash`) for `initialDashFrames`, a flick back during the dash
 dashes the other way (dash dance) or, on its first frame, turns in place (pivot), and held past it
