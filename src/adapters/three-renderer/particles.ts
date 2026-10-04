@@ -61,6 +61,20 @@ export const EFFECTS: Readonly<Record<string, EffectPreset>> = {
     opacity: 1,
     capacity: 500,
   },
+  // Block shards (#50): quick, cold blue-white flecks thrown off the guard.
+  guard: {
+    rate: 0,
+    life: 14,
+    jitter: 0.12,
+    spread: 0.14,
+    lift: 0.01,
+    rise: -0.004,
+    drag: 0.82,
+    size: 0.42,
+    colors: [0xe8fbff, 0x2f7dff],
+    opacity: 1,
+    capacity: 300,
+  },
   // A KO burst (#48): a big, slow-fading blast of light where a fighter left the blast zone.
   ko: {
     rate: 0,

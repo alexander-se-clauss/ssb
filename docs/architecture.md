@@ -138,6 +138,14 @@ cloud of points. Hit sparks and KO bursts (#48) come from session events, not fr
 `launch`ed, and a `ko` event into a burst where the fighter left the blast zone. The camera
 lingers on a KO burst for a moment, since the fighter respawns at once.
 `object-layer.ts` draws spawned objects as balls in their owner's colour.
+A block is a move with a `guard` (#50), not a new kind of move: on its guard frames, on the
+ground, `activeGuard` in `combat.ts` returns it, and `applyHit` lets it take a hit that comes from
+in front (the attacker's feet or the object, against the blocker's facing). A taken hit deals
+`damageScale` of its damage and pushes the blocker back along the ground instead of launching it;
+the blocker stays in its move. A hit of `breakDamage` or more breaks the guard and lands in full,
+with `breakStun` more hitstun. The guard's `hold` frame keeps the move waiting while special is
+held. A move with a guard cannot start in the air and ends when the blocker leaves the ground.
+The `hit` event says `guard: 'blocked'` or `'broken'`, and the view throws off blue shards.
 Ledges are stage data (`StageDef.ledges`, #40): a fighter falling near a free one snaps to hang
 from it (`ledge.ts` works out where from the character's own hanging pose), with brief
 invulnerability and its air jumps and air dodge back, and lets go after `LEDGE.hangFrames`
@@ -186,7 +194,7 @@ comes from the composition root (`ThreeViewOptions.coveredTop` in `main.ts`), no
    visuals interpolate smoothly on 120/144 Hz screens.
 4. Events from `step()` (`hit`, `ko`, `match-end`) go to `session.onEvent` listeners (sound,
    particles; future: rumble). A `hit` carries that hit's own `damage`, where it landed and its
-   `launch` speed; a `ko` carries where the fighter left the blast zone. `main.ts` gives
+   `launch` speed, and whether a block took or broke under it (`guard`, #50); a `ko` carries where the fighter left the blast zone. `main.ts` gives
    `createViews` the session so the Three.js view can listen.
 
 ## Sound

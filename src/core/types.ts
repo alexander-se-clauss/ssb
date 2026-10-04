@@ -175,6 +175,9 @@ export interface StageDef {
   readonly blastZone: Rect;
 }
 
+/** What a block made of a hit (#50): `blocked` took it, `broken` gave way under it. */
+export type GuardOutcome = 'blocked' | 'broken';
+
 export type GameEvent =
   | {
       readonly type: 'hit';
@@ -184,8 +187,13 @@ export type GameEvent =
       readonly damage: number;
       /** Where it struck (#48): the centre of the hitbox or object that hit. */
       readonly position: Vec2;
-      /** Launch speed it gave the target, in units per frame: how hard it was. */
+      /**
+       * Launch speed it gave the target, in units per frame: how hard it was. For a blocked hit,
+       * the speed it pushed the blocker back.
+       */
       readonly launch: number;
+      /** Whether a block (#50) took it, or broke under it; left out for a plain hit. */
+      readonly guard?: GuardOutcome;
     }
   | {
       readonly type: 'ko';

@@ -35,14 +35,20 @@ export const CAPSULE: CharacterDef = {
 
 /**
  * Fighter 1 (#39): Rivet, a stocky handyman and the all-rounder. The capsule's ground attacks and
- * aerials, plus a lunging haymaker as neutral special and a rising uppercut that recovers.
+ * aerials, plus a lunging haymaker as neutral special, a rising uppercut that recovers, and a
+ * block, Iron Guard, as down special (#50).
  */
 export const RIVET: CharacterDef = {
   id: 'rivet',
   name: 'Rivet',
   stats: RIVET_STATS,
   skeleton: STOCKY,
-  moves: { ...CAPSULE.moves, neutralSpecial: 'haymaker', upSpecial: 'springJack' },
+  moves: {
+    ...CAPSULE.moves,
+    neutralSpecial: 'haymaker',
+    upSpecial: 'springJack',
+    downSpecial: 'ironGuard',
+  },
 };
 
 /** A bounty hunter in power armour; she plays exactly like the capsule for now (epic #7). */
