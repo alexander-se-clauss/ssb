@@ -47,6 +47,20 @@ export const EFFECTS: Readonly<Record<string, EffectPreset>> = {
     opacity: 0.95,
     capacity: 600,
   },
+  // Vela's Pulse Shot (#53): a cyan plasma trail that cools to deep blue.
+  plasma: {
+    rate: 24,
+    life: 14,
+    jitter: 0.1,
+    spread: 0.02,
+    lift: 0,
+    rise: 0,
+    drag: 0.88,
+    size: 0.55,
+    colors: [0x7ff7e8, 0x1238c8],
+    opacity: 0.95,
+    capacity: 400,
+  },
   // Hit sparks (#48): a quick spray of hot yellow sparks, reddening as they fall and die.
   spark: {
     rate: 0,

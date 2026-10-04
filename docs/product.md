@@ -91,11 +91,15 @@ Smash meets Monster Hunter: defense is about commitment and timing, not a panic 
   special _Iron Guard_ (#50), a block: he braces behind his forearms for as long as special is
   held. Hits from the front deal under a third of their damage and push him back instead of
   launching him; a smash-strength hit breaks the guard and stuns him for longer.
-- **Vela**, a bounty hunter in power armour with an arm cannon: plays like the capsule until she
-  becomes fighter 2 in S6. Down special _Riposte_ (#51), a counter, on the ground and in the air:
-  she waits in a low stance, and a hit that lands in its window deals her nothing and sets off
-  _Riposte Blast_, a point-blank shot from the cannon, turned to where the hit came from. A whiffed Riposte
-  leaves her open for a moment.
+- **Vela** (fighter 2, #53), a bounty hunter in power armour with an arm cannon, and the
+  contrast to Rivet: light, quick on the ground and in the air, floaty, with two air jumps. Hard
+  to pin down, but the same hit launches her further. Neutral special _Pulse Shot_, a weak plasma
+  bolt that flies across the stage, to poke and keep opponents out. Up special _Thruster_, a long
+  boost up and forward on her boot jets that hits what it rams and leaves her helpless; it
+  recovers from much further out than Spring Jack. Down special _Riposte_ (#51), a counter, on
+  the ground and in the air: she waits in a low stance, and a hit that lands in its window deals
+  her nothing and sets off _Riposte Blast_, a point-blank shot from the cannon, turned to where
+  the hit came from. A whiffed Riposte leaves her open for a moment.
 
 ## Non-goals (for now)
 
@@ -135,7 +139,7 @@ a playable build; it is done when that build works, not on a date.
       with an arm cannon, built from primitives on the shared skeleton and playable with the
       capsule moveset until they get their own; their overalls and armour plates take the
       player's colour. Character definitions and own movesets stay in S5 and S6 (Rivet's body
-      and specials since #39).
+      and specials since #39, Vela's stats and specials since #53).
 - [x] **S5 Off-stage play.** Ledge grab (#40) and getups (#41), larger blast zones in stage
       data (#42), a camera that follows fighters off-stage (#43), helpless state (#44); character
       definitions (#37), per-character air jumps (#38), and fighter 1: Rivet (#39). Epics #7, #8.

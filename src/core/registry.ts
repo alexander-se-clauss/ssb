@@ -2,7 +2,7 @@
  * Everything that can be picked in a match, as plain data. Menus list these arrays in order;
  * match configs and game state refer to entries only by id, so they stay serializable.
  */
-import { FIGHTER, RIVET_STATS } from './config';
+import { FIGHTER, RIVET_STATS, VELA_STATS } from './config';
 import { HUMANOID, STOCKY } from './skeleton';
 import { BATTLEFIELD, FINAL_DESTINATION } from './stages';
 import type { CharacterDef, StageDef } from './types';
@@ -52,14 +52,21 @@ export const RIVET: CharacterDef = {
 };
 
 /**
- * A bounty hunter in power armour (epic #7): the capsule's moves, plus a counter, Riposte, as
- * down special (#51). Her own body and the rest of her moves come with #53 and #49.
+ * Fighter 2 (#53): Vela, a bounty hunter in power armour and the contrast to Rivet. Light, quick
+ * and floaty with two air jumps; she keeps opponents out with a shot from her arm cannon, recovers
+ * with a long thruster boost, and counters, Riposte (#51), where Rivet blocks.
  */
 export const VELA: CharacterDef = {
-  ...CAPSULE,
   id: 'vela',
   name: 'Vela',
-  moves: { ...CAPSULE.moves, downSpecial: 'riposte' },
+  stats: VELA_STATS,
+  skeleton: HUMANOID,
+  moves: {
+    ...CAPSULE.moves,
+    neutralSpecial: 'pulseShot',
+    upSpecial: 'thruster',
+    downSpecial: 'riposte',
+  },
 };
 
 export const CHARACTERS: readonly CharacterDef[] = [CAPSULE, RIVET, VELA];

@@ -1,6 +1,7 @@
 /**
- * Vela's specials (#51 on): she is the counter fighter, so her down special waits for a hit and
- * answers it with a point-blank blast from her arm cannon.
+ * Vela's specials (#51, #53): she keeps opponents out with shots from her arm cannon, recovers
+ * with a long thruster boost, and her down special is a counter that answers a hit with a
+ * point-blank blast.
  */
 import type { MoveDef } from '../moves';
 import { POSES } from '../pose-data';
@@ -64,4 +65,77 @@ export const RIPOSTE: MoveDef = {
   ],
   cancels: [],
   counter: { from: 5, to: 25, into: 'riposteBlast' },
+};
+
+/**
+ * Pulse Shot (#53), Vela's neutral special: a plasma bolt from the cannon on frame 12 that flies
+ * straight across the stage. Weak, to poke and keep opponents out rather than to kill. Usable in
+ * the air too.
+ */
+export const PULSE_SHOT: MoveDef = {
+  kind: 'attack',
+  id: 'pulseShot',
+  totalFrames: 34,
+  hitboxes: [],
+  poses: [
+    { frame: 6, pose: POSES.counterStance },
+    { frame: 12, pose: POSES.counterStrike },
+    { frame: 20, pose: POSES.counterStrike },
+    { frame: 32, pose: POSES.idle },
+  ],
+  cancels: [],
+  spawns: [
+    {
+      frame: 12,
+      offset: { x: 0.75, y: 1.05 },
+      velocity: { x: 0.36, y: 0 },
+      lifetime: 40,
+      radius: 0.24,
+      hit: { damage: 6, angle: 35, baseKnockback: 0.16, knockbackGrowth: 0.0025 },
+      effect: 'plasma',
+    },
+  ],
+};
+
+/**
+ * Thruster (#53), Vela's up special and recovery: after a short ignition she boosts up and
+ * forward on her boot jets, much further sideways than Rivet's Spring Jack climbs, hitting anyone
+ * she rams on the way. Helpless after, with its own landing lag if she touches down early.
+ */
+export const THRUSTER: MoveDef = {
+  kind: 'attack',
+  id: 'thruster',
+  totalFrames: 36,
+  hitboxes: [
+    {
+      anchor: { bone: 'torso', at: 0.5 },
+      radius: 0.5,
+      from: 6,
+      to: 12,
+      priority: 0,
+      damage: 7,
+      angle: 60,
+      baseKnockback: 0.2,
+      knockbackGrowth: 0.004,
+    },
+  ],
+  poses: [
+    { frame: 0, pose: POSES.springJackStart },
+    { frame: 6, pose: POSES.thruster },
+    { frame: 30, pose: POSES.thruster },
+    { frame: 35, pose: POSES.fall },
+  ],
+  cancels: [],
+  landingLag: 16,
+  helpless: true,
+  motion: [
+    { frame: 6, x: 0.16, y: 0.24 },
+    { frame: 14, x: 0.16, y: 0.2 },
+    { frame: 22, x: 0.14, y: 0.14 },
+  ],
+  // The boot jets burn while she boosts (#47).
+  effects: [
+    { effect: 'fire', anchor: { bone: 'lowerLegFront', at: 1 }, from: 4, to: 28 },
+    { effect: 'fire', anchor: { bone: 'lowerLegBack', at: 1 }, from: 4, to: 28 },
+  ],
 };
