@@ -40,7 +40,12 @@ export const JAB: MoveDef = {
     { frame: 6, pose: POSES.jab },
     { frame: 11, pose: POSES.idle },
   ],
-  cancels: [{ on: 'jab', into: 'jab2', from: 6, to: 14 }],
+  cancels: [
+    { on: 'jab', into: 'jab2', from: 6, to: 14 },
+    // Out of the chain into a dodge, or the fighter's block or counter (#52).
+    { on: 'dodge', from: 6, to: 14 },
+    { on: 'downSpecial', from: 6, to: 14 },
+  ],
 };
 
 /** The back fist follows: another light hit that keeps the target close for jab 3. */
@@ -66,7 +71,11 @@ export const JAB2: MoveDef = {
     { frame: 6, pose: POSES.jab2 },
     { frame: 11, pose: POSES.idle },
   ],
-  cancels: [{ on: 'jab', into: 'jab3', from: 6, to: 14 }],
+  cancels: [
+    { on: 'jab', into: 'jab3', from: 6, to: 14 },
+    { on: 'dodge', from: 6, to: 14 },
+    { on: 'downSpecial', from: 6, to: 14 },
+  ],
 };
 
 /** The finisher: a front kick that launches. Slower to come out and to recover. */
@@ -103,5 +112,9 @@ export const JAB3: MoveDef = {
     { frame: 10, pose: POSES.jab3 },
     { frame: 18, pose: POSES.idle },
   ],
-  cancels: [],
+  // The finisher's long recovery can still be cut into a dodge, block or counter (#52).
+  cancels: [
+    { on: 'dodge', from: 12, to: 22 },
+    { on: 'downSpecial', from: 12, to: 22 },
+  ],
 };

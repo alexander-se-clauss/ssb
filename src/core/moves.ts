@@ -72,8 +72,11 @@ export interface SpawnDef {
   readonly effect?: EffectId;
 }
 
-/** What a press asks for, kept in the input buffer: a move slot or a dodge, later block (#6). */
-export type BufferedAction = PressSlot | DodgeKind | 'jump' | 'block';
+/**
+ * What a press asks for, kept in the input buffer: a move slot, a dodge or a jump. Block and
+ * counter are moves in the `downSpecial` slot (#50, #51).
+ */
+export type BufferedAction = PressSlot | DodgeKind | 'jump';
 
 /**
  * The ground dodges (#35): a sidestep into the background or out towards the camera, or a roll
@@ -87,10 +90,11 @@ export const isDodge = (action: BufferedAction): action is DodgeKind =>
 
 /**
  * A window in which the move gives way to a buffered action: on frames `[from, to)`, a buffered
- * `on` starts `into` (the next combo step), or the character's move for that slot.
+ * `on` starts `into` (the next combo step), or the character's move for that slot. `dodge` (#52)
+ * takes any dodge that can start; `downSpecial` is the character's block or counter, if any.
  */
 export interface CancelDef {
-  readonly on: BufferedAction;
+  readonly on: BufferedAction | 'dodge';
   readonly into?: MoveId;
   readonly from: number;
   readonly to: number;
@@ -252,6 +256,13 @@ export const validateMove = (move: MoveDef): void => {
       fail(`cancel ${index} has an empty or broken window [${from}, ${to})`);
     }
     if (to > move.totalFrames) fail(`cancel ${index} ends after the move (${to})`);
+    const { on, into } = move.cancels[index] ?? { on: 'dodge' };
+    if (on === 'dodge' && into !== undefined)
+      fail(`cancel ${index} into a dodge cannot name a move`);
+    // Such a window could never fire: a dodge cancel is `dodge`, and a jump cancels nothing.
+    if (on === 'jump' || (on !== 'dodge' && isDodge(on))) {
+      fail(`cancel ${index} on "${on}" never fires; use "dodge" for dodges`);
+    }
   });
   // The frame a move starts on is its frame 0; the runner plays it from frame 1 on.
   (move.motion ?? []).forEach(({ frame, x, y }, index, keys) => {

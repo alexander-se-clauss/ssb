@@ -15,7 +15,7 @@ import { findMove } from './move-data';
 import { isAerialSlot, moveSlot } from './move-slots';
 import { nextPose } from './poses';
 import { REST_POSE } from './skeleton';
-import { isDodge, type BufferedAction, type MoveId } from './moves';
+import { isDodge, type BufferedAction, type DodgeKind, type MoveId } from './moves';
 import type {
   BufferedInput,
   FighterAction,
@@ -312,8 +312,7 @@ export const updateFighter = (
   const kept = fighter.buffer && fighter.buffer.age < INPUT.bufferFrames ? fighter.buffer : null;
   let buffer = latest(press(grounded), kept && { ...kept, age: kept.age + 1 });
   const slotMove = (action: BufferedAction): MoveId | undefined => {
-    const id =
-      isDodge(action) || action === 'jump' || action === 'block' ? undefined : moves[action];
+    const id = isDodge(action) || action === 'jump' ? undefined : moves[action];
     // A block starts only on the ground (#50).
     return id !== undefined && !grounded && findMove(id).guard ? undefined : id;
   };
@@ -325,6 +324,34 @@ export const updateFighter = (
     moveId = id;
     facing = face;
     hitTargets = [];
+    // The turn is settled once a move starts; a roll cancelled out of it must not undo it.
+    turnedFrom = null;
+  };
+  /** Starts a buffered dodge; `face` is the way a roll travels. */
+  const startDodge = (dodge: DodgeKind, face: 1 | -1): void => {
+    actionFrame = 0;
+    if (dodge === 'roll') {
+      // Towards the facing a forward roll, away from it a back roll, counted from the facing
+      // before a turn the stick made just now.
+      if (turnedFrom) facing = turnedFrom.facing;
+      action = face === facing ? 'forwardRoll' : 'backRoll';
+    } else {
+      action = dodge;
+    }
+    // Out of a move it cancels (#52).
+    moveId = null;
+    hitTargets = [];
+    turnedFrom = null;
+    buffer = null;
+    vx = 0;
+    if (dodge === 'airDodge') {
+      // Off in the stick's direction, or held in place without one.
+      airDodgeUsed = true;
+      const tilt = Math.hypot(input.x, input.y);
+      const speed = tilt >= DODGE.air.directionStick ? DODGE.air.speed / tilt : 0;
+      vx = input.x * speed;
+      vy = input.y * speed;
+    }
   };
   // An empty slot does nothing: the press is dropped, and a jump on the same frame still counts.
   // So is a dodge that can no longer start: a ground dodge once the fighter left the ground, an
@@ -358,24 +385,31 @@ export const updateFighter = (
     // control back.
     const move = moveId === null ? undefined : findMove(moveId);
     const queued = buffer;
+    // A `dodge` window (#52) takes whichever dodge can start here.
     const cancel =
       queued &&
       move?.cancels.find(
-        (c) => c.on === queued.action && actionFrame >= c.from && actionFrame < c.to,
+        (c) =>
+          (c.on === queued.action || (c.on === 'dodge' && bufferedDodge !== undefined)) &&
+          actionFrame >= c.from &&
+          actionFrame < c.to,
       );
     const into = cancel?.into;
-    const next = cancel
-      ? into !== undefined && !(findMove(into).guard && !grounded)
-        ? into
-        : into === undefined
-          ? slotMove(cancel.on)
-          : undefined
-      : undefined;
+    const next =
+      cancel && cancel.on !== 'dodge'
+        ? into !== undefined && !(findMove(into).guard && !grounded)
+          ? into
+          : into === undefined
+            ? slotMove(cancel.on)
+            : undefined
+        : undefined;
     const hold = move?.guard?.hold;
     // A block waits with its guard up while special stays held (#50).
     if (hold !== undefined && actionFrame === hold + 1 && input.special) actionFrame = hold;
     if (queued && next !== undefined) {
       startMove(next, queued.face);
+    } else if (queued && cancel?.on === 'dodge' && bufferedDodge !== undefined) {
+      startDodge(bufferedDodge, queued.face);
     } else if (!move || actionFrame >= move.totalFrames || (move.guard && !grounded)) {
       // A block pushed off the ground ends there; it only guards on the ground.
       // A recovery move that ends in the air leaves the fighter helpless (#44).
@@ -420,26 +454,7 @@ export const updateFighter = (
   } else if (buffer && bufferedMove !== undefined) {
     startMove(bufferedMove, buffer.face);
   } else if (buffer && bufferedDodge !== undefined) {
-    actionFrame = 0;
-    if (bufferedDodge === 'roll') {
-      // Towards the facing a forward roll, away from it a back roll, counted from the facing
-      // before a turn the stick made just now.
-      if (turnedFrom) facing = turnedFrom.facing;
-      action = buffer.face === facing ? 'forwardRoll' : 'backRoll';
-    } else {
-      action = bufferedDodge;
-    }
-    turnedFrom = null;
-    buffer = null;
-    vx = 0;
-    if (bufferedDodge === 'airDodge') {
-      // Off in the stick's direction, or held in place without one.
-      airDodgeUsed = true;
-      const tilt = Math.hypot(input.x, input.y);
-      const speed = tilt >= DODGE.air.directionStick ? DODGE.air.speed / tilt : 0;
-      vx = input.x * speed;
-      vy = input.y * speed;
-    }
+    startDodge(bufferedDodge, buffer.face);
   } else if (bufferedJump) {
     if (buffer?.action === 'jump') buffer = null;
     if (grounded) {

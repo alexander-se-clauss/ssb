@@ -76,7 +76,10 @@ table fills each slot with a move id or leaves it empty. The press goes into
 `FighterState.buffer` as that slot, with the way the move will face, and waits there up to
 `INPUT.bufferFrames` until the fighter can act (presses during hitlag are buffered too, and do not
 age). A move's `cancels` list windows in which a buffered slot starts the next move: the jab
-chains into jab 2 and jab 3.
+chains into jab 2 and jab 3. A window can also name `dodge` (#52), which starts whichever dodge
+the press asked for and can start there, or `downSpecial`, the character's block or counter;
+the jab chain has both, so Vela's flow jab, jab, sidestep, Riposte and Rivet's jab, jab, Iron
+Guard come from shared move data and each character's down special.
 A ground jump starts with a short `jumpsquat` (the character's `jumpSquatFrames`) as in Melee: an attack
 pressed during it is still a ground attack, so flicking the stick up (which tap-jumps) and
 pressing attack plays the up smash. A jump press waits in the buffer like the others, so a double
