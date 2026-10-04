@@ -78,9 +78,11 @@ describe('jab combo', () => {
     let state = withFighter(settled(), 0, { position: { x: 0, y: 0 }, facing: 1 });
     state = withFighter(state, 1, { position: { x: 0.8, y: 0 }, facing: -1 });
     const hits: string[] = [];
+    let peak = 0;
     // Mashing attack, as a player would.
     for (let i = 0; i < 60; i += 1) {
       state = step(state, [i % 4 === 0 ? ATTACK : NONE]);
+      peak = Math.max(peak, fighter(state, 1).position.y);
       for (const event of state.events) {
         if (event.type === 'hit') hits.push(fighter(state, 0).moveId ?? '');
       }
@@ -89,7 +91,7 @@ describe('jab combo', () => {
     const damage = ['jab', 'jab2', 'jab3'].map((id) => findMove(id).hitboxes[0]?.damage ?? 0);
     expect(fighter(state, 1).damage).toBe(damage.reduce((sum, d) => sum + d, 0));
     // Jab 1 and 2 keep the target close; the kick sends it flying.
-    expect(fighter(state, 1).position.y).toBeGreaterThan(1);
+    expect(peak).toBeGreaterThan(1);
   });
 });
 

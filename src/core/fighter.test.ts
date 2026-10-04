@@ -108,6 +108,8 @@ describe('fighter movement', () => {
       position: { x: 8, y: -1 },
       velocity: { x: -0.1, y: 0 },
       action: 'airborne',
+      // Falling past the ledge, it would grab it; this is about the wall below.
+      ledgeRegrabFrames: 60,
     });
     const after = run(state, 5, [inputOf({ x: -1 })]);
     expect(fighter(after, 0).position.x).toBeGreaterThanOrEqual(7 + FIGHTER.width / 2 - 1e-9);

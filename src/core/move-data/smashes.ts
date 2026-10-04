@@ -76,8 +76,8 @@ export const UP_SMASH: MoveDef = {
       priority: 2,
       damage: 15,
       angle: 86,
-      baseKnockback: 0.15,
-      knockbackGrowth: 0.0041,
+      baseKnockback: 0.18,
+      knockbackGrowth: 0.00492,
     },
     {
       anchor: { bone: 'lowerLegFront', at: 0 },
@@ -87,8 +87,8 @@ export const UP_SMASH: MoveDef = {
       priority: 1,
       damage: 12,
       angle: 84,
-      baseKnockback: 0.12,
-      knockbackGrowth: 0.0036,
+      baseKnockback: 0.144,
+      knockbackGrowth: 0.00432,
     },
     {
       anchor: { bone: 'lowerLegFront', at: 1 },
@@ -98,8 +98,8 @@ export const UP_SMASH: MoveDef = {
       priority: 0,
       damage: 10,
       angle: 80,
-      baseKnockback: 0.1,
-      knockbackGrowth: 0.003,
+      baseKnockback: 0.12,
+      knockbackGrowth: 0.0036,
     },
   ],
   poses: [

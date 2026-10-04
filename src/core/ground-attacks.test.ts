@@ -264,6 +264,7 @@ describe('ground attack knockback', () => {
   });
 
   it.each([
+    // Still true with the Melee-near air physics (#145); the up smash was strengthened for it.
     ['forwardSmash', 90, 120],
     ['upSmash', 105, 135],
     ['downSmash', 100, 130],
