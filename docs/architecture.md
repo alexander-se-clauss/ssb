@@ -73,7 +73,11 @@ Move data is one file per family in `move-data/` (`jab.ts`, `tilts.ts`, `smashes
 landing while it runs ends it and puts the fighter in the `landing` action for that many frames
 (`landingLagFrames`). An aerial's `autoCancel` windows (#148, `auto-cancel.test.ts`) mark its
 first and last frames, clear of the hitboxes: landing in them costs only the normal landing lag,
-as in Melee. Landing from a jump or fall without an aerial costs the character's `landingLagFrames`;
+as in Melee. Between them an L-cancel (#149, `l-cancel.test.ts`) halves the aerial's landing lag,
+never below the normal one: a dodge press during an aerial starts `FighterState.lCancelPress`, and
+landing within `L_CANCEL.windowFrames` of it counts; a new press only counts once
+`L_CANCEL.lockoutFrames` have passed since the last one that did, so mashing misses.
+`FighterState.lastLanding` records how the last aerial landed. Landing from a jump or fall without an aerial costs the character's `landingLagFrames`;
 a fighter in hitstun lands without lag. An aerial press still in the buffer on landing is
 dropped, and during an aerial the fighter drifts and fast-falls like `airborne`. As in Melee,
 holding down while falling drops at once (for as long as it is held) at the character's `fastFallSpeed` (#145), instead of
@@ -117,7 +121,8 @@ even speed and stops at its platform's edge. In the air the button starts an
 Ultimate-style `airDodge` (`DODGE.air`): it carries the fighter the way the stick points (or holds
 it in place) with gravity paused, then the fighter falls and can act again. It is used once per
 airtime (`FighterState.airDodgeUsed`), and landing or being hit gives it back; landing during it
-costs `DODGE.air.landingLag`, and a buffered air dodge is dropped on landing.
+costs `DODGE.air.landingLag`, and a buffered air dodge is dropped on landing. During an aerial
+the button L-cancels instead (#149): the press is not buffered and never becomes an air dodge.
 A move flagged `helpless` in its data (a recovery move, #44) that ends in the air puts the
 fighter in the `helpless` action, Melee's special fall: it only drifts (`HELPLESS.drift`), cannot
 fast-fall, jump, attack or dodge, and it ends on landing (with `HELPLESS.landingLagFrames`), on a
@@ -340,7 +345,8 @@ dummy `dummyInput` instead of its slot's input, never ends the match and costs n
 and follows the last hit until attacker and dummy can both act: the frame advantage. The
 `TrainingControls` port pauses, advances one frame, changes settings (`configureTraining`) and
 resets (`resetTraining`) between frames; `LocalTrainingSession` implements it. `TrainingHud`
-(`dom-hud/training-hud.ts`, text from `training-readout.ts`) draws the readout, and the panel is a
+(`dom-hud/training-hud.ts`, text from `training-readout.ts`) draws the readout, including how the
+player's last aerial landed (L-cancelled, missed or auto-cancelled), and the panel is a
 `MenuPanel` in `App` (`training-menu.ts` holds its rows).
 
 Menus with a way back show a Back button in their top left corner, except results and the

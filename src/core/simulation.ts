@@ -123,6 +123,8 @@ const handleKo = (fighter: FighterState, state: MatchState, events: GameEvent[])
     kos: fighter.kos,
     falls,
     damageDealt: fighter.damageDealt,
+    // The training readout keeps showing the last aerial landing (#149) after a KO.
+    lastLanding: fighter.lastLanding,
     invulnerableFrames: FIGHTER_RULES.respawnInvulnerabilityFrames,
     previousInput: fighter.previousInput,
   };

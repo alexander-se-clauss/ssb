@@ -43,6 +43,18 @@ describe('trainingReadout', () => {
     expect(trainingReadout(withTraining(match(), { advantage: 0 }))?.advantage).toBe('0');
   });
 
+  it("shows how the player's last aerial landing went: L-cancelled or not (#149)", () => {
+    const landed = (lastLanding: 'lCancelled' | 'missed' | 'autoCancelled' | null) => {
+      const state = match();
+      const fighters = state.fighters.map((f) => ({ ...f, lastLanding }));
+      return trainingReadout({ ...state, fighters })?.lCancel;
+    };
+    expect(landed(null)).toBe('–');
+    expect(landed('lCancelled')).toBe('Yes');
+    expect(landed('missed')).toBe('Missed');
+    expect(landed('autoCancelled')).toBe('Auto-cancel');
+  });
+
   it('shows the move being played with its frame, counted from 1', () => {
     const state = match();
     const playing = {

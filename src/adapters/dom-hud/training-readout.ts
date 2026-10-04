@@ -1,9 +1,16 @@
 /**
  * What the training HUD (#144) shows, as plain text from the match state: the combo counter,
- * the last hit's frame advantage and the first player's current (or last) move with its frames.
+ * the last hit's frame advantage, the first player's current (or last) move with its frames, and
+ * whether its last aerial landing was L-cancelled (#149).
  * Frames are counted from 1, as frame data usually is.
  */
-import { findMove, moveTiming, type MatchState, type MoveDef } from '../../core';
+import {
+  findMove,
+  moveTiming,
+  type AerialLanding,
+  type MatchState,
+  type MoveDef,
+} from '../../core';
 
 export type MovePhase = 'startup' | 'active' | 'endlag';
 
@@ -24,7 +31,15 @@ export interface TrainingReadout {
   /** Signed, like `+3` or `-9`; a dash before any hit was measured. */
   readonly advantage: string;
   readonly move: MoveReadout | null;
+  /** How the player's last aerial landing went; a dash before the first one. */
+  readonly lCancel: string;
 }
+
+const LANDING_LABEL: Readonly<Record<AerialLanding, string>> = {
+  lCancelled: 'Yes',
+  missed: 'Missed',
+  autoCancelled: 'Auto-cancel',
+};
 
 /** `forwardSmash` → `Forward smash`, `jab2` → `Jab 2`. */
 export const moveName = (id: string): string => {
@@ -85,6 +100,11 @@ const moveReadout = (
   };
 };
 
+const lCancelReadout = (state: MatchState, dummy: number): string => {
+  const landing = state.fighters.find((f) => f.slot !== dummy)?.lastLanding ?? null;
+  return landing === null ? '–' : LANDING_LABEL[landing];
+};
+
 /** The readout for a training match, or null for any other match. */
 export const trainingReadout = (state: MatchState): TrainingReadout | null => {
   const training = state.training;
@@ -96,5 +116,6 @@ export const trainingReadout = (state: MatchState): TrainingReadout | null => {
     comboActive: training.comboActive,
     advantage: advantage === null ? '–' : advantage > 0 ? `+${advantage}` : String(advantage),
     move: moveReadout(state, training.settings.dummy, training.lastMove),
+    lCancel: lCancelReadout(state, training.settings.dummy),
   };
 };

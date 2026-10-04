@@ -1,6 +1,6 @@
 import { CENTRED_STICK, attackInput, trackStick } from './attack-input';
 import { characterOf } from './character';
-import { DODGE, FIGHTER_RULES, HELPLESS, INPUT, LEDGE, STICK } from './config';
+import { DODGE, FIGHTER_RULES, HELPLESS, INPUT, L_CANCEL, LEDGE, STICK } from './config';
 import { NEUTRAL_INPUT, pressed } from './input';
 import {
   climbPosition,
@@ -13,11 +13,12 @@ import {
 import { approach } from './math';
 import { isGroundMovement, moveOnGround } from './ground-movement';
 import { findMove } from './move-data';
-import { isAerialSlot, moveSlot } from './move-slots';
+import { PRESS_SLOTS, isAerialSlot, moveSlot } from './move-slots';
 import { nextPose } from './poses';
 import { REST_POSE } from './skeleton';
 import { isDodge, type BufferedAction, type DodgeKind, type MoveDef, type MoveId } from './moves';
 import type {
+  AerialLanding,
   BufferedInput,
   FighterAction,
   FighterState,
@@ -59,6 +60,8 @@ export const createFighter = (
     lastHitBy: null,
     hitstunFrames: 0,
     landingLagFrames: 0,
+    lCancelPress: null,
+    lastLanding: null,
     hitlagFrames: 0,
     invulnerableFrames: 0,
     ledge: null,
@@ -88,12 +91,38 @@ const dodgeOf = (action: FighterAction) =>
  * The landing lag of an aerial that lands on `frame` of its move: the normal one inside an
  * auto-cancel window (#148), the aerial's own otherwise.
  */
-const aerialLandingLag = (move: MoveDef, frame: number, normal: number): number | undefined => {
-  const { autoCancel } = move;
-  return autoCancel && (frame < autoCancel.before || frame >= autoCancel.after)
-    ? normal
-    : move.landingLag;
+const aerialLandingLag = (move: MoveDef, frame: number, normal: number): number | undefined =>
+  autoCancelled(move, frame) ? normal : move.landingLag;
+
+/** Landing on `frame` of `move` falls in one of its auto-cancel windows (#148). */
+const autoCancelled = ({ autoCancel }: MoveDef, frame: number): boolean =>
+  autoCancel !== undefined && (frame < autoCancel.before || frame >= autoCancel.after);
+
+/**
+ * How an aerial lands on `frame` of its move: inside an auto-cancel window (#148) with the normal
+ * landing lag, otherwise with its own, halved by an L-cancel (#149) when the dodge press that
+ * counts came at most `L_CANCEL.windowFrames` ago, though never below the normal lag.
+ */
+const landAerial = (
+  move: MoveDef,
+  frame: number,
+  normal: number,
+  lCancelPress: number | null,
+): { readonly lag: number; readonly how: AerialLanding } => {
+  const own = aerialLandingLag(move, frame, normal) ?? normal;
+  if (autoCancelled(move, frame)) return { lag: own, how: 'autoCancelled' };
+  return lCancelPress !== null && lCancelPress < L_CANCEL.windowFrames
+    ? { lag: Math.max(Math.ceil(own / 2), normal), how: 'lCancelled' }
+    : { lag: own, how: 'missed' };
 };
+
+/** Frames since the press that counts for an L-cancel, one frame on; null once its lockout is over. */
+const ageLCancel = (since: number | null): number | null =>
+  since === null || since + 1 >= L_CANCEL.lockoutFrames ? null : since + 1;
+
+/** A dodge press during an aerial counts for an L-cancel, unless the last one still locks it out. */
+const pressLCancel = (since: number | null, pressedNow: boolean): number | null =>
+  pressedNow && since === null ? 0 : since;
 
 const standsOn = (x: number, y: number, platform: PlatformDef): boolean =>
   x >= platform.bounds.left &&
@@ -126,6 +155,14 @@ export const updateFighter = (
       ? 'special'
       : null;
   const dodgePress = pressed(input, prev, 'shield');
+  const isAerial = (id: MoveId): boolean =>
+    PRESS_SLOTS.some((slot) => isAerialSlot(slot) && moves[slot] === id);
+  // During an aerial the dodge button L-cancels (#149) instead of asking for an air dodge.
+  const lCancelling =
+    fighter.action === 'attack' &&
+    !fighter.grounded &&
+    fighter.moveId !== null &&
+    isAerial(fighter.moveId);
   // The jump button jumps in full; the short hop button (#147) only jumps low from the ground.
   const jumpPressed = pressed(input, prev, 'jump') || pressed(input, prev, 'shortHop');
   const shortHopPressed = pressed(input, prev, 'shortHop') && !pressed(input, prev, 'jump');
@@ -143,7 +180,7 @@ export const updateFighter = (
           }
         : null;
     if (button === null) {
-      if (!dodgePress) return jumpPress();
+      if (!dodgePress || lCancelling) return jumpPress();
       // The dodge button dodges on the ground (#35), and in the air once per airtime (#36). On
       // the ground the stick sideways rolls along the stage plane; up, down or centred sidesteps
       // out of it. An air dodge reads its direction from the stick when it starts; one pressed in
@@ -183,6 +220,7 @@ export const updateFighter = (
       ...fighter,
       hitlagFrames: fighter.hitlagFrames - 1,
       buffer: latest(press(fighter.grounded), fighter.buffer),
+      lCancelPress: pressLCancel(fighter.lCancelPress, dodgePress && lCancelling),
       stick,
       previousInput: input,
     };
@@ -298,6 +336,8 @@ export const updateFighter = (
   // Widened again: the fighter can grab a ledge this frame, though it held none before.
   let action: FighterAction = fighter.action;
   let shortHop = fighter.shortHop;
+  let lCancelPress = pressLCancel(ageLCancel(fighter.lCancelPress), dodgePress && lCancelling);
+  let lastLanding = fighter.lastLanding;
   turnedFrom =
     turnedFrom && turnedFrom.age < DODGE.turnGraceFrames
       ? { ...turnedFrom, age: turnedFrom.age + 1 }
@@ -588,6 +628,13 @@ export const updateFighter = (
       // was meant for the ground.
       const airOnly = (a: BufferedAction) => isAerialSlot(a) || a === 'airDodge' || a === 'jump';
       if (buffer && airOnly(buffer.action)) buffer = null;
+      // An aerial lands by its auto-cancel windows and L-cancel; the press is used up either way.
+      const aerial =
+        action === 'attack' && moveId !== null && isAerial(moveId)
+          ? landAerial(findMove(moveId), actionFrame, stats.landingLagFrames, lCancelPress)
+          : undefined;
+      if (aerial) lastLanding = aerial.how;
+      lCancelPress = null;
       // An aerial or air dodge ends on landing, with its own landing lag; a plain landing has a
       // short one. A launched fighter in hitstun lands without lag.
       const lag =
@@ -597,9 +644,11 @@ export const updateFighter = (
             ? HELPLESS.landingLagFrames
             : action === 'airDodge'
               ? DODGE.air.landingLag
-              : action === 'attack' && moveId !== null
-                ? aerialLandingLag(findMove(moveId), actionFrame, stats.landingLagFrames)
-                : undefined;
+              : aerial
+                ? aerial.lag
+                : action === 'attack' && moveId !== null
+                  ? aerialLandingLag(findMove(moveId), actionFrame, stats.landingLagFrames)
+                  : undefined;
       if (lag !== undefined) {
         landingLagFrames = lag;
         action = 'landing';
@@ -691,6 +740,7 @@ export const updateFighter = (
     // Holding on gives the air jumps and the air dodge back, as in Ultimate.
     jumpsRemaining = stats.airJumps;
     airDodgeUsed = false;
+    lCancelPress = null;
   }
 
   const moved: FighterState = {
@@ -709,6 +759,8 @@ export const updateFighter = (
     moveId,
     hitstunFrames,
     landingLagFrames,
+    lCancelPress,
+    lastLanding,
     hitTargets,
     buffer,
     invulnerableFrames: Math.max(
