@@ -47,7 +47,9 @@ export type PoseName =
   | 'haymaker'
   | 'springJackStart'
   | 'springJack'
-  | 'guard';
+  | 'guard'
+  | 'counterStance'
+  | 'counterStrike';
 
 /**
  * Melee-style key poses. Angles are relative to the parent bone (0 = straight on, positive turns
@@ -609,5 +611,31 @@ export const POSES: Readonly<Record<PoseName, Pose>> = {
     lowerLegFront: 60,
     upperLegBack: 215,
     lowerLegBack: 45,
+  },
+  // Riposte (#51): Vela settles low and side-on, the arm cannon held across her body, waiting.
+  counterStance: {
+    torso: 10,
+    head: -5,
+    upperArmFront: 150,
+    lowerArmFront: -70,
+    upperArmBack: 120,
+    lowerArmBack: -110,
+    upperLegFront: 140,
+    lowerLegFront: 55,
+    upperLegBack: 215,
+    lowerLegBack: 40,
+  },
+  // ...and answers with the cannon thrust straight out, braced against the recoil.
+  counterStrike: {
+    torso: 30,
+    head: -25,
+    upperArmFront: 75,
+    lowerArmFront: 0,
+    upperArmBack: 160,
+    lowerArmBack: -40,
+    upperLegFront: 125,
+    lowerLegFront: 35,
+    upperLegBack: 220,
+    lowerLegBack: 30,
   },
 };

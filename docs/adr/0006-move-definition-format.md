@@ -111,7 +111,7 @@ interface AttackMoveDef {
   readonly poses: readonly PoseKey[];
 }
 
-type MoveDef = AttackMoveDef; // | BlockMoveDef | CounterMoveDef with #6
+type MoveDef = AttackMoveDef; // block and counter became fields instead (#50, #51)
 ```
 
 ### Amendment (2026-10-01, #31)
@@ -255,7 +255,10 @@ type MoveDef = AttackMoveDef; // | BlockMoveDef | CounterMoveDef with #6
   (`GuardDef`: a frame window, an optional `hold` frame, `damageScale`, `pushback`,
   `breakDamage`, `breakStun`), instead of a `'block'` variant of `MoveDef`. Poses, cancels,
   timing and the move runner then work for blocks unchanged, and a move could guard and hit at
-  once later (armour). Counter (#51) follows the same pattern. `kind` stays `'attack'` for now.
+  once later (armour). `kind` stays `'attack'` for now.
+- **Counter (#51)** is the same pattern: an optional `counter` (`CounterDef`: a frame window and
+  the move it goes `into`). A move cannot both guard and counter, and `into` must name a known
+  move, as a cancel's does.
 - Block sits in the character's `downSpecial` slot. The `'block'` buffered action stays unused
   until #52 decides whether cancels name it.
 

@@ -75,6 +75,20 @@ export const EFFECTS: Readonly<Record<string, EffectPreset>> = {
     opacity: 1,
     capacity: 300,
   },
+  // A counter flash (#51): a ring of hot gold that hangs a moment, then fades.
+  counter: {
+    rate: 0,
+    life: 20,
+    jitter: 0.2,
+    spread: 0.12,
+    lift: 0,
+    rise: 0,
+    drag: 0.86,
+    size: 0.55,
+    colors: [0xfff4b0, 0xffa400],
+    opacity: 1,
+    capacity: 300,
+  },
   // A KO burst (#48): a big, slow-fading blast of light where a fighter left the blast zone.
   ko: {
     rate: 0,

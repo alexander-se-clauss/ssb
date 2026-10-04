@@ -46,6 +46,12 @@ describe('hit and KO effects (#48)', () => {
     expect(hasEffect('guard')).toBe(true);
   });
 
+  it('flashes gold where a counter catches a hit (#51)', () => {
+    const caught = burstFor({ ...hit(0), damage: 0, guard: 'countered' } as GameEvent);
+    expect(caught).toMatchObject({ effect: 'counter', x: 1, y: 2 });
+    expect(hasEffect('counter')).toBe(true);
+  });
+
   it('shows nothing for the end of the match', () => {
     expect(burstFor({ type: 'match-end', winner: 0 })).toBeUndefined();
   });

@@ -6,6 +6,7 @@ import { LEDGE_ATTACK } from './ledge';
 import { HAYMAKER, IRON_GUARD, SPRING_JACK } from './rivet';
 import { DOWN_SMASH, FORWARD_SMASH, UP_SMASH } from './smashes';
 import { DOWN_TILT, FORWARD_TILT, UP_TILT } from './tilts';
+import { RIPOSTE, RIPOSTE_BLAST } from './vela';
 
 const ALL: readonly MoveDef[] = [
   JAB,
@@ -26,6 +27,8 @@ const ALL: readonly MoveDef[] = [
   HAYMAKER,
   SPRING_JACK,
   IRON_GUARD,
+  RIPOSTE,
+  RIPOSTE_BLAST,
 ];
 
 /** Checks each move, and that every move a cancel goes into is in the same list. */
@@ -33,6 +36,9 @@ export const validateMoves = (moves: readonly MoveDef[]): void => {
   const ids = new Set(moves.map((move) => move.id));
   for (const move of moves) {
     validateMove(move);
+    if (move.counter && !ids.has(move.counter.into)) {
+      throw new Error(`Move "${move.id}": counters into unknown move "${move.counter.into}"`);
+    }
     for (const cancel of move.cancels) {
       if (cancel.into !== undefined && !ids.has(cancel.into)) {
         throw new Error(`Move "${move.id}": cancels into unknown move "${cancel.into}"`);

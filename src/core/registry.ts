@@ -51,8 +51,16 @@ export const RIVET: CharacterDef = {
   },
 };
 
-/** A bounty hunter in power armour; she plays exactly like the capsule for now (epic #7). */
-export const VELA: CharacterDef = { ...CAPSULE, id: 'vela', name: 'Vela' };
+/**
+ * A bounty hunter in power armour (epic #7): the capsule's moves, plus a counter, Riposte, as
+ * down special (#51). Her own body and the rest of her moves come with #53 and #49.
+ */
+export const VELA: CharacterDef = {
+  ...CAPSULE,
+  id: 'vela',
+  name: 'Vela',
+  moves: { ...CAPSULE.moves, downSpecial: 'riposte' },
+};
 
 export const CHARACTERS: readonly CharacterDef[] = [CAPSULE, RIVET, VELA];
 

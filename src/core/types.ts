@@ -175,8 +175,11 @@ export interface StageDef {
   readonly blastZone: Rect;
 }
 
-/** What a block made of a hit (#50): `blocked` took it, `broken` gave way under it. */
-export type GuardOutcome = 'blocked' | 'broken';
+/**
+ * What a defence made of a hit: a block (#50) `blocked` it or was `broken` by it, or a counter
+ * (#51) `countered` it.
+ */
+export type GuardOutcome = 'blocked' | 'broken' | 'countered';
 
 export type GameEvent =
   | {
@@ -192,7 +195,7 @@ export type GameEvent =
        * the speed it pushed the blocker back.
        */
       readonly launch: number;
-      /** Whether a block (#50) took it, or broke under it; left out for a plain hit. */
+      /** Whether a block (#50) or a counter (#51) met it; left out for a plain hit. */
       readonly guard?: GuardOutcome;
     }
   | {
