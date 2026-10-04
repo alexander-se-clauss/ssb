@@ -96,6 +96,13 @@ export interface FighterState {
   readonly turnedFrom: { readonly facing: 1 | -1; readonly age: number } | null;
   /** The air dodge is used up until the fighter lands or is hit (#36). */
   readonly airDodgeUsed: boolean;
+  /**
+   * Dodges in the current or last streak, the current one included (#150), counted up to
+   * `DODGE.repeat.maxLevel + 1`: later ones in a row are weaker.
+   */
+  readonly dodgeStreak: number;
+  /** Frames since the last dodge ended; from `DODGE.repeat.wearOffFrames` on, the streak is over. */
+  readonly dodgeRestFrames: number;
   readonly action: FighterAction;
   /** Frames spent in the current action; during an attack, the frame of the move. */
   readonly actionFrame: number;

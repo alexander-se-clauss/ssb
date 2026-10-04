@@ -10,6 +10,19 @@ const at = (action: FighterAction, actionFrame: number, facing: 1 | -1 = 1) =>
 const wrap = (angle: number) => Math.atan2(Math.sin(angle), Math.cos(angle));
 
 describe('dodge motion', () => {
+  it('finishes a weakened repeated dodge by its last invulnerable frame too (#150)', () => {
+    const third = DODGE.sidestep.invulnerableTo - 1 - 2 * DODGE.repeat.invulnerableLoss;
+    const repeated = (actionFrame: number) =>
+      dodgeMotion({ action: 'sidestepIn', actionFrame, facing: 1, dodgeStreak: 3 });
+    expect(repeated(Math.round(third / 2)).depth).toBeCloseTo(-DODGE_DEPTH, 1);
+    expect(repeated(third).depth).toBe(0);
+    const spin = (actionFrame: number) =>
+      dodgeMotion({ action: 'airDodge', actionFrame, facing: 1, dodgeStreak: 3 }).yaw;
+    expect(spin(DODGE.air.invulnerableTo - 1 - 2 * DODGE.repeat.invulnerableLoss)).toBeCloseTo(
+      TURN,
+    );
+  });
+
   it('leaves fighters alone unless they dodge', () => {
     for (const action of ['idle', 'run', 'airborne', 'attack', 'hitstun'] as const) {
       expect(at(action, 10)).toEqual({ depth: 0, spin: 0, yaw: 0 });

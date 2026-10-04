@@ -160,6 +160,13 @@ export const DODGE = {
     /** Landing during the air dodge ends it with this landing lag. */
     landingLag: 10,
   },
+  /**
+   * Repeated dodges get weaker (#150), instead of a stamina bar (#10). A dodge of any kind that
+   * starts less than `wearOffFrames` after the last one ended is one more in a row: each loses
+   * `invulnerableLoss` invulnerable frames off the end and gains `extraFrames` of endlag, up to
+   * `maxLevel` times (the floor), so a single dodge stays strong and nonstop rolling is punishable.
+   */
+  repeat: { wearOffFrames: 60, invulnerableLoss: 4, extraFrames: 6, maxLevel: 2 },
 } as const;
 
 /**
