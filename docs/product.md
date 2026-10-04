@@ -163,7 +163,7 @@ a playable build; it is done when that build works, not on a date.
       (#50, #51) as cancel targets with the dodge (#52), Vela as fighter 2 (#53), and side
       specials for both (#49). Epics #6, #7, #9.
 - [ ] **S7 Movement tuning.** A Melee-near tempo: training mode first (#144 done), faster air physics (#145 done),
-      Melee dash with dash dance and pivot, a short hop button, auto-cancel windows and
+      Melee dash with dash dance and pivot (#146 done), a short hop button, auto-cancel windows and
       L-cancel, repeated dodges get weaker, dash and landing dust, movement benchmarks as
       tests. Epic #142.
 - [ ] **S8 Combos and combat feel.** Melee knockback and hitstun, DI, SDI and crouch cancel,

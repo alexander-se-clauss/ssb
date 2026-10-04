@@ -12,12 +12,13 @@ describe('fighter movement', () => {
     expect(p1.velocity.y).toBe(0);
   });
 
-  it('runs in the held direction and faces it', () => {
+  it('dashes in the flicked direction and faces it (#146)', () => {
     const start = settled();
     const moved = run(start, 8, [inputOf({ x: -1 })]);
     expect(fighter(moved, 0).position.x).toBeLessThan(fighter(start, 0).position.x);
     expect(fighter(moved, 0).facing).toBe(-1);
-    expect(fighter(moved, 0).action).toBe('run');
+    // Still in the initial dash; `dash.test.ts` covers the run that follows.
+    expect(fighter(moved, 0).action).toBe('dash');
   });
 
   it('allows one ground jump and one air jump, but not a third', () => {

@@ -32,11 +32,16 @@ export const RULE_LIMITS = {
  * The capsule's stats (`CharacterStats`), the base every character starts from. The air physics
  * are Melee-near (#145): a full hop of about 40 frames, fast falls, and a fast fall that drops at
  * once at `fastFallSpeed`. `air-physics.test.ts` pins airtime, apex and fast fall per fighter.
+ * On the ground it walks, dashes, dash dances and runs as in Melee (#146, `ground-movement.ts`).
  */
 export const FIGHTER = {
   width: 0.8,
   height: 1.6,
   walkSpeed: 0.14,
+  initialDashFrames: 11,
+  dashSpeed: 0.19,
+  runSpeed: 0.2,
+  skidFrames: 14,
   groundAcceleration: 0.02,
   groundFriction: 0.015,
   airSpeed: 0.11,
@@ -77,6 +82,10 @@ export const VELA_STATS = {
   ...FIGHTER,
   width: 0.75,
   walkSpeed: 0.17,
+  initialDashFrames: 10,
+  dashSpeed: 0.23,
+  runSpeed: 0.24,
+  skidFrames: 12,
   groundAcceleration: 0.026,
   airSpeed: 0.13,
   airAcceleration: 0.012,
@@ -219,6 +228,8 @@ export const STICK = {
   tapJump: 0.7,
   /** Deflection that counts as the rim, for smash detection. */
   smash: 0.8,
+  /** Sideways deflection that keeps a dash running (#146); below it a run skids to a stop. */
+  run: 0.6,
   /** A flick reaches the rim within this many frames of leaving the deadzone. */
   flickFrames: 3,
   /** Frames after a flick in which attack still makes a smash, the flick frame included. */
@@ -233,6 +244,8 @@ export const POSE = {
   idleCycleFrames: 90,
   /** One full stride (both legs), in frames. */
   runCycleFrames: 24,
+  /** One full walking stride, slower and shorter than the run's. */
+  walkCycleFrames: 36,
   /** Launch speed from which a hit fighter tumbles instead of flinching. */
   tumbleSpeed: 0.4,
 } as const;

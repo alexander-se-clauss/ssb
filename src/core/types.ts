@@ -28,7 +28,14 @@ export interface PlayerInput {
 
 export type FighterAction =
   | 'idle'
+  /** Ground movement (#146): a slowly pushed stick walks, a flick dashes, holding on runs. */
+  | 'walk'
+  | 'dash'
   | 'run'
+  /** Braking to a halt after the stick let go of a run. */
+  | 'skid'
+  /** Braking out of a run the stick pushed back against, then turning round. */
+  | 'runTurn'
   | 'jumpsquat'
   | 'airborne'
   | 'landing'
@@ -295,8 +302,18 @@ export interface CharacterStats {
   /** The body box for stage collision, around the feet. */
   readonly width: number;
   readonly height: number;
-  /** Top ground speed; the run is the walk at full stick. */
+  /** Top walking speed, at a full but slowly pushed stick; a partly tilted stick walks slower. */
   readonly walkSpeed: number;
+  /**
+   * The Melee-style dash (#146): a sideways flick of the stick dashes at `dashSpeed` for
+   * `initialDashFrames`; a flick back during it dashes the other way (dash dance). Held past it,
+   * the fighter runs at `runSpeed`. A run stopped (stick let go) or turned (stick pushed back)
+   * brakes to a halt over `skidFrames`.
+   */
+  readonly initialDashFrames: number;
+  readonly dashSpeed: number;
+  readonly runSpeed: number;
+  readonly skidFrames: number;
   readonly groundAcceleration: number;
   readonly groundFriction: number;
   /** Top drift speed in the air. */

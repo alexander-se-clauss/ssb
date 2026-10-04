@@ -37,7 +37,9 @@ describe('poses for movement states', () => {
   it('picks a pose from what the fighter is doing', () => {
     const standing = fighter(settled(), 0);
     expect(poseName(standing)).toBe('idle');
-    expect(poseName({ ...standing, action: 'run' })).toBe('run');
+    for (const action of ['walk', 'dash', 'run', 'skid', 'runTurn'] as const) {
+      expect(poseName({ ...standing, action })).toBe(action);
+    }
     // During a move its keyframes lead instead (moves.test.ts).
     expect(poseName({ ...standing, action: 'attack', moveId: 'jab' })).toBeNull();
     const air = { ...standing, action: 'airborne' as const, grounded: false };
@@ -65,9 +67,23 @@ describe('poses for movement states', () => {
   });
 
   it('reaches the pose of each state the game puts the fighter in', () => {
+    // Running to the right along the main stage.
+    const onStage = withFighter(settled(), 0, {
+      position: { x: -6, y: 0 },
+      velocity: { x: 0, y: 0 },
+      facing: 1,
+      grounded: true,
+      action: 'idle',
+    });
+    const running = run(onStage, 24, [inputOf({ x: 1 })]);
     const scenarios: readonly [PoseName, MatchState, PlayerInput[]][] = [
       ['idle', settled(), Array<PlayerInput>(30).fill(NEUTRAL_INPUT)],
-      ['run', settled(), Array<PlayerInput>(12).fill(inputOf({ x: 1 }))],
+      // A stick half tilted from the start walks; a full flick dashes, then runs (#146).
+      ['walk', onStage, Array<PlayerInput>(20).fill(inputOf({ x: 0.5 }))],
+      ['dash', onStage, Array<PlayerInput>(8).fill(inputOf({ x: 1 }))],
+      ['run', onStage, Array<PlayerInput>(24).fill(inputOf({ x: 1 }))],
+      ['skid', running, Array<PlayerInput>(10).fill(NEUTRAL_INPUT)],
+      ['runTurn', running, Array<PlayerInput>(10).fill(inputOf({ x: -1 }))],
       ['jump', settled(), [inputOf({ jump: true }), ...Array<PlayerInput>(14).fill(NEUTRAL_INPUT)]],
       ['fall', settled(), [inputOf({ jump: true }), ...Array<PlayerInput>(40).fill(NEUTRAL_INPUT)]],
       ['hurt', hit(settled(), TUMBLE_HITSTUN - 1), Array<PlayerInput>(12).fill(NEUTRAL_INPUT)],
@@ -78,7 +94,8 @@ describe('poses for movement states', () => {
       const body = fighter(end, 0);
       expect(poseName(body), name).toBe(name);
       // The stride never holds still, so easing always trails it; compare the steady bones there.
-      const bones = name === 'run' ? BONE_IDS.filter((b) => !STRIDE_BONES.includes(b)) : BONE_IDS;
+      const striding = name === 'run' || name === 'walk';
+      const bones = striding ? BONE_IDS.filter((b) => !STRIDE_BONES.includes(b)) : BONE_IDS;
       expect(biggestChange(body.pose, targetPose(body, end.frame), bones), name).toBeLessThan(10);
     }
   });

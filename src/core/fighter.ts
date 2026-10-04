@@ -11,6 +11,7 @@ import {
   type LedgeClimb,
 } from './ledge';
 import { approach } from './math';
+import { isGroundMovement, moveOnGround } from './ground-movement';
 import { findMove } from './move-data';
 import { isAerialSlot, moveSlot } from './move-slots';
 import { nextPose } from './poses';
@@ -27,8 +28,6 @@ import type {
 } from './types';
 
 const DROP_THRESHOLD = -0.5;
-const FACE_THRESHOLD = 0.2;
-const MOVE_EPSILON = 0.001;
 
 export const createFighter = (
   slot: PlayerSlot,
@@ -72,7 +71,7 @@ export const createFighter = (
 };
 
 const isControllable = (action: FighterAction): boolean =>
-  action === 'idle' || action === 'run' || action === 'airborne';
+  isGroundMovement(action) || action === 'airborne';
 
 /** The frame data of a dodge action, or undefined for any other action. */
 const dodgeOf = (action: FighterAction) =>
@@ -515,16 +514,16 @@ export const updateFighter = (
           : approach(vx, 0, stats.airFriction);
   } else if (!grounded && Math.abs(vx) > stats.airSpeed) {
     vx = approach(vx, Math.sign(vx) * stats.airSpeed, FIGHTER_RULES.launchDecay);
-  } else if (isControllable(action) || inAerial) {
-    const stickFacing = input.x > 0 ? 1 : -1;
-    if (Math.abs(input.x) > FACE_THRESHOLD && grounded && stickFacing !== facing) {
+  } else if (grounded && isGroundMovement(action)) {
+    // Walk, dash, dash dance, run, skid and pivot (#146).
+    const moved = moveOnGround({ action, actionFrame, facing, vx }, input, stick, stats);
+    if (moved.facing !== facing) {
       // Turning back to where the fighter faced before the last turn undoes that turn.
-      turnedFrom = turnedFrom?.facing === stickFacing ? null : (turnedFrom ?? { facing, age: 0 });
-      facing = stickFacing;
+      turnedFrom = turnedFrom?.facing === moved.facing ? null : (turnedFrom ?? { facing, age: 0 });
     }
-    if (grounded) {
-      vx = approach(vx, input.x * stats.walkSpeed, stats.groundAcceleration);
-    } else if (Math.abs(input.x) > 0.1) {
+    ({ action, actionFrame, facing, vx } = moved);
+  } else if (isControllable(action) || inAerial) {
+    if (Math.abs(input.x) > 0.1) {
       vx = approach(vx, input.x * stats.airSpeed, stats.airAcceleration);
     } else {
       vx = approach(vx, 0, stats.airFriction);
@@ -627,13 +626,9 @@ export const updateFighter = (
     }
   }
 
-  // Resolve locomotion actions from the physical state.
+  // Off the ground any movement is airborne; ground movement itself is settled above.
   if (isControllable(action)) {
-    const next: FighterAction = !grounded
-      ? 'airborne'
-      : Math.abs(vx) > MOVE_EPSILON
-        ? 'run'
-        : 'idle';
+    const next: FighterAction = !grounded ? 'airborne' : action === 'airborne' ? 'idle' : action;
     if (next !== action) {
       action = next;
       actionFrame = 0;

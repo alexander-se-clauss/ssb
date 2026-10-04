@@ -63,6 +63,10 @@ export const trackStick = (tracker: StickTracker, input: PlayerInput): StickTrac
   return { direction, deflection, framesOut, smashFramesLeft };
 };
 
+/** Whether the stick reached the rim in a flick on this very frame (a smash, or a dash, #146). */
+export const flickedThisFrame = (tracker: StickTracker): boolean =>
+  tracker.smashFramesLeft === STICK.smashWindowFrames;
+
 export type AttackDirection = 'neutral' | 'forward' | 'back' | 'up' | 'down';
 export type AttackStrength = 'tilt' | 'smash';
 

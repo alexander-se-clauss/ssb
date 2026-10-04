@@ -33,7 +33,7 @@ browsers, rendering or networking.
 | App      | `src/app`      | everything                         | `main.ts` wiring, screens and menus, debug handle, CSS                          |
 
 A character is plain data too (`CharacterDef` in `types.ts`, registered in `registry.ts`): its
-`stats` (`CharacterStats`: body box, walk and air speed, gravity, fall speeds, jump speeds,
+`stats` (`CharacterStats`: body box, walk, dash and run speeds, dash and skid frames, air speed, gravity, fall speeds, jump speeds,
 `airJumps`, weight, landing lag), its `skeleton` and its `moves`. The capsule's stats are `FIGHTER` in
 `config.ts`, and other characters' stats sit beside them (`RIVET_STATS`, `VELA_STATS`); rules every fighter
 shares are `FIGHTER_RULES`. Rivet (#39) has his own `STOCKY` skeleton in `skeleton.ts` and his
@@ -72,7 +72,14 @@ landing while it runs ends it and puts the fighter in the `landing` action for t
 a fighter in hitstun lands without lag. An aerial press still in the buffer on landing is
 dropped, and during an aerial the fighter drifts and fast-falls like `airborne`. As in Melee,
 holding down while falling drops at once (for as long as it is held) at the character's `fastFallSpeed` (#145), instead of
-speeding up to it; `air-physics.test.ts` pins each fighter's full hop and fast fall. A
+speeding up to it; `air-physics.test.ts` pins each fighter's full hop and fast fall. On the
+ground the fighter moves as in Melee (#146, `ground-movement.ts`): a slowly pushed stick walks
+(`walk`), a sideways flick dashes (`dash`) for `initialDashFrames`, a flick back during the dash
+dashes the other way (dash dance) or, on its first frame, turns in place (pivot), and held past it
+the fighter runs (`run`). Letting go of a run skids (`skid`), pushing back brakes and turns round
+(`runTurn`), both over `skidFrames`. Jumps, moves and dodges start out of all of them. Keys
+only send a full stick, so on a keyboard every press from standing dashes; walking needs an analog
+stick (or a key held after a pivot). A
 press of attack or special picks a move slot from the situation and the stick (`move-slots.ts`:
 jab, tilts and smashes on the ground, five aerials, four specials), and the character's `moves`
 table fills each slot with a move id or leaves it empty. The press goes into
@@ -172,7 +179,7 @@ fighter per ledge: `step` updates the fighters on a ledge first, so a ledge let 
 from is free on that same frame, then the others in slot order, each handed the ledges held by
 the rest, so of two reaching a ledge on the same frame the lower slot gets it.
 Each fighter carries its current `pose` in `FighterState`: `step` eases it a little each frame towards
-the pose of its movement state, with idle breathing and a running stride (`poses.ts`), and the
+the pose of its movement state, with idle breathing and a walking and running stride (`poses.ts`), and the
 view interpolates it between frames like the position. A move has pose keyframes instead: the
 body closes in on the first one and from then on follows them exactly (`movePose`), so a bone
 hitbox reaches the same spot every time. Key poses are data in `pose-data.ts`.
