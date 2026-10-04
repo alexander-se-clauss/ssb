@@ -1,6 +1,7 @@
 /**
- * Rivet's specials (#39). The neutral special is a slow, heavy punch with a lunge; the up special
- * is the recovery move: a rising uppercut that hits several times and leaves Rivet helpless.
+ * Rivet's specials (#39, #49). The neutral special is a slow, heavy punch with a lunge; the side
+ * special a wrench that flies out and back; the up special is the recovery move: a rising
+ * uppercut that hits several times and leaves Rivet helpless.
  */
 import type { HitboxDef, MoveDef } from '../moves';
 import { POSES } from '../pose-data';
@@ -138,4 +139,34 @@ export const IRON_GUARD: MoveDef = {
     breakDamage: 15,
     breakStun: 30,
   },
+};
+
+/**
+ * Wrench Toss (#49), Rivet's side special: he flings a wrench on frame 10 that spins out about
+ * four units, slowing to a stop, and comes back to his hand. It hits on the way out or back,
+ * once, so even the all-rounder can reach a fighter keeping away. Usable in the air too.
+ */
+export const WRENCH_TOSS: MoveDef = {
+  kind: 'attack',
+  id: 'wrenchToss',
+  totalFrames: 32,
+  hitboxes: [],
+  poses: [
+    { frame: 6, pose: POSES.haymakerWindup },
+    { frame: 10, pose: POSES.haymaker },
+    { frame: 14, pose: POSES.haymaker },
+    { frame: 30, pose: POSES.idle },
+  ],
+  cancels: [],
+  spawns: [
+    {
+      frame: 10,
+      offset: { x: 0.7, y: 1 },
+      velocity: { x: 0.32, y: 0 },
+      lifetime: 90,
+      radius: 0.28,
+      hit: { damage: 7, angle: 40, baseKnockback: 0.18, knockbackGrowth: 0.004 },
+      behavior: { kind: 'return', turnFrames: 22 },
+    },
+  ],
 };

@@ -46,6 +46,7 @@ export const RIVET: CharacterDef = {
   moves: {
     ...CAPSULE.moves,
     neutralSpecial: 'haymaker',
+    sideSpecial: 'wrenchToss',
     upSpecial: 'springJack',
     downSpecial: 'ironGuard',
   },
@@ -64,6 +65,7 @@ export const VELA: CharacterDef = {
   moves: {
     ...CAPSULE.moves,
     neutralSpecial: 'pulseShot',
+    sideSpecial: 'stasisMine',
     upSpecial: 'thruster',
     downSpecial: 'riposte',
   },

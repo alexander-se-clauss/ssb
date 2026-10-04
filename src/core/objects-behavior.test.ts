@@ -24,6 +24,7 @@ const withObject = (
   const full: SpawnedObject = {
     id: 0,
     owner: 0,
+    moveId: 'pulseShot',
     position: { x: x + 0.8, y: 1 },
     velocity,
     launchVelocity: velocity,

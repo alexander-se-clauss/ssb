@@ -6,22 +6,28 @@
 import { characterOf } from './character';
 import { applyHit, touchesBody } from './combat';
 import { findMove } from './move-data';
-import type { ObjectBehavior, SpawnDef } from './moves';
+import type { MoveId, ObjectBehavior, SpawnDef } from './moves';
 import type { Rect, Vec2 } from './math';
 import type { FighterState, GameEvent, PlatformDef, SpawnedObject, StageDef } from './types';
 
 const STRAIGHT: ObjectBehavior = { kind: 'straight' };
 
 /** The spawns `after` reached this frame: its move's ones on the move frame it just played. */
-const reachedSpawns = (before: FighterState, after: FighterState): readonly SpawnDef[] => {
-  if (after.action !== 'attack' || after.moveId === null) return [];
+const reachedSpawns = (
+  before: FighterState,
+  after: FighterState,
+): { moveId: MoveId; spawns: readonly SpawnDef[] } | undefined => {
+  if (after.action !== 'attack' || after.moveId === null) return undefined;
   // A frozen fighter (hitlag) stays on its frame; it only reaches a frame by playing it.
   const stood =
     before.action === 'attack' &&
     before.moveId === after.moveId &&
     before.actionFrame === after.actionFrame;
-  if (stood) return [];
-  return (findMove(after.moveId).spawns ?? []).filter((spawn) => spawn.frame === after.actionFrame);
+  if (stood) return undefined;
+  const spawns = (findMove(after.moveId).spawns ?? []).filter(
+    (spawn) => spawn.frame === after.actionFrame,
+  );
+  return { moveId: after.moveId, spawns };
 };
 
 /**
@@ -37,13 +43,16 @@ export const spawnObjects = (
   after.forEach((fighter, index) => {
     const previous = before[index];
     if (!previous) return;
-    for (const spawn of reachedSpawns(previous, fighter)) {
+    const reached = reachedSpawns(previous, fighter);
+    if (!reached) return;
+    for (const spawn of reached.spawns) {
       const { facing } = fighter;
       const behavior = spawn.behavior ?? STRAIGHT;
       const velocity = { x: spawn.velocity.x * facing, y: spawn.velocity.y };
       spawned.push({
         id: nextId + spawned.length,
         owner: fighter.slot,
+        moveId: reached.moveId,
         position: {
           x: fighter.position.x + spawn.offset.x * facing,
           y: fighter.position.y + spawn.offset.y,
@@ -61,6 +70,23 @@ export const spawnObjects = (
     }
   });
   return spawned;
+};
+
+/**
+ * `objects` (oldest first) without those over their move's `spawnLimit` (#49): of each fighter's
+ * objects from one such move, only the newest stay.
+ */
+export const limitObjects = (objects: readonly SpawnedObject[]): SpawnedObject[] => {
+  const counts = new Map<string, number>();
+  const kept = objects.toReversed().filter((object) => {
+    const limit = findMove(object.moveId).spawnLimit;
+    if (limit === undefined) return true;
+    const key = `${object.owner}:${object.moveId}`;
+    const count = (counts.get(key) ?? 0) + 1;
+    counts.set(key, count);
+    return count <= limit;
+  });
+  return kept.toReversed();
 };
 
 /** Whether the object is inside the blast zone; outside it, it is gone. */
@@ -159,7 +185,7 @@ const launchDirection = (object: SpawnedObject): 1 | -1 => {
 };
 
 /** A trap hits only once armed (#46); everything else from the start. */
-const armed = (object: SpawnedObject): boolean =>
+export const isArmed = (object: SpawnedObject): boolean =>
   object.behavior.kind !== 'trap' || object.age >= object.behavior.armFrames;
 
 /**
@@ -174,7 +200,7 @@ export const resolveObjectHits = (
   const next = [...fighters];
   const events: GameEvent[] = [];
   const left = objects.filter((object) => {
-    if (!armed(object)) return true;
+    if (!isArmed(object)) return true;
     const target = next.find(
       (fighter) =>
         fighter.slot !== object.owner &&

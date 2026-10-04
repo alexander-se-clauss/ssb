@@ -151,3 +151,33 @@ export const THRUSTER: MoveDef = {
     { effect: 'fire', anchor: { bone: 'lowerLegBack', at: 1 }, from: 4, to: 28 },
   ],
 };
+
+/**
+ * Stasis Mine (#49), Vela's side special: she crouches and sets a mine in front of her feet, on
+ * the ground or hanging in the air where she is, to guard a ledge. It arms after half a second and pops the first opponent who steps on it straight up, into
+ * a juggle; unused, it fades after ten seconds. One at a time: a new mine replaces the old.
+ */
+export const STASIS_MINE: MoveDef = {
+  kind: 'attack',
+  id: 'stasisMine',
+  totalFrames: 36,
+  hitboxes: [],
+  poses: [
+    { frame: 8, pose: POSES.crouch },
+    { frame: 18, pose: POSES.crouch },
+    { frame: 34, pose: POSES.idle },
+  ],
+  cancels: [],
+  spawns: [
+    {
+      frame: 12,
+      offset: { x: 1, y: 0.15 },
+      velocity: { x: 0, y: 0 },
+      lifetime: 600,
+      radius: 0.3,
+      hit: { damage: 9, angle: 88, baseKnockback: 0.3, knockbackGrowth: 0.004 },
+      behavior: { kind: 'trap', armFrames: 30 },
+    },
+  ],
+  spawnLimit: 1,
+};

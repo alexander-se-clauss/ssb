@@ -264,4 +264,16 @@ describe('spawn data (#45)', () => {
   ])('refuses a spawn %s', (_, patch) => {
     expect(() => validateMove(withSpawn(patch))).toThrow(/spawn 0/);
   });
+
+  it('accepts a limit on how many of its objects a fighter has out (#49)', () => {
+    expect(() => validateMove({ ...withSpawn({}), spawnLimit: 2 })).not.toThrow();
+  });
+
+  it.each([
+    ['of none', { ...withSpawn({}), spawnLimit: 0 }],
+    ['between whole numbers', { ...withSpawn({}), spawnLimit: 1.5 }],
+    ['on a move that spawns nothing', { ...base, spawnLimit: 1 }],
+  ])('refuses a spawn limit %s', (_, move) => {
+    expect(() => validateMove(move)).toThrow(/spawnLimit/);
+  });
 });

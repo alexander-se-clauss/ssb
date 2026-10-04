@@ -131,6 +131,8 @@ export interface SpawnedObject {
   readonly id: number;
   /** Who spawned it: it never hits them, and they get the credit for its hits. */
   readonly owner: PlayerSlot;
+  /** The move that spawned it, for that move's `spawnLimit` (#49). */
+  readonly moveId: MoveId;
   /** The centre of its circle. */
   readonly position: Vec2;
   readonly velocity: Vec2;

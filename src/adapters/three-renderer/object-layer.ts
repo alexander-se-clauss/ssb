@@ -1,12 +1,15 @@
 import * as THREE from 'three';
-import type { SpawnedObject } from '../../core';
+import { isArmed, type SpawnedObject } from '../../core';
 import { PLAYER_COLORS } from './fighter-model';
 
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
 
+/** How see-through a trap is until it is armed. */
+const UNARMED_OPACITY = 0.3;
+
 /**
  * Draws spawned objects (#45): a glowing ball in its owner's colour, the size of its hit circle,
- * followed by id from one game frame to the next.
+ * followed by id from one game frame to the next. A trap is faint until it is armed (#49).
  */
 export class ObjectLayer {
   private readonly meshes = new Map<
@@ -40,6 +43,7 @@ export class ObjectLayer {
           this.geometry,
           new THREE.MeshBasicMaterial({
             color: new THREE.Color(color).lerp(new THREE.Color(0xffffff), 0.4),
+            transparent: true,
           }),
         );
         this.meshes.set(object.id, mesh);
@@ -52,6 +56,7 @@ export class ObjectLayer {
         0,
       );
       mesh.scale.setScalar(object.radius);
+      mesh.material.opacity = isArmed(object) ? 1 : UNARMED_OPACITY;
     }
     for (const [id, mesh] of this.meshes) {
       if (seen.has(id)) continue;

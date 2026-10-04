@@ -26,4 +26,5 @@ export {
 export * from './moves';
 export * from './move-slots';
 export { MOVES, findMove } from './move-data';
+export { isArmed } from './objects';
 export { FixedStepClock } from './time';

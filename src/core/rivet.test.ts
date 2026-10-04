@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { knockback } from './combat';
 import { FIGHTER } from './config';
 import { findMove } from './move-data';
-import { PRESS_SLOTS } from './move-slots';
 import { CAPSULE, RIVET } from './registry';
 import { createMatch } from './simulation';
 import { BATTLEFIELD } from './stages';
@@ -52,12 +51,6 @@ describe('Rivet, fighter 1 (#39)', () => {
     expect(RIVET.stats.width).toBeGreaterThan(CAPSULE.stats.width);
     // createMatch validates the definition, so a broken body would throw here.
     expect(fighter(match(false), 0).grounded).toBe(true);
-  });
-
-  it('has a move in every slot but the side special, which comes in S6', () => {
-    const empty = PRESS_SLOTS.filter((slot) => RIVET.moves[slot] === undefined);
-    expect(empty).toEqual(['sideSpecial']);
-    expect(RIVET.moves.ledgeAttack).toBeDefined();
   });
 
   describe('neutral special: haymaker', () => {
