@@ -109,15 +109,32 @@ describe('stateCues', () => {
 
 describe('eventCue', () => {
   it('makes harder hits heavier, up to full strength', () => {
-    const light = eventCue({ type: 'hit', attacker: 0, target: 1, damage: 3 });
-    const heavy = eventCue({ type: 'hit', attacker: 0, target: 1, damage: 40 });
+    const at = { x: 0, y: 1 };
+    const light = eventCue({
+      type: 'hit',
+      attacker: 0,
+      target: 1,
+      damage: 3,
+      position: at,
+      launch: 0.1,
+    });
+    const heavy = eventCue({
+      type: 'hit',
+      attacker: 0,
+      target: 1,
+      damage: 40,
+      position: at,
+      launch: 2,
+    });
     expect(light.cue).toBe('hit');
     expect(light.strength).toBeLessThan(heavy.strength ?? 0);
     expect(heavy.strength).toBe(1);
   });
 
   it('plays ko and match-end for those events', () => {
-    expect(eventCue({ type: 'ko', slot: 0, stocksLeft: 2 }).cue).toBe('ko');
+    expect(eventCue({ type: 'ko', slot: 0, stocksLeft: 2, position: { x: 22, y: 0 } }).cue).toBe(
+      'ko',
+    );
     expect(eventCue({ type: 'match-end', winner: 1 }).cue).toBe('match-end');
   });
 });

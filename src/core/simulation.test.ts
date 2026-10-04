@@ -18,7 +18,9 @@ describe('match simulation', () => {
     expect(p1.stocks).toBe(2);
     expect(p1.damage).toBe(0);
     expect(p1.invulnerableFrames).toBe(FIGHTER_RULES.respawnInvulnerabilityFrames);
-    expect(state.events).toContainEqual({ type: 'ko', slot: 0, stocksLeft: 2 });
+    expect(state.events).toContainEqual(
+      expect.objectContaining({ type: 'ko', slot: 0, stocksLeft: 2 }),
+    );
     expect(state.phase).toBe('playing');
   });
 

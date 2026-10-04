@@ -47,6 +47,34 @@ export const EFFECTS: Readonly<Record<string, EffectPreset>> = {
     opacity: 0.95,
     capacity: 600,
   },
+  // Hit sparks (#48): a quick spray of hot yellow sparks, reddening as they fall and die.
+  spark: {
+    rate: 0,
+    life: 12,
+    jitter: 0.08,
+    spread: 0.16,
+    lift: 0.02,
+    rise: -0.006,
+    drag: 0.84,
+    size: 0.5,
+    colors: [0xfff08a, 0xe02800],
+    opacity: 1,
+    capacity: 500,
+  },
+  // A KO burst (#48): a big, slow-fading blast of light where a fighter left the blast zone.
+  ko: {
+    rate: 0,
+    life: 40,
+    jitter: 0.6,
+    spread: 0.45,
+    lift: 0,
+    rise: 0,
+    drag: 0.9,
+    size: 1.1,
+    colors: [0xffffff, 0xff5a1e],
+    opacity: 1,
+    capacity: 400,
+  },
 };
 
 export const hasEffect = (id: string): boolean => Object.hasOwn(EFFECTS, id);
@@ -95,9 +123,10 @@ export class ParticlePool {
     this.emit(x, y, depth, count);
   }
 
-  /** Emits `count` particles at (x, y). */
-  emit(x: number, y: number, depth: number, count: number): void {
-    const { jitter, spread, lift, capacity } = this.preset;
+  /** Emits `count` particles at (x, y); `power` scales how fast they fly out. */
+  emit(x: number, y: number, depth: number, count: number, power = 1): void {
+    const { jitter, lift, capacity } = this.preset;
+    const spread = this.preset.spread * power;
     for (let i = 0; i < count; i += 1) {
       const slot = this.next;
       this.next = (this.next + 1) % capacity;

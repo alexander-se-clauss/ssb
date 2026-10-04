@@ -153,12 +153,14 @@ describe('spawned objects (#45)', () => {
     expect(target.action).toBe('hitstun');
     expect(target.lastHitBy).toBe(0);
     expect(fighter(state, 0).damageDealt).toBe(SHOT.hit.damage);
-    expect(state.events).toContainEqual({
-      type: 'hit',
-      attacker: 0,
-      target: 1,
-      damage: SHOT.hit.damage,
-    });
+    expect(state.events).toContainEqual(
+      expect.objectContaining({
+        type: 'hit',
+        attacker: 0,
+        target: 1,
+        damage: SHOT.hit.damage,
+      }),
+    );
     // Launched the way the shot flew, as hard as a hitbox with the same numbers.
     const speed = knockback(SHOT.hit, SHOT.hit.damage, CAPSULE.stats.weight);
     const radians = (SHOT.hit.angle * Math.PI) / 180;
@@ -226,7 +228,9 @@ describe('spawned objects (#45)', () => {
     let state = shootUntil(faceOff(-3, 1, -6.5), SHOT.frame);
     state = withFighter(state, 0, { position: { x: -30, y: 0 }, grounded: false });
     state = run(state, 1);
-    expect(state.events).toContainEqual({ type: 'ko', slot: 0, stocksLeft: 2 });
+    expect(state.events).toContainEqual(
+      expect.objectContaining({ type: 'ko', slot: 0, stocksLeft: 2 }),
+    );
     expect(only(state).owner).toBe(0);
   });
 });

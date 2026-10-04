@@ -183,7 +183,12 @@ export const resolveObjectHits = (
         touchesBody(object.position, object.radius, fighter),
     );
     if (!target) return true;
-    const { target: struck } = applyHit(target, object.hit, launchDirection(object), object.owner);
+    const { target: struck, launch } = applyHit(
+      target,
+      object.hit,
+      launchDirection(object),
+      object.owner,
+    );
     next[target.slot] = struck;
     const owner = next[object.owner];
     if (owner) {
@@ -193,7 +198,9 @@ export const resolveObjectHits = (
       type: 'hit',
       attacker: object.owner,
       target: target.slot,
-      damage: struck.damage,
+      damage: object.hit.damage,
+      position: object.position,
+      launch,
     });
     return false;
   });

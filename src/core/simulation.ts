@@ -84,7 +84,18 @@ const handleKo = (fighter: FighterState, state: MatchState, events: GameEvent[])
   const stockMatch = state.rules.mode === 'stock';
   const stocks = stockMatch ? fighter.stocks - 1 : 0;
   const falls = fighter.falls + 1;
-  events.push({ type: 'ko', slot: fighter.slot, stocksLeft: stockMatch ? stocks : null });
+  const zone = state.stage.blastZone;
+  // Where it crossed, as far as a burst on screen goes: its spot pulled back onto the zone's edge.
+  const position = {
+    x: Math.min(Math.max(fighter.position.x, zone.left), zone.right),
+    y: Math.min(Math.max(fighter.position.y, zone.bottom), zone.top),
+  };
+  events.push({
+    type: 'ko',
+    slot: fighter.slot,
+    stocksLeft: stockMatch ? stocks : null,
+    position,
+  });
   if (stockMatch && stocks <= 0) {
     return {
       ...fighter,

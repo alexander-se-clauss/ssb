@@ -180,13 +180,20 @@ export type GameEvent =
       readonly type: 'hit';
       readonly attacker: PlayerSlot;
       readonly target: PlayerSlot;
+      /** Damage percent this hit dealt. */
       readonly damage: number;
+      /** Where it struck (#48): the centre of the hitbox or object that hit. */
+      readonly position: Vec2;
+      /** Launch speed it gave the target, in units per frame: how hard it was. */
+      readonly launch: number;
     }
   | {
       readonly type: 'ko';
       readonly slot: PlayerSlot;
       /** Lives left after this KO; null in a time match, where lives don't count. */
       readonly stocksLeft: number | null;
+      /** Where the fighter left the blast zone (#48), on its edge. */
+      readonly position: Vec2;
     }
   | { readonly type: 'match-end'; readonly winner: PlayerSlot | null };
 

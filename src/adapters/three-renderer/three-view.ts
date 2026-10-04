@@ -10,6 +10,7 @@ import {
   vec2,
   type BoneId,
   type FighterState,
+  type GameEvent,
   type Rect,
   type SkeletonDef,
   type StageDef,
@@ -20,6 +21,7 @@ import { bodyParts } from './body-layout';
 import { dodgeMotion, lerpAngle, ROLL_PIVOT } from './dodge-motion';
 import { BOX_COLORS, hurtboxColor } from './debug-colors';
 import { EffectLayer, type Emitter } from './effect-layer';
+import { burstFor, type Burst } from './hit-effects';
 import { ObjectLayer } from './object-layer';
 import { buildScenery, type Scenery } from './scenery';
 
@@ -35,6 +37,9 @@ import {
 } from './match-camera';
 
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
+
+/** Game frames the camera keeps a KO's burst in view (#48), as Smash lingers on the blast. */
+const KO_LINGER_FRAMES = 45;
 
 /** How far in front of the body an effect on it burns, so the body does not hide it. */
 const EFFECT_DEPTH = 0.35;
@@ -85,6 +90,10 @@ export class ThreeView implements GameView {
   private readonly objects: ObjectLayer;
   /** Reused every drawing, so the render loop makes no garbage for it. */
   private readonly emitters: Emitter[] = [];
+  /** Sparks and KO bursts from events since the last drawing (#48). */
+  private readonly bursts: Burst[] = [];
+  /** Where the latest KO burst is and how many game frames the camera still keeps it in view. */
+  private koFocus: { area: Rect; frames: number } | null = null;
   private showBoxes = false;
 
   constructor(
@@ -126,9 +135,30 @@ export class ThreeView implements GameView {
       if (object.effect === undefined || !at) continue;
       emitters.push({ effect: object.effect, x: at.x, y: at.y, depth: 0 });
     }
-    this.effects.update(emitters, elapsed);
+    this.effects.update(emitters, this.bursts, elapsed);
+    this.bursts.length = 0;
+    // The camera keeps a fresh KO's burst in view, though the fighter respawned at once.
+    if (this.koFocus) {
+      bodies.push(this.koFocus.area);
+      this.koFocus.frames -= elapsed;
+      if (this.koFocus.frames <= 0) this.koFocus = null;
+    }
     this.updateCamera(bodies, frame, elapsed);
     this.renderer.render(this.scene, this.camera);
+  }
+
+  /**
+   * Hears a match event (#48): a hit sprays sparks where it landed, a KO bursts where the
+   * fighter left. Events come from the session, so none is missed when several game frames pass
+   * between two drawings.
+   */
+  handleEvent(event: GameEvent): void {
+    const burst = burstFor(event);
+    if (burst) this.bursts.push(burst);
+    if (event.type !== 'ko') return;
+    const { x, y } = event.position;
+    const area = { left: x - 1, right: x + 1, bottom: y - 1, top: y + 1 };
+    this.koFocus = { area, frames: KO_LINGER_FRAMES };
   }
 
   /** Turns the debug overlay of hurtboxes and attack hitboxes on or off. */
