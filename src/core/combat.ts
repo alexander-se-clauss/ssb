@@ -2,9 +2,9 @@ import { characterOf } from './character';
 import { HITLAG, HITSTUN_PER_KNOCKBACK } from './config';
 import { circleIntersectsCapsule, type Vec2 } from './math';
 import { findMove } from './move-data';
-import type { EffectId, HitboxAnchor, HitboxDef, HitDef } from './moves';
+import type { EffectId, GuardDef, HitboxAnchor, HitboxDef, HitDef } from './moves';
 import { plantedBoneSegments, type BoneId } from './skeleton';
-import type { FighterState, GameEvent, PlayerSlot } from './types';
+import type { FighterState, GameEvent, GuardOutcome, PlayerSlot } from './types';
 
 export interface Hitbox {
   readonly center: Vec2;
@@ -63,6 +63,14 @@ export const activeEffects = (fighter: FighterState): ActiveEffect[] => {
   if (on.length === 0) return [];
   const at = anchorPoints(fighter);
   return on.map((key) => ({ effect: key.effect, position: at(key.anchor) }));
+};
+
+/** The fighter's guard this frame (#50): its block's guard, on its guard frames, on the ground. */
+export const activeGuard = (fighter: FighterState): GuardDef | undefined => {
+  if (fighter.action !== 'attack' || fighter.moveId === null || !fighter.grounded) return undefined;
+  const { guard } = findMove(fighter.moveId);
+  const frame = fighter.actionFrame;
+  return guard && frame >= guard.from && frame < guard.to ? guard : undefined;
 };
 
 /**
@@ -135,24 +143,60 @@ export const hitlagFrames = (attack: Pick<HitDef, 'damage' | 'hitlagScale'>): nu
     (HITLAG.baseFrames + attack.damage / HITLAG.damagePerFrame) * (attack.hitlagScale ?? 1),
   );
 
+/** What a hit did: the target after it, the freeze, the launch and the damage it dealt. */
+export interface HitResult {
+  readonly target: FighterState;
+  readonly hitlag: number;
+  readonly launch: number;
+  readonly damage: number;
+  readonly guard?: GuardOutcome;
+}
+
 /**
  * `target` struck by `hit`, launched with `direction` as forward, and credited to `by`; with the
  * freeze the hit causes. A fighter's hitbox and a spawned object (#45) hit the same way.
+ * A block (#50) takes a hit that comes `from` in front of it (the attacker's feet, or the
+ * object): less damage and a push back instead of a launch, unless the hit breaks it.
  */
 export const applyHit = (
   target: FighterState,
   hit: HitDef,
   direction: 1 | -1,
   by: PlayerSlot,
-): { target: FighterState; hitlag: number; launch: number } => {
-  const damage = target.damage + hit.damage;
+  from: Vec2,
+): HitResult => {
   const { stats } = characterOf(target.characterId);
+  const hitlag = hitlagFrames(hit);
+  const guard = activeGuard(target);
+  const fromFront = (from.x - target.position.x) * target.facing >= 0;
+  if (guard && fromFront && hit.damage < guard.breakDamage) {
+    const damage = hit.damage * guard.damageScale;
+    // By the hit alone, not the blocker's percent, so a guard at 120% slides no further.
+    const push = knockback(hit, hit.damage, stats.weight) * guard.pushback;
+    return {
+      hitlag,
+      launch: push,
+      damage,
+      guard: 'blocked',
+      target: {
+        ...target,
+        damage: target.damage + damage,
+        // Pushed straight back along the ground, the guard still up.
+        velocity: { x: -target.facing * push, y: target.velocity.y },
+        hitlagFrames: Math.max(target.hitlagFrames, hitlag),
+        lastHitBy: by,
+      },
+    };
+  }
+  const broken = guard !== undefined && fromFront;
+  const damage = target.damage + hit.damage;
   const speed = knockback(hit, damage, stats.weight);
   const radians = (hit.angle * Math.PI) / 180;
-  const hitlag = hitlagFrames(hit);
   return {
     hitlag,
     launch: speed,
+    damage: hit.damage,
+    ...(broken && { guard: 'broken' as const }),
     target: {
       ...target,
       damage,
@@ -167,7 +211,7 @@ export const applyHit = (
       // A hit gives the air dodge back, as in Ultimate.
       airDodgeUsed: false,
       moveId: null,
-      hitstunFrames: Math.round(speed * HITSTUN_PER_KNOCKBACK),
+      hitstunFrames: Math.round(speed * HITSTUN_PER_KNOCKBACK) + (broken ? guard.breakStun : 0),
       // The launch is set now but held until the freeze ends.
       hitlagFrames: Math.max(target.hitlagFrames, hitlag),
       hitTargets: [],
@@ -200,12 +244,15 @@ export const resolveCombat = (
       if (!hitbox) continue;
 
       const current = next[target.slot] ?? target;
-      const {
-        target: struck,
-        hitlag,
-        launch,
-      } = applyHit(current, hitbox.attack, attacker.facing, attacker.slot);
-      next[target.slot] = struck;
+      const result = applyHit(
+        current,
+        hitbox.attack,
+        attacker.facing,
+        attacker.slot,
+        attacker.position,
+      );
+      const { hitlag, damage } = result;
+      next[target.slot] = result.target;
       const attackerNow = next[attacker.slot] ?? attacker;
       next[attacker.slot] = {
         ...attackerNow,
@@ -213,16 +260,17 @@ export const resolveCombat = (
           ...attackerNow.hitTargets,
           { slot: target.slot, group: hitbox.attack.group ?? 0 },
         ],
-        damageDealt: attackerNow.damageDealt + hitbox.attack.damage,
+        damageDealt: attackerNow.damageDealt + damage,
         hitlagFrames: Math.max(attackerNow.hitlagFrames, hitlag),
       };
       events.push({
         type: 'hit',
         attacker: attacker.slot,
         target: target.slot,
-        damage: hitbox.attack.damage,
+        damage,
         position: hitbox.center,
-        launch,
+        launch: result.launch,
+        ...(result.guard && { guard: result.guard }),
       });
     }
   }

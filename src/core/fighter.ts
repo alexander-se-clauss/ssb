@@ -141,8 +141,10 @@ export const updateFighter = (
       return { action: 'roll', face: input.x > 0 ? 1 : -1, age: 0 };
     }
     const choice = moveSlot({ grounded, button, attack: attackInput(stick, fighter.facing) });
-    // A press for an empty slot does nothing, so a jump pressed with it is buffered instead.
-    if (moves[choice.slot] === undefined) {
+    // A press for an empty slot does nothing, so a jump pressed with it is buffered instead. So
+    // is one for a block in the air, which cannot start there (#50).
+    const id = moves[choice.slot];
+    if (id === undefined || (!grounded && findMove(id).guard)) {
       const jump = jumpPress();
       if (jump) return jump;
     }
@@ -309,8 +311,12 @@ export const updateFighter = (
 
   const kept = fighter.buffer && fighter.buffer.age < INPUT.bufferFrames ? fighter.buffer : null;
   let buffer = latest(press(grounded), kept && { ...kept, age: kept.age + 1 });
-  const slotMove = (action: BufferedAction): MoveId | undefined =>
-    isDodge(action) || action === 'jump' || action === 'block' ? undefined : moves[action];
+  const slotMove = (action: BufferedAction): MoveId | undefined => {
+    const id =
+      isDodge(action) || action === 'jump' || action === 'block' ? undefined : moves[action];
+    // A block starts only on the ground (#50).
+    return id !== undefined && !grounded && findMove(id).guard ? undefined : id;
+  };
   /** Starts a move from the buffered press, facing the way the press asked for. */
   const startMove = (id: MoveId, face: 1 | -1): void => {
     buffer = null;
@@ -357,10 +363,21 @@ export const updateFighter = (
       move?.cancels.find(
         (c) => c.on === queued.action && actionFrame >= c.from && actionFrame < c.to,
       );
-    const next = cancel ? (cancel.into ?? slotMove(cancel.on)) : undefined;
+    const into = cancel?.into;
+    const next = cancel
+      ? into !== undefined && !(findMove(into).guard && !grounded)
+        ? into
+        : into === undefined
+          ? slotMove(cancel.on)
+          : undefined
+      : undefined;
+    const hold = move?.guard?.hold;
+    // A block waits with its guard up while special stays held (#50).
+    if (hold !== undefined && actionFrame === hold + 1 && input.special) actionFrame = hold;
     if (queued && next !== undefined) {
       startMove(next, queued.face);
-    } else if (!move || actionFrame >= move.totalFrames) {
+    } else if (!move || actionFrame >= move.totalFrames || (move.guard && !grounded)) {
+      // A block pushed off the ground ends there; it only guards on the ground.
       // A recovery move that ends in the air leaves the fighter helpless (#44).
       action = grounded ? 'idle' : move?.helpless ? 'helpless' : 'airborne';
       actionFrame = 0;

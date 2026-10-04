@@ -110,6 +110,23 @@ export interface EffectKey {
   readonly to: number;
 }
 
+/**
+ * A block (#50): on frames `[from, to)` the move guards the fighter's front, on the ground only.
+ * A hit from the front deals `damageScale` of its damage and no launch; it pushes the blocker
+ * back instead, at `pushback` times the launch it would give a fighter at no damage. A hit of `breakDamage` or
+ * more breaks the guard: it lands in full, with `breakStun` more frames of hitstun.
+ */
+export interface GuardDef {
+  readonly from: number;
+  readonly to: number;
+  /** While the special button stays held, the move waits on this frame, guard up. */
+  readonly hold?: number;
+  readonly damageScale: number;
+  readonly pushback: number;
+  readonly breakDamage: number;
+  readonly breakStun: number;
+}
+
 export interface PoseKey {
   readonly frame: number;
   readonly pose: Pose;
@@ -153,9 +170,11 @@ export interface AttackMoveDef {
   readonly spawns?: readonly SpawnDef[];
   /** Cosmetic effects on the body while the move plays (#47), such as fire on a fist. */
   readonly effects?: readonly EffectKey[];
+  /** Makes the move a block (#50); it starts only on the ground. */
+  readonly guard?: GuardDef;
 }
 
-/** Block and counter moves join this union with #6. */
+/** Every move is an attack move; a block is one with a `guard` (#50). */
 export type MoveDef = AttackMoveDef;
 
 export interface MoveTiming {
@@ -275,6 +294,29 @@ export const validateMove = (move: MoveDef): void => {
     if (to > move.totalFrames) fail(`effect ${index} ends after the move (${to})`);
     checkAnchor(key.anchor, `effect ${index}`);
   });
+  const { guard } = move;
+  if (guard) {
+    const { from, to, hold } = guard;
+    if (!Number.isInteger(from) || !Number.isInteger(to) || from < 0 || to <= from) {
+      fail(`guard has an empty or broken window [${from}, ${to})`);
+    }
+    if (to > move.totalFrames) fail(`guard ends after the move (${to})`);
+    if (hold !== undefined && !(Number.isInteger(hold) && hold >= from && hold < to)) {
+      fail(`guard must hold on a whole frame within its window (${hold})`);
+    }
+    if (!(guard.damageScale >= 0 && guard.damageScale <= 1)) {
+      fail(`guard must take 0 to 1 of the damage (${guard.damageScale})`);
+    }
+    if (!(Number.isFinite(guard.pushback) && guard.pushback >= 0)) {
+      fail(`guard needs a pushback of 0 or more (${guard.pushback})`);
+    }
+    if (!(Number.isFinite(guard.breakDamage) && guard.breakDamage > 0)) {
+      fail(`guard needs a positive breakDamage (${guard.breakDamage})`);
+    }
+    if (!(Number.isInteger(guard.breakStun) && guard.breakStun >= 0)) {
+      fail(`guard needs a whole breakStun of 0 or more (${guard.breakStun})`);
+    }
+  }
   if (
     move.landingLag !== undefined &&
     !(Number.isInteger(move.landingLag) && move.landingLag >= 1)

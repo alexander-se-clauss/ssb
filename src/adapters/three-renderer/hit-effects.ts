@@ -15,11 +15,19 @@ const STRONGEST_LAUNCH = 1.2;
 
 /**
  * The burst an event shows: sparks where a hit landed, more and faster the harder it launched,
- * and a blast of light where a fighter left the blast zone. Nothing for the end of a match.
+ * shards where a block took or broke under one, and a blast of light where a fighter left the
+ * blast zone. Nothing for the end of a match.
  */
 export const burstFor = (event: GameEvent): Burst | undefined => {
   switch (event.type) {
     case 'hit': {
+      // A block (#50) throws off shards of light instead of sparks; a breaking hit shatters it.
+      if (event.guard === 'blocked') {
+        return { effect: 'guard', ...event.position, count: 16, power: 0.8 };
+      }
+      if (event.guard === 'broken') {
+        return { effect: 'guard', ...event.position, count: 70, power: 1.8 };
+      }
       const strength = Math.min(event.launch / STRONGEST_LAUNCH, 1);
       return {
         effect: 'spark',

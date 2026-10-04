@@ -249,6 +249,16 @@ type MoveDef = AttackMoveDef; // | BlockMoveDef | CounterMoveDef with #6
   depending on how fire is drawn. A test in the view checks that every id the move data names has
   a look.
 
+### Amendment (2026-10-04, #50)
+
+- **Block as a field, not a kind.** A block is an `AttackMoveDef` with no hitboxes and a `guard`
+  (`GuardDef`: a frame window, an optional `hold` frame, `damageScale`, `pushback`,
+  `breakDamage`, `breakStun`), instead of a `'block'` variant of `MoveDef`. Poses, cancels,
+  timing and the move runner then work for blocks unchanged, and a move could guard and hit at
+  once later (armour). Counter (#51) follows the same pattern. `kind` stays `'attack'` for now.
+- Block sits in the character's `downSpecial` slot. The `'block'` buffered action stays unused
+  until #52 decides whether cancels name it.
+
 ## Consequences
 
 - New moves are data. Tests, tools and an AI agent can write and check them without new code.

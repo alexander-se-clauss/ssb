@@ -54,9 +54,9 @@ describe('Rivet, fighter 1 (#39)', () => {
     expect(fighter(match(false), 0).grounded).toBe(true);
   });
 
-  it('has a move in every slot but the side and down specials, which come in S6', () => {
+  it('has a move in every slot but the side special, which comes in S6', () => {
     const empty = PRESS_SLOTS.filter((slot) => RIVET.moves[slot] === undefined);
-    expect(empty).toEqual(['sideSpecial', 'downSpecial']);
+    expect(empty).toEqual(['sideSpecial']);
     expect(RIVET.moves.ledgeAttack).toBeDefined();
   });
 

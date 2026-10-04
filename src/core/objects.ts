@@ -183,24 +183,25 @@ export const resolveObjectHits = (
         touchesBody(object.position, object.radius, fighter),
     );
     if (!target) return true;
-    const { target: struck, launch } = applyHit(
-      target,
-      object.hit,
-      launchDirection(object),
-      object.owner,
-    );
+    const {
+      target: struck,
+      launch,
+      damage,
+      guard,
+    } = applyHit(target, object.hit, launchDirection(object), object.owner, object.position);
     next[target.slot] = struck;
     const owner = next[object.owner];
     if (owner) {
-      next[object.owner] = { ...owner, damageDealt: owner.damageDealt + object.hit.damage };
+      next[object.owner] = { ...owner, damageDealt: owner.damageDealt + damage };
     }
     events.push({
       type: 'hit',
       attacker: object.owner,
       target: target.slot,
-      damage: object.hit.damage,
+      damage,
       position: object.position,
       launch,
+      ...(guard && { guard }),
     });
     return false;
   });

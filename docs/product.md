@@ -72,7 +72,9 @@ Smash meets Monster Hunter: defense is about commitment and timing, not a panic 
 - **No shield.** Everyone can sidestep, roll and air dodge (Ultimate style: directional,
   actionable afterwards), each with invulnerability frames and recovery.
 - **Block and counter are per character.** Block soaks a hit (less damage and knockback,
-  pushback, can break). Counter is a timing window that strikes back automatically.
+  pushback, can break). Counter is a timing window that strikes back automatically. Both sit on
+  the down special. A block guards the front only, so position matters, and only on the ground;
+  a counter works in the air too (#10). Rivet blocks, Vela counters.
 - **Cancel windows** in each move say what it can flow into (next combo step, dodge, block,
   counter). This gives each character a signature flow such as jab, jab, dodge-cancel, counter.
 - **Everything is move data.** Frames, bone-attached hitboxes, damage, knockback, cancel windows,
@@ -85,7 +87,10 @@ Smash meets Monster Hunter: defense is about commitment and timing, not a panic 
 - **Rivet** (fighter 1, #39), a stocky handyman and the all-rounder: medium weight and speed on
   a short-legged body. Neutral special _Haymaker_, a slow lunging punch that hits harder than
   his forward smash. Up special _Spring Jack_, a rising uppercut that carries a target up with
-  four hits and launches it with a fifth, then leaves him helpless; it is his recovery.
+  four hits and launches it with a fifth, then leaves him helpless; it is his recovery. Down
+  special _Iron Guard_ (#50), a block: he braces behind his forearms for as long as special is
+  held. Hits from the front deal under a third of their damage and push him back instead of
+  launching him; a smash-strength hit breaks the guard and stuns him for longer.
 - **Vela**, a bounty hunter in power armour with an arm cannon: plays like the capsule until she
   becomes fighter 2 in S6.
 

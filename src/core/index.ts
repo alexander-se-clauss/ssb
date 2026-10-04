@@ -14,6 +14,7 @@ export { createMatch, step } from './simulation';
 export { leader, playedFrames, score, timeLeftFrames } from './rules';
 export {
   activeEffects,
+  activeGuard,
   activeHitboxes,
   hurtboxes,
   knockback,

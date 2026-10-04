@@ -3,7 +3,7 @@ import { validateMove, type MoveDef, type MoveId } from '../moves';
 import { BACK_AIR, DOWN_AIR, FORWARD_AIR, NEUTRAL_AIR, UP_AIR } from './aerials';
 import { JAB, JAB2, JAB3 } from './jab';
 import { LEDGE_ATTACK } from './ledge';
-import { HAYMAKER, SPRING_JACK } from './rivet';
+import { HAYMAKER, IRON_GUARD, SPRING_JACK } from './rivet';
 import { DOWN_SMASH, FORWARD_SMASH, UP_SMASH } from './smashes';
 import { DOWN_TILT, FORWARD_TILT, UP_TILT } from './tilts';
 
@@ -25,6 +25,7 @@ const ALL: readonly MoveDef[] = [
   LEDGE_ATTACK,
   HAYMAKER,
   SPRING_JACK,
+  IRON_GUARD,
 ];
 
 /** Checks each move, and that every move a cancel goes into is in the same list. */

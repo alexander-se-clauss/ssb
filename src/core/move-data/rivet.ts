@@ -112,3 +112,30 @@ export const SPRING_JACK: MoveDef = {
   helpless: true,
   motion: [{ frame: 4, x: 0.04, y: 0.34 }],
 };
+
+/**
+ * Iron Guard (#50), Rivet's down special: he braces behind his forearms. Up on frames 4 to 15,
+ * and held up while special stays held; then a short recovery. It soaks hits from the front on
+ * the ground; smash-strength hits break it.
+ */
+export const IRON_GUARD: MoveDef = {
+  kind: 'attack',
+  id: 'ironGuard',
+  totalFrames: 24,
+  hitboxes: [],
+  poses: [
+    { frame: 4, pose: POSES.guard },
+    { frame: 16, pose: POSES.guard },
+    { frame: 23, pose: POSES.idle },
+  ],
+  cancels: [],
+  guard: {
+    from: 4,
+    to: 16,
+    hold: 8,
+    damageScale: 0.3,
+    pushback: 1,
+    breakDamage: 15,
+    breakStun: 30,
+  },
+};

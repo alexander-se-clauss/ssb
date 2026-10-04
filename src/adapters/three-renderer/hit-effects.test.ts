@@ -37,6 +37,15 @@ describe('hit and KO effects (#48)', () => {
     expect(hasEffect('ko')).toBe(true);
   });
 
+  it('throws off shards where a block takes a hit, and many more where it breaks (#50)', () => {
+    const blocked = burstFor({ ...hit(0.1), guard: 'blocked' } as GameEvent);
+    const broken = burstFor({ ...hit(1), guard: 'broken' } as GameEvent);
+    expect(blocked).toMatchObject({ effect: 'guard', x: 1, y: 2 });
+    expect(broken?.effect).toBe('guard');
+    expect(broken?.count).toBeGreaterThan((blocked?.count ?? 0) * 3);
+    expect(hasEffect('guard')).toBe(true);
+  });
+
   it('shows nothing for the end of the match', () => {
     expect(burstFor({ type: 'match-end', winner: 0 })).toBeUndefined();
   });

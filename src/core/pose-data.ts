@@ -46,7 +46,8 @@ export type PoseName =
   | 'haymakerWindup'
   | 'haymaker'
   | 'springJackStart'
-  | 'springJack';
+  | 'springJack'
+  | 'guard';
 
 /**
  * Melee-style key poses. Angles are relative to the parent bone (0 = straight on, positive turns
@@ -595,5 +596,18 @@ export const POSES: Readonly<Record<PoseName, Pose>> = {
     lowerLegFront: 40,
     upperLegBack: 200,
     lowerLegBack: 50,
+  },
+  // Iron Guard (#50): braced low, both forearms raised in front of the face.
+  guard: {
+    torso: 28,
+    head: -8,
+    upperArmFront: 95,
+    lowerArmFront: -125,
+    upperArmBack: 105,
+    lowerArmBack: -130,
+    upperLegFront: 140,
+    lowerLegFront: 60,
+    upperLegBack: 215,
+    lowerLegBack: 45,
   },
 };
