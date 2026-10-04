@@ -71,7 +71,9 @@ sideways launch flies a set distance instead of drifting on almost undamped.
 Move data is one file per family in `move-data/` (`jab.ts`, `tilts.ts`, `smashes.ts`,
 `aerials.ts`, `ledge.ts`, and a file of specials per character, `rivet.ts` and `vela.ts`, each registered in `move-data/index.ts`). A move with a `landingLag` is an aerial:
 landing while it runs ends it and puts the fighter in the `landing` action for that many frames
-(`landingLagFrames`). Landing from a jump or fall without one costs the character's `landingLagFrames`;
+(`landingLagFrames`). An aerial's `autoCancel` windows (#148, `auto-cancel.test.ts`) mark its
+first and last frames, clear of the hitboxes: landing in them costs only the normal landing lag,
+as in Melee. Landing from a jump or fall without an aerial costs the character's `landingLagFrames`;
 a fighter in hitstun lands without lag. An aerial press still in the buffer on landing is
 dropped, and during an aerial the fighter drifts and fast-falls like `airborne`. As in Melee,
 holding down while falling drops at once (for as long as it is held) at the character's `fastFallSpeed` (#145), instead of

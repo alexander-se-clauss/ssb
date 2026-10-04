@@ -29,7 +29,7 @@ const AERIALS: readonly {
     id: 'neutralAir',
     input: inputOf({}),
     timing: [4, 20, 36],
-    landingLag: 8,
+    landingLag: 6,
     target: { x: 0.9, y: 0 },
   },
   {
@@ -37,7 +37,7 @@ const AERIALS: readonly {
     id: 'forwardAir',
     input: inputOf({ x: 0.5 }),
     timing: [7, 4, 36],
-    landingLag: 16,
+    landingLag: 12,
     target: { x: 0.9, y: 0 },
   },
   {
@@ -45,7 +45,7 @@ const AERIALS: readonly {
     id: 'backAir',
     input: inputOf({ x: -0.5 }),
     timing: [6, 4, 30],
-    landingLag: 12,
+    landingLag: 9,
     target: { x: -0.9, y: 0 },
   },
   {
@@ -53,7 +53,7 @@ const AERIALS: readonly {
     id: 'upAir',
     input: inputOf({ y: 0.5 }),
     timing: [5, 5, 32],
-    landingLag: 12,
+    landingLag: 9,
     target: { x: 0.2, y: 1.3 },
   },
   {
@@ -61,7 +61,7 @@ const AERIALS: readonly {
     id: 'downAir',
     input: inputOf({ y: -0.5 }),
     timing: [8, 5, 40],
-    landingLag: 18,
+    landingLag: 15,
     target: { x: 0, y: -1.5 },
   },
 ];
@@ -280,16 +280,17 @@ describe('landing lag', () => {
     expect(activeHitboxes(fighter(state, 0))).toEqual([]);
   });
 
-  it('gives the full landing lag to an aerial started just before landing, as in Melee', () => {
+  it('auto-cancels an aerial started just before landing, as in Melee (#148)', () => {
     let state = aboveStage(0.6);
     // Fall until one frame before touching down, then attack.
     for (let i = 0; i < 60 && !fighter(step(state, [NONE]), 0).grounded; i += 1) {
       state = step(state, [NONE]);
     }
     state = step(state, [inputOf({ y: -0.5, attack: true })]);
+    // Its first frames are an auto-cancel window: only the normal landing lag.
     expect(fighter(state, 0)).toMatchObject({
       action: 'landing',
-      landingLagFrames: byId('downAir').landingLag,
+      landingLagFrames: FIGHTER.landingLagFrames,
     });
   });
 

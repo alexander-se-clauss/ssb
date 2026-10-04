@@ -134,7 +134,8 @@ type MoveDef = AttackMoveDef; // block and counter became fields instead (#50, #
   `stats.landingLagFrames`); a fighter in hitstun lands without
   lag. Presses during the lag wait in the buffer as usual. Sliding off an edge during the lag
   ends it, and the fighter falls under control.
-- An aerial started on the frame before landing still costs its full landing lag, as in Melee.
+- An aerial started on the frame before landing still costs its full landing lag, as in Melee
+  (superseded by the #148 amendment: its first frames are an auto-cancel window).
 - An aerial press still in the buffer on landing is dropped, so no aerial plays on the ground.
 - During an aerial the fighter drifts with the stick and can fast-fall, like `airborne`.
 
@@ -281,6 +282,16 @@ type MoveDef = AttackMoveDef; // block and counter became fields instead (#50, #
   marked `shortHop: true`; a ground jump from it leaves at the character's `shortHopVelocity`.
   `FighterState.shortHop` carries the choice through the jump squat. Pressed together with jump,
   the full jump wins.
+
+### Amendment (2026-10-04, #148)
+
+- An aerial may have `autoCancel: { before, after }`. Landing on frames `[0, before)` or
+  `[after, totalFrames)` costs only the character's normal landing lag; landing in between costs
+  the aerial's `landingLag`. This replaces the rule that an aerial started on the frame before
+  landing costs its full landing lag. The windows must stay clear of the hitboxes, and only a move with a
+  `landingLag` may have them. Recovery moves keep none and always land with their own lag.
+- The capsule's aerial landing lags are shorter for the faster tempo: nair 6, back air and up
+  air 9, forward air 12, down air 15 (the punishable one).
 
 ## Consequences
 

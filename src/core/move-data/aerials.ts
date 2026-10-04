@@ -1,6 +1,7 @@
 /**
- * Aerials (#34): attacks in the air. Each has a landing lag; landing while one runs ends it and
- * the fighter is stuck for that many frames, so a late aerial is punishable. Tuned with the blast
+ * Aerials (#34): attacks in the air. Each has a landing lag; landing while one runs ends it and,
+ * outside its `autoCancel` windows (#148), the fighter is stuck for that many frames, so a late
+ * aerial is punishable. Tuned with the blast
  * zones (#42): from a short hop over Battlefield's centre the back and up aerials KO at about 125%,
  * the forward aerial at 130%, the weak neutral aerial at 155%.
  */
@@ -15,7 +16,8 @@ export const NEUTRAL_AIR: MoveDef = {
   kind: 'attack',
   id: 'neutralAir',
   totalFrames: 36,
-  landingLag: 8,
+  landingLag: 6,
+  autoCancel: { before: 4, after: 30 },
   hitboxes: [
     {
       anchor: { bone: 'lowerLegFront', at: 1 },
@@ -53,7 +55,8 @@ export const FORWARD_AIR: MoveDef = {
   kind: 'attack',
   id: 'forwardAir',
   totalFrames: 36,
-  landingLag: 16,
+  landingLag: 12,
+  autoCancel: { before: 6, after: 28 },
   hitboxes: [
     {
       anchor: { bone: 'lowerArmFront', at: 1 },
@@ -95,7 +98,8 @@ export const BACK_AIR: MoveDef = {
   kind: 'attack',
   id: 'backAir',
   totalFrames: 30,
-  landingLag: 12,
+  landingLag: 9,
+  autoCancel: { before: 5, after: 22 },
   hitboxes: [
     {
       anchor: { bone: 'lowerLegBack', at: 1 },
@@ -134,7 +138,8 @@ export const UP_AIR: MoveDef = {
   kind: 'attack',
   id: 'upAir',
   totalFrames: 32,
-  landingLag: 12,
+  landingLag: 9,
+  autoCancel: { before: 4, after: 24 },
   hitboxes: [
     {
       anchor: { bone: 'lowerLegFront', at: 1 },
@@ -176,7 +181,8 @@ export const DOWN_AIR: MoveDef = {
   kind: 'attack',
   id: 'downAir',
   totalFrames: 40,
-  landingLag: 18,
+  landingLag: 15,
+  autoCancel: { before: 6, after: 36 },
   hitboxes: [
     {
       anchor: { bone: 'lowerLegFront', at: 1 },
