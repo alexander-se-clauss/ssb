@@ -175,6 +175,12 @@ export interface AttackMoveDef {
    */
   readonly landingLag?: number;
   /**
+   * Auto-cancel windows of an aerial (#148), as in Melee: landing on frames `[0, before)` or
+   * `[after, totalFrames)` costs only the character's normal landing lag, not `landingLag`. Both
+   * windows stay clear of the hitboxes. Without it, landing always costs `landingLag`.
+   */
+  readonly autoCancel?: { readonly before: number; readonly after: number };
+  /**
    * A recovery move (#44): if it ends with the fighter in the air, the fighter is helpless until
    * it lands or grabs a ledge, able only to drift. Such a move has no cancels.
    */
@@ -365,6 +371,24 @@ export const validateMove = (move: MoveDef): void => {
     !(Number.isInteger(move.landingLag) && move.landingLag >= 1)
   ) {
     fail(`landingLag must be at least one whole frame, got ${move.landingLag}`);
+  }
+  if (move.autoCancel) {
+    const { before, after } = move.autoCancel;
+    if (move.landingLag === undefined) fail('autoCancel needs a landingLag: only aerials land');
+    if (
+      !Number.isInteger(before) ||
+      !Number.isInteger(after) ||
+      before < 0 ||
+      before > after ||
+      after > move.totalFrames
+    ) {
+      fail(`autoCancel windows must be whole frames within the move (${before}, ${after})`);
+    }
+    for (const hitbox of move.hitboxes) {
+      if (hitbox.from < before || hitbox.to > after) {
+        fail(`autoCancel windows must stay clear of the hitboxes (${before}, ${after})`);
+      }
+    }
   }
   // From the first keyframe on the pose is exact, so a bone hitbox reaches the same spot.
   if (first && first.frame > moveTiming(move).startupFrames) {

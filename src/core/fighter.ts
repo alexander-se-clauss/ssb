@@ -16,7 +16,7 @@ import { findMove } from './move-data';
 import { isAerialSlot, moveSlot } from './move-slots';
 import { nextPose } from './poses';
 import { REST_POSE } from './skeleton';
-import { isDodge, type BufferedAction, type DodgeKind, type MoveId } from './moves';
+import { isDodge, type BufferedAction, type DodgeKind, type MoveDef, type MoveId } from './moves';
 import type {
   BufferedInput,
   FighterAction,
@@ -83,6 +83,17 @@ const dodgeOf = (action: FighterAction) =>
       : action === 'airDodge'
         ? DODGE.air
         : undefined;
+
+/**
+ * The landing lag of an aerial that lands on `frame` of its move: the normal one inside an
+ * auto-cancel window (#148), the aerial's own otherwise.
+ */
+const aerialLandingLag = (move: MoveDef, frame: number, normal: number): number | undefined => {
+  const { autoCancel } = move;
+  return autoCancel && (frame < autoCancel.before || frame >= autoCancel.after)
+    ? normal
+    : move.landingLag;
+};
 
 const standsOn = (x: number, y: number, platform: PlatformDef): boolean =>
   x >= platform.bounds.left &&
@@ -587,7 +598,7 @@ export const updateFighter = (
             : action === 'airDodge'
               ? DODGE.air.landingLag
               : action === 'attack' && moveId !== null
-                ? findMove(moveId).landingLag
+                ? aerialLandingLag(findMove(moveId), actionFrame, stats.landingLagFrames)
                 : undefined;
       if (lag !== undefined) {
         landingLagFrames = lag;
