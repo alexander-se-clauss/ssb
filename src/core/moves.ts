@@ -183,6 +183,11 @@ export interface AttackMoveDef {
   readonly motion?: readonly MotionKey[];
   /** Objects the move spawns, such as projectiles (#45). */
   readonly spawns?: readonly SpawnDef[];
+  /**
+   * At most this many of the move's objects per fighter at once (#49), such as one mine: a new
+   * one removes that fighter's oldest. No limit if left out.
+   */
+  readonly spawnLimit?: number;
   /** Cosmetic effects on the body while the move plays (#47), such as fire on a fist. */
   readonly effects?: readonly EffectKey[];
   /** Makes the move a block (#50); it starts only on the ground. */
@@ -275,6 +280,12 @@ export const validateMove = (move: MoveDef): void => {
       fail(`motion ${index} has a bad speed`);
     }
   });
+  if (move.spawnLimit !== undefined) {
+    if (!Number.isInteger(move.spawnLimit) || move.spawnLimit < 1) {
+      fail(`spawnLimit must be a whole number of at least 1 (${move.spawnLimit})`);
+    }
+    if (!move.spawns?.length) fail('spawnLimit without spawns');
+  }
   (move.spawns ?? []).forEach((spawn, index) => {
     const { frame, offset, velocity, lifetime, radius, hit } = spawn;
     // Like motion, a spawn on the start frame would never come out: the runner plays from 1 on.

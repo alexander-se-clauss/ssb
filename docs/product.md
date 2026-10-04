@@ -86,7 +86,8 @@ Smash meets Monster Hunter: defense is about commitment and timing, not a panic 
 
 - **Rivet** (fighter 1, #39), a stocky handyman and the all-rounder: medium weight and speed on
   a short-legged body. Neutral special _Haymaker_, a slow lunging punch that hits harder than
-  his forward smash. Up special _Spring Jack_, a rising uppercut that carries a target up with
+  his forward smash. Side special _Wrench Toss_ (#49), a wrench that spins out about four units
+  and comes back to his hand, hitting once on the way out or back. Up special _Spring Jack_, a rising uppercut that carries a target up with
   four hits and launches it with a fifth, then leaves him helpless; it is his recovery. Down
   special _Iron Guard_ (#50), a block: he braces behind his forearms for as long as special is
   held. Hits from the front deal under a third of their damage and push him back instead of
@@ -94,7 +95,9 @@ Smash meets Monster Hunter: defense is about commitment and timing, not a panic 
 - **Vela** (fighter 2, #53), a bounty hunter in power armour with an arm cannon, and the
   contrast to Rivet: light, quick on the ground and in the air, floaty, with two air jumps. Hard
   to pin down, but the same hit launches her further. Neutral special _Pulse Shot_, a weak plasma
-  bolt that flies across the stage, to poke and keep opponents out. Up special _Thruster_, a long
+  bolt that flies across the stage, to poke and keep opponents out. Side special _Stasis Mine_
+  (#49): she sets a mine in front of her feet, on the ground or hanging in the air to guard a ledge, that arms after half a second and pops the
+  first opponent to step on it straight up, into a juggle; one mine at a time. Up special _Thruster_, a long
   boost up and forward on her boot jets that hits what it rams and leaves her helpless; it
   recovers from much further out than Spring Jack. Down special _Riposte_ (#51), a counter, on
   the ground and in the air: she waits in a low stance, and a hit that lands in its window deals

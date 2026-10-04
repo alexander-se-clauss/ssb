@@ -114,13 +114,14 @@ recovery move rises; an upward speed takes a grounded fighter into the air. A re
 does not fast-fall, and on its way down it already catches a ledge.
 A move can spawn objects (`spawns` in its data, #45), such as a projectile. On the spawn's frame
 `step` adds a `SpawnedObject` to `MatchState.objects`: plain data with its owner, position,
-velocity, `launchVelocity`, age, lifetime, radius, `behavior` and its own hit (`HitDef`, the damage and launch part of a
+velocity, `launchVelocity`, age, lifetime, radius, `behavior`, the `moveId` that spawned it and its own hit (`HitDef`, the damage and launch part of a
 hitbox), numbered from `MatchState.nextObjectId` so a view can follow it. Each frame
 `objects.ts` moves it by its velocity, and it hits the first fighter its circle touches that is
 not its owner and not invulnerable (`applyHit` in `combat.ts`, shared with hitboxes): the target
 is launched the way the object flies (its owner's facing when it does not fly sideways), only the target freezes, the owner gets the credit, and the
 object is gone. It is also gone when its lifetime ends or it leaves the blast zone; it outlives
-its owner's move and stock. Spawns come from the frame's snapshot like hitboxes, so a fighter
+its owner's move and stock. A move's `spawnLimit` (#49) caps how many of its objects one fighter
+has out: a new one pushes out that fighter's oldest (`limitObjects`). Spawns come from the frame's snapshot like hitboxes, so a fighter
 hit as it fires still fires; object hits are worked out after hitbox hits, so a fighter struck by
 both on one frame takes both damages and flies with the object's launch.
 How an object moves is data too (`behavior` on the spawn, #46): `straight` flies on, `arc` is
@@ -141,7 +142,8 @@ cloud of points. Hit sparks and KO bursts (#48) come from session events, not fr
 `hit-effects.ts` turns a `hit` event into sparks at its `position`, more and faster the harder it
 `launch`ed, and a `ko` event into a burst where the fighter left the blast zone. The camera
 lingers on a KO burst for a moment, since the fighter respawns at once.
-`object-layer.ts` draws spawned objects as balls in their owner's colour.
+`object-layer.ts` draws spawned objects as balls in their owner's colour, a trap faint until it
+is armed.
 A block is a move with a `guard` (#50), not a new kind of move: on its guard frames, on the
 ground, `activeGuard` in `combat.ts` returns it, and `applyHit` lets it take a hit that comes from
 in front (the attacker's feet or the object, against the blocker's facing). A taken hit deals

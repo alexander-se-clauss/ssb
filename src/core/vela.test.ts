@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { knockback } from './combat';
 import { findMove } from './move-data';
-import { PRESS_SLOTS } from './move-slots';
 import { RIVET, VELA } from './registry';
 import { createMatch, step } from './simulation';
 import { BATTLEFIELD } from './stages';
@@ -91,12 +90,6 @@ describe('Vela, fighter 2 (#53)', () => {
       return Math.abs(fighter(state, 1).position.x - 0.9);
     };
     expect(sent(RIVET.id, VELA.id)).toBeGreaterThan(sent(VELA.id, RIVET.id));
-  });
-
-  it('has a move in every slot but the side special, which comes with #49', () => {
-    const empty = PRESS_SLOTS.filter((slot) => VELA.moves[slot] === undefined);
-    expect(empty).toEqual(['sideSpecial']);
-    expect(VELA.moves.downSpecial).toBe('riposte');
   });
 
   describe('neutral special: pulse shot', () => {

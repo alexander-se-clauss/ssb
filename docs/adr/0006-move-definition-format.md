@@ -268,6 +268,13 @@ type MoveDef = AttackMoveDef; // block and counter became fields instead (#50, #
   dodge that can start (sidestep or roll on the ground, air dodge in the air) cuts the move short.
   Such a cancel names no `into`.
 
+### Amendment (2026-10-04, #49)
+
+- **Spawn limit.** An `AttackMoveDef` with spawns may set `spawnLimit`: at most that many of the
+  move's objects per fighter at once, and a new one removes that fighter's oldest (Vela's one
+  mine). To count them, a `SpawnedObject` records the `moveId` that spawned it. The limit is per
+  move, not per spawn, since a move with several spawns is one attack.
+
 ## Consequences
 
 - New moves are data. Tests, tools and an AI agent can write and check them without new code.

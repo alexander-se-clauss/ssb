@@ -153,6 +153,7 @@ describe("Rivet's block (#50)", () => {
         {
           id: state.nextObjectId,
           owner: 1,
+          moveId: 'pulseShot',
           position: { x: 0.9, y: 0.8 },
           velocity: { x: -0.2, y: 0 },
           launchVelocity: { x: -0.2, y: 0 },
