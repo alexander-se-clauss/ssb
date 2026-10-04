@@ -165,7 +165,10 @@ seeded so the same frame pacing gives the same flames; `effect-layer.ts` draws e
 cloud of points. Hit sparks and KO bursts (#48) come from session events, not from the state:
 `hit-effects.ts` turns a `hit` event into sparks at its `position`, more and faster the harder it
 `launch`ed, and a `ko` event into a burst where the fighter left the blast zone. The camera
-lingers on a KO burst for a moment, since the fighter respawns at once.
+lingers on a KO burst for a moment, since the fighter respawns at once. Dash and landing dust
+(#151) is view-only and read from the state instead, like the movement sounds: `dust.ts` compares
+each fighter with the state the dust was last read from and puffs at the feet on a dash, a dash
+dance turn, a skid, a run turnaround, a jump take-off and a landing (bigger after a fast fall).
 `object-layer.ts` draws spawned objects as balls in their owner's colour, a trap faint until it
 is armed.
 A block is a move with a `guard` (#50), not a new kind of move: on its guard frames, on the
