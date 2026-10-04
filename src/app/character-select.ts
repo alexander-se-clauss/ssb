@@ -27,6 +27,8 @@ export interface SelectState {
   readonly picks: readonly (string | null)[];
   /** The rules overlay is open; players' grid controls pause meanwhile. */
   readonly rulesOpen: boolean;
+  /** Players needed to start: two for versus, one for training (#144). */
+  readonly minPlayers: number;
 }
 
 export type SelectAction =
@@ -47,26 +49,27 @@ export type SelectAction =
   /** Opens or closes the rules overlay, e.g. by mouse or from the overlay itself. */
   | { readonly type: 'rules'; readonly open: boolean };
 
+/** A versus match needs at least this many players. */
+export const MIN_PLAYERS = 2;
+
 /** An empty character select with `slots` player slots, nobody joined yet. */
-export const createSelect = (slots: number): SelectState => ({
+export const createSelect = (slots: number, minPlayers = MIN_PLAYERS): SelectState => ({
   devices: Array.from({ length: slots }, () => null),
   cursors: Array.from({ length: slots }, () => 0),
   guestCursors: {},
   activeDevice: null,
   picks: Array.from({ length: slots }, () => null),
   rulesOpen: false,
+  minPlayers,
 });
 
 /** The slot a device plays in, or -1 if it has not joined. */
 export const slotOf = (state: SelectState, device: number): PlayerSlot =>
   state.devices.indexOf(device);
 
-/** A versus match needs at least this many players. */
-export const MIN_PLAYERS = 2;
-
-/** At least `MIN_PLAYERS` joined, and every joined player has picked. */
+/** At least `minPlayers` joined, and every joined player has picked. */
 export const allReady = (state: SelectState): boolean =>
-  state.devices.filter((device) => device !== null).length >= MIN_PLAYERS &&
+  state.devices.filter((device) => device !== null).length >= state.minPlayers &&
   state.devices.every((device, slot) => device === null || state.picks[slot] != null);
 
 const wrap = (value: number, size: number): number => ((value % size) + size) % size;

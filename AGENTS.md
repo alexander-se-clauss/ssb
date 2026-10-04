@@ -24,7 +24,8 @@ to a server later. Product intent: `docs/product.md`. Structure and rules: `docs
 
 1. `src/core` is the game: pure, deterministic TypeScript. No Three.js, no DOM, no `Date.now()`,
    no `Math.random()`. `step(state, inputs) => nextState` must stay a pure function.
-2. `src/ports` holds interfaces only (`GameSession`, `InputSource`, `GameView`).
+2. `src/ports` holds interfaces only (`GameSession`, `TrainingControls`, `InputSource`, `GameView`,
+   `AudioOutput`).
 3. `src/adapters` implements ports (local session, keyboard, Three.js view, HUD). Import the
    core only through `src/core/index.ts`.
 4. `src/app` is the composition root. It is the only place that picks concrete adapters.

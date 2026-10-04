@@ -7,6 +7,7 @@ import {
   type MatchConfig,
   type MatchRules,
   type MatchState,
+  type TrainingSettings,
 } from '../core';
 import type {
   AudioChannel,
@@ -15,6 +16,8 @@ import type {
   GameView,
   InputSource,
   SoundCue,
+  TrainingControls,
+  TrainingSession,
   Unsubscribe,
 } from '../ports';
 import {
@@ -22,13 +25,16 @@ import {
   canStart,
   createSelect,
   menuActions,
+  MIN_PLAYERS,
   reduceSelect,
   requestsStart,
   requestsBack,
   slotOf,
   type SelectState,
 } from './character-select';
-import { menuCommands } from './menu-commands';
+import { menuCommands, type MenuCommand } from './menu-commands';
+import { markHandled, wasHandled } from './key-events';
+import { adjustTraining, cycle, trainingRows, type TrainingField } from './training-menu';
 import { LastDevice } from './button-prompts';
 import { screenMusic, selectCue } from './menu-sounds';
 import { eventCue, stateCues, type FightCue } from './match-sounds';
@@ -58,6 +64,7 @@ import {
   go,
   hasMenuBackdrop,
   nextScreens,
+  type PlayMode,
   type Screen,
 } from './screens';
 
@@ -102,6 +109,8 @@ export interface AppAdapters {
   readonly devices: readonly InputDevice[];
   /** Starts a match: locally today, on a server later. */
   readonly createSession: (config: MatchConfig) => GameSession;
+  /** Starts a training match (#144), whose panel can pause it and set up the dummy. */
+  readonly createTrainingSession: (config: MatchConfig) => TrainingSession;
   /** Views for a match; they may listen to the session's events, such as hits for sparks. */
   readonly createViews: (container: HTMLElement, session: GameSession) => readonly GameView[];
   /** Button names per kind of device, for the controls screen. */
@@ -117,6 +126,8 @@ interface RunningMatch {
   readonly session: GameSession;
   readonly views: readonly GameView[];
   readonly unsubscribe: Unsubscribe;
+  /** The training panel's controls, in a training match. */
+  readonly training?: TrainingControls;
   /** The state fight sounds were last taken from (`stateCues`). */
   heard: MatchState;
 }
@@ -162,6 +173,20 @@ export class App {
   private audioSettings: AudioSettings;
   /** Keyboard or gamepad, whichever was used last on any screen: names the button bar. */
   private readonly lastDevice = new LastDevice();
+  /** Picked in the main menu: versus or training (#144). */
+  private mode: PlayMode = 'versus';
+  /** The dummy's settings, kept from one training match to the next. */
+  private trainingSettings: TrainingSettings = {
+    dummy: 1,
+    behaviour: 'stand',
+    percent: 0,
+    freezePercent: false,
+  };
+  /** The dummy's fighter; the first player's pick until changed in the panel. */
+  private dummyCharacter: string | undefined;
+  /** The training panel; open means paused. */
+  private readonly trainingPanel: MenuPanel;
+  private trainingShown = false;
 
   constructor(
     private readonly container: HTMLElement,
@@ -173,7 +198,15 @@ export class App {
     const play = (cue: SoundCue): void => adapters.audio.play(cue);
     this.menu = new MenuPanel(container, play, this.lastDevice);
     this.rulesPanel = new MenuPanel(container, play, this.lastDevice);
+    this.trainingPanel = new MenuPanel(container, play, this.lastDevice);
     window.addEventListener('keydown', () => this.lastDevice.use('keyboard'));
+    // In training, Enter or Escape pauses and opens the panel; the panel itself closes it.
+    window.addEventListener('keydown', (event) => {
+      if (event.repeat || wasHandled(event) || !this.match?.training || this.trainingShown) return;
+      if (event.code !== 'Enter' && event.code !== 'Escape') return;
+      markHandled(event);
+      this.setTrainingOpen(true);
+    });
     this.transition = new ScreenTransition(container);
     this.characterSelect = new CharacterSelectView(container, CHARACTERS, GRID_COLUMNS, {
       portrait: fighterPortrait,
@@ -293,7 +326,7 @@ export class App {
     }
     if (screen === 'character-select') {
       this.lobbyScene = new LobbyScene(this.characterSelect.stage);
-      this.select = createSelect(MAX_PLAYERS);
+      this.select = createSelect(MAX_PLAYERS, this.mode === 'training' ? 1 : MIN_PLAYERS);
       // Start press detection from the current state, so a held button doesn't join at once.
       this.previousInputs = this.adapters.devices.map((device) => device.source.sample());
       this.characterSelect.render(this.select, false, this.rules);
@@ -329,8 +362,11 @@ export class App {
           variant: 'menu-main',
           options: MAIN_MENU.map((entry) => ({
             label: entry.label,
-            artwork: entry.to === 'character-select' ? ('versus' as const) : ('settings' as const),
-            select: () => this.navigate(entry.to),
+            artwork: entry.mode ?? ('settings' as const),
+            select: () => {
+              if (entry.mode) this.mode = entry.mode;
+              this.navigate(entry.to);
+            },
           })),
           back: () => this.navigate('title'),
         };
@@ -443,6 +479,7 @@ export class App {
   private updateMenus(): void {
     const screen = this.screen;
     const rulesShown = this.rulesShown;
+    const trainingShown = this.trainingShown;
     this.adapters.devices.forEach(({ source, drivesMenus }, index) => {
       if (!drivesMenus) return;
       const current = source.sample();
@@ -455,6 +492,7 @@ export class App {
         // presses were meant for the old one: two pads pressing A on the title must not also
         // pick VS. Mode.
         if (this.screen !== screen || this.rulesShown !== rulesShown) return;
+        if (this.trainingShown !== trainingShown) return;
         if (this.screen === 'character-select') {
           // A player's B already closes the rules through their controls, as special.
           const isPlayer = this.select !== undefined && slotOf(this.select, index) >= 0;
@@ -463,6 +501,8 @@ export class App {
           }
         } else if (this.screen !== 'match') {
           this.menu.command(command);
+        } else if (this.match?.training) {
+          this.trainingCommand(command);
         }
       }
     });
@@ -643,11 +683,25 @@ export class App {
       throw new Error('A match needs a device and a character pick for every player');
     }
     const players = this.picks.map((characterId) => ({ characterId }));
-    const session = this.adapters.createSession({
-      stageId: this.stageId,
-      players,
-      rules: this.rules,
-    });
+    let session: GameSession;
+    let training: TrainingControls | undefined;
+    if (this.mode === 'training') {
+      // The dummy joins after the players, in a slot no device drives.
+      const dummy = this.dummyCharacter ?? this.picks[0] ?? CHARACTERS[0]?.id ?? '';
+      this.dummyCharacter = dummy;
+      this.trainingSettings = { ...this.trainingSettings, dummy: players.length };
+      const trainingSession = this.adapters.createTrainingSession({
+        stageId: this.stageId,
+        players: [...players, { characterId: dummy }],
+        rules: this.rules,
+        countdownFrames: 0,
+        training: this.trainingSettings,
+      });
+      session = trainingSession;
+      training = trainingSession;
+    } else {
+      session = this.adapters.createSession({ stageId: this.stageId, players, rules: this.rules });
+    }
     const views = this.adapters.createViews(this.container, session);
     // Drop key taps made in the menus, so the match does not start with a stray jump.
     for (const device of this.adapters.devices) device.source.sample();
@@ -662,9 +716,89 @@ export class App {
         if (this.match?.session === session) this.navigate('results');
       }, RESULTS_DELAY_MS);
     });
-    this.match = { session, views, unsubscribe, heard: session.view().current };
+    this.match = {
+      session,
+      views,
+      unsubscribe,
+      heard: session.view().current,
+      ...(training ? { training } : {}),
+    };
     this.lastResult = undefined;
     this.resize();
+  }
+
+  /** Opens (and pauses) or closes (and resumes) the training panel. */
+  private setTrainingOpen(open: boolean, focus = 0): void {
+    const training = this.match?.training;
+    if (!training || open === this.trainingShown) {
+      if (!training && this.trainingShown) this.trainingPanel.hide();
+      this.trainingShown = open && training !== undefined;
+      return;
+    }
+    this.trainingShown = open;
+    training.setPaused(open);
+    if (open) this.trainingPanel.show(this.trainingMenu(training), focus);
+    else this.trainingPanel.hide();
+  }
+
+  /** A gamepad's command in a training match: Start opens the panel or closes it. */
+  private trainingCommand(command: MenuCommand): void {
+    if (!this.trainingShown) {
+      if (command === 'start') this.setTrainingOpen(true);
+      return;
+    }
+    if (command === 'start') this.setTrainingOpen(false);
+    else this.trainingPanel.command(command);
+  }
+
+  private trainingMenu(training: TrainingControls): MenuContent {
+    const dummyName =
+      CHARACTERS.find((c) => c.id === this.dummyCharacter)?.name ?? this.dummyCharacter ?? '';
+    const rows = trainingRows(training.settings, dummyName);
+    const first = 2;
+    const change = (field: TrainingField, delta: 1 | -1, row: number): void => {
+      if (field === 'fighter') return this.changeDummyFighter(delta, row);
+      this.trainingSettings = adjustTraining(training.settings, field, delta);
+      training.configure(this.trainingSettings);
+      this.trainingPanel.show(this.trainingMenu(training), row);
+    };
+    return {
+      heading: 'Training',
+      variant: 'menu-overlay menu-training',
+      options: [
+        { label: 'Resume', select: () => this.setTrainingOpen(false) },
+        {
+          label: 'Advance frame',
+          select: () => training.advanceFrame(),
+          cue: 'menu-move',
+        },
+        ...rows.map((row, index) => ({
+          label: row.label,
+          select: () => {
+            if (row.field === 'freeze') change(row.field, 1, first + index);
+          },
+          adjust: (delta: 1 | -1) => change(row.field, delta, first + index),
+          ...(row.field === 'percent' ? { cue: null } : { stepLabels: ['‹', '›'] as const }),
+        })),
+        {
+          label: 'Reset positions',
+          select: () => training.reset(),
+        },
+        { label: 'Exit training', select: () => this.navigate('main-menu') },
+      ],
+      back: () => this.setTrainingOpen(false),
+      backButton: false,
+    };
+  }
+
+  /** Restarts training with the next or previous fighter as the dummy, the panel still open. */
+  private changeDummyFighter(delta: 1 | -1, row: number): void {
+    const ids = CHARACTERS.map((c) => c.id);
+    this.dummyCharacter = cycle(ids, this.dummyCharacter ?? ids[0] ?? '', delta);
+    this.adapters.audio.play('menu-adjust');
+    this.stopMatch();
+    this.startMatch();
+    this.setTrainingOpen(true, row);
   }
 
   private playFight({ cue, strength }: FightCue): void {
@@ -673,6 +807,7 @@ export class App {
 
   private stopMatch(): void {
     if (!this.match) return;
+    this.setTrainingOpen(false);
     this.lastResult = this.match.session.view().current;
     this.match.unsubscribe();
     this.match.session.dispose();

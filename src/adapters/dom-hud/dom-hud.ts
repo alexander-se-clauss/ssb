@@ -148,6 +148,11 @@ export class DomHud implements GameView {
     plate.shown = shown;
     plate.damage.textContent = `${damage}%`;
     plate.element.style.setProperty('--heat', heat(fighter.damage).toFixed(3));
+    // Training (#144) counts neither lives nor score.
+    if (match.training) {
+      plate.stocks.textContent = '';
+      return;
+    }
     if (match.rules.mode === 'time') {
       const points = score(fighter);
       plate.stocks.textContent = points > 0 ? `+${points}` : String(points);

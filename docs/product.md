@@ -65,6 +65,18 @@ does not delay navigation. Every screen change plays one signature transition: a
 navy blades with a gold leading edge sweeps across and wipes the old screen away; the new screen
 takes input at once. Layouts adapt to narrow and short viewports and respect reduced motion.
 
+## Training mode
+
+Training in the main menu (#144) is how we measure before we tune. One or more players pick on
+character select as usual and fight a dummy on any stage, with no lives and no clock; a KO
+respawns. Enter or Escape (Start on a pad) pauses into the training panel on the right: Resume,
+Advance frame (one frame per press), the dummy's percent (in steps of 10) and whether it is
+frozen there, what the dummy does (stand, crouch, jump, dodge; holding a direction for DI comes
+with DI in S8), the dummy's fighter, Reset positions and Exit training. A readout in the bottom
+left shows the combo (hits while the dummy stays in hitstun, and their damage; lit while it
+runs), the last hit's frame advantage, and the first player's current or last move with its
+frame, phase (startup, active, endlag), active frames and total.
+
 ## Combat concept (planned)
 
 Smash meets Monster Hunter: defense is about commitment and timing, not a panic button.
@@ -148,7 +160,7 @@ a playable build; it is done when that build works, not on a date.
       definitions (#37), per-character air jumps (#38), and fighter 1: Rivet (#39). Epics #7, #8.
 - [ ] **S6 Guard and specials.** Block and counter, spawned objects and projectiles, particle
       effects (fire, hit, KO), side and down specials, fighter 2. Epics #6, #7, #9.
-- [ ] **S7 Movement tuning.** A Melee-near tempo: training mode first, faster air physics,
+- [ ] **S7 Movement tuning.** A Melee-near tempo: training mode first (#144 done), faster air physics,
       Melee dash with dash dance and pivot, a short hop button, auto-cancel windows and
       L-cancel, repeated dodges get weaker, dash and landing dust, movement benchmarks as
       tests. Epic #142.

@@ -240,6 +240,51 @@ export interface MatchState {
   /** Events produced by the most recent step only. */
   readonly events: readonly GameEvent[];
   readonly winner: PlayerSlot | null;
+  /** Present only in training mode (#144): the dummy's settings and what the HUD measures. */
+  readonly training?: TrainingState;
+}
+
+/** What the training dummy does on its own (#144). */
+export type DummyBehaviour = 'stand' | 'crouch' | 'jump' | 'dodge';
+
+/** Set in the training panel; the session applies them between frames. */
+export interface TrainingSettings {
+  /** The slot the dummy plays; it ignores that slot's input. */
+  readonly dummy: PlayerSlot;
+  readonly behaviour: DummyBehaviour;
+  /** The dummy's damage after a reset or a change here. */
+  readonly percent: number;
+  /** Holds the dummy at `percent`, so every try of a combo starts the same. */
+  readonly freezePercent: boolean;
+}
+
+/**
+ * Follows one hit until attacker and dummy can both act again, to measure frame advantage:
+ * frames since the hit, and the frame each became free (null while still busy).
+ */
+export interface AdvantageWatch {
+  readonly attacker: PlayerSlot;
+  /** The move that hit, and its frame last step: the attacker is busy while it plays on. */
+  readonly moveId: MoveId | null;
+  readonly moveFrame: number;
+  readonly frames: number;
+  readonly attackerFree: number | null;
+  readonly targetFree: number | null;
+}
+
+/** Training mode's settings and measurements (#144). Plain data like the rest of the state. */
+export interface TrainingState {
+  readonly settings: TrainingSettings;
+  /** Hits and damage of the current combo, or of the last one once `comboActive` is false. */
+  readonly comboHits: number;
+  readonly comboDamage: number;
+  /** The dummy is still in hitstun from the combo, so the next hit adds to it. */
+  readonly comboActive: boolean;
+  /** Frames the attacker could act before the dummy after the last measured hit. */
+  readonly advantage: number | null;
+  readonly watch: AdvantageWatch | null;
+  /** The move the first player played last, for its frame data on the HUD. */
+  readonly lastMove: MoveId | null;
 }
 
 /**
@@ -306,4 +351,9 @@ export interface MatchConfig {
   readonly rules: MatchRules;
   /** Frames of READY before GO; `COUNTDOWN.frames` by default, 0 to start playing at once. */
   readonly countdownFrames?: number;
+  /**
+   * Makes the match a training session (#144): no stocks and no clock, KOs respawn, and the
+   * dummy acts on its own.
+   */
+  readonly training?: TrainingSettings;
 }
