@@ -11,6 +11,7 @@ import {
   type LedgeClimb,
 } from './ledge';
 import { approach } from './math';
+import { baseDodge, dodgeFrames } from './dodge-frames';
 import { isGroundMovement, moveOnGround } from './ground-movement';
 import { findMove } from './move-data';
 import { PRESS_SLOTS, isAerialSlot, moveSlot } from './move-slots';
@@ -48,6 +49,8 @@ export const createFighter = (
     jumpsRemaining: stats.airJumps,
     shortHop: false,
     airDodgeUsed: false,
+    dodgeStreak: 0,
+    dodgeRestFrames: DODGE.repeat.wearOffFrames,
     turnedFrom: null,
     action: 'airborne',
     actionFrame: 0,
@@ -76,16 +79,6 @@ export const createFighter = (
 
 const isControllable = (action: FighterAction): boolean =>
   isGroundMovement(action) || action === 'airborne';
-
-/** The frame data of a dodge action, or undefined for any other action. */
-const dodgeOf = (action: FighterAction) =>
-  action === 'sidestepIn' || action === 'sidestepOut'
-    ? DODGE.sidestep
-    : action === 'forwardRoll' || action === 'backRoll'
-      ? DODGE.roll
-      : action === 'airDodge'
-        ? DODGE.air
-        : undefined;
 
 /**
  * The landing lag of an aerial that lands on `frame` of its move: the normal one inside an
@@ -123,6 +116,15 @@ const ageLCancel = (since: number | null): number | null =>
 /** A dodge press during an aerial counts for an L-cancel, unless the last one still locks it out. */
 const pressLCancel = (since: number | null, pressedNow: boolean): number | null =>
   pressedNow && since === null ? 0 : since;
+
+/**
+ * Frames since the last dodge ended, one frame on (#150), counted no further than it matters. A
+ * dodge that started this frame counts too, also one that ended at once by landing.
+ */
+const restFrom = (fighter: FighterState, dodgeStarted = false): number =>
+  dodgeStarted || baseDodge(fighter.action) !== undefined
+    ? 0
+    : Math.min(fighter.dodgeRestFrames + 1, DODGE.repeat.wearOffFrames);
 
 const standsOn = (x: number, y: number, platform: PlatformDef): boolean =>
   x >= platform.bounds.left &&
@@ -235,6 +237,7 @@ export const updateFighter = (
       actionFrame,
       buffer: null,
       invulnerableFrames: Math.max(fighter.invulnerableFrames - 1, 0),
+      dodgeRestFrames: restFrom(fighter),
       stick,
       previousInput: input,
     };
@@ -291,6 +294,7 @@ export const updateFighter = (
       actionFrame,
       buffer: null,
       invulnerableFrames: Math.max(fighter.invulnerableFrames - 1, 0),
+      dodgeRestFrames: restFrom(fighter),
       stick,
       previousInput: input,
     };
@@ -326,6 +330,7 @@ export const updateFighter = (
     grounded,
     jumpsRemaining,
     airDodgeUsed,
+    dodgeStreak,
     turnedFrom,
     actionFrame,
     moveId,
@@ -385,9 +390,17 @@ export const updateFighter = (
     // The turn is settled once a move starts; a roll cancelled out of it must not undo it.
     turnedFrom = null;
   };
+  let dodgeStarted = false;
   /** Starts a buffered dodge; `face` is the way a roll travels. */
   const startDodge = (dodge: DodgeKind, face: 1 | -1): void => {
     actionFrame = 0;
+    dodgeStarted = true;
+    // One more in a row unless the last dodge ended long enough ago (#150).
+    // Counted no further than the floor, where later dodges are no weaker.
+    dodgeStreak =
+      fighter.dodgeRestFrames < DODGE.repeat.wearOffFrames
+        ? Math.min(dodgeStreak + 1, DODGE.repeat.maxLevel + 1)
+        : 1;
     if (dodge === 'roll') {
       // Towards the facing a forward roll, away from it a back roll, counted from the facing
       // before a turn the stick made just now.
@@ -475,9 +488,9 @@ export const updateFighter = (
       moveId = null;
       hitTargets = [];
     }
-  } else if (dodgeOf(action) !== undefined) {
+  } else if (baseDodge(action) !== undefined) {
     // A dodge plays out its frames; a press waits in the buffer. A forward roll ends turned round.
-    if (actionFrame >= (dodgeOf(action)?.totalFrames ?? 0)) {
+    if (actionFrame >= (dodgeFrames(action, dodgeStreak)?.totalFrames ?? 0)) {
       if (action === 'forwardRoll') facing = facing === 1 ? -1 : 1;
       action = grounded ? 'idle' : 'airborne';
       actionFrame = 0;
@@ -707,7 +720,7 @@ export const updateFighter = (
   }
 
   // A dodge cannot be hit on its invulnerable frames; a longer invulnerability (a respawn) stays.
-  const dodge = dodgeOf(action);
+  const dodge = dodgeFrames(action, dodgeStreak);
   const dodgeInvulnerable =
     dodge !== undefined &&
     actionFrame >= dodge.invulnerableFrom &&
@@ -753,6 +766,9 @@ export const updateFighter = (
     // Only a jump squat under way carries it; one cut short by a move or a hit forgets it.
     shortHop: action === 'jumpsquat' && shortHop,
     airDodgeUsed,
+    dodgeStreak,
+    // Counted from the frame after the last dodge ended (#150), and no further than it matters.
+    dodgeRestFrames: restFrom(fighter, dodgeStarted),
     turnedFrom,
     action,
     actionFrame,

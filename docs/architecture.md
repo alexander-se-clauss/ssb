@@ -116,7 +116,12 @@ back. The view adds the Melee look (`three-renderer/dodge-motion.ts`): a sideste
 the stage plane and back, a roll somersaults along it, an air dodge spins round once; the game
 itself stays 2D. On the dodge's invulnerable frames
 `invulnerableFrames` is kept above zero, so combat skips the fighter and the view shows it as it
-does after a respawn; the frames after them are recovery and can be punished. A roll moves at an
+does after a respawn; the frames after them are recovery and can be punished. Repeated dodges get
+weaker instead of using up a stamina bar (#150, `dodge-wear.test.ts`): a dodge of any kind that
+starts less than `DODGE.repeat.wearOffFrames` after the last one ended counts as one more in a row
+(`FighterState.dodgeStreak`, `dodgeRestFrames`), and each loses invulnerable frames and gains
+endlag, down to a floor (`dodge-frames.ts`). The view finishes a weakened sidestep or air dodge by
+its last invulnerable frame too, so a fighter that can be hit looks it. A roll moves at an
 even speed and stops at its platform's edge. In the air the button starts an
 Ultimate-style `airDodge` (`DODGE.air`): it carries the fighter the way the stick points (or holds
 it in place) with gravity paused, then the fighter falls and can act again. It is used once per

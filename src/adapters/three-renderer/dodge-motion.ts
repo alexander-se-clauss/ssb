@@ -1,4 +1,4 @@
-import { DODGE, LEDGE, climbFrames, type FighterState } from '../../core';
+import { DODGE, LEDGE, climbFrames, dodgeFrames, type FighterState } from '../../core';
 import { MAIN_BLOCK_DEPTH } from './scenery/common';
 
 /** How far a sidestep moves the body out of the stage plane, in stage units. */
@@ -30,17 +30,22 @@ const progress = (frame: number, from: number, to: number) =>
 /**
  * The view-only motion of a dodge, as in Melee: a sidestep steps into the background (or
  * towards the camera) and back, a roll somersaults along the stage the way it travels, and an air
- * dodge spins round once. Sidestep and air dodge are done by the last invulnerable frame, so a
- * fighter that can be hit looks it. The game stays on its 2D plane.
+ * dodge spins round once. Sidestep and air dodge are done by the last invulnerable frame, also
+ * of a weakened repeated dodge (#150), so a fighter that can be hit looks it. The game stays on
+ * its 2D plane.
  */
 export const dodgeMotion = (
-  fighter: Pick<FighterState, 'action' | 'actionFrame' | 'facing'>,
+  fighter: Pick<FighterState, 'action' | 'actionFrame' | 'facing'> &
+    Partial<Pick<FighterState, 'dodgeStreak'>>,
 ): DodgeMotion => {
   const frame = fighter.actionFrame;
+  /** The last invulnerable frame of the dodge under way. */
+  const lastSafe = (): number =>
+    (dodgeFrames(fighter.action, fighter.dodgeStreak ?? 1)?.invulnerableTo ?? 1) - 1;
   switch (fighter.action) {
     case 'sidestepIn':
     case 'sidestepOut': {
-      const back = DODGE.sidestep.invulnerableTo - 1;
+      const back = lastSafe();
       if (frame >= back) return STILL;
       const side = fighter.action === 'sidestepIn' ? -1 : 1;
       return { ...STILL, depth: side * DODGE_DEPTH * Math.sin(Math.PI * progress(frame, 0, back)) };
@@ -52,7 +57,7 @@ export const dodgeMotion = (
       return { ...STILL, spin: -travel * TURN * progress(frame, moveFrom, moveTo) };
     }
     case 'airDodge':
-      return { ...STILL, yaw: TURN * progress(frame, 0, DODGE.air.invulnerableTo - 1) };
+      return { ...STILL, yaw: TURN * progress(frame, 0, lastSafe()) };
     case 'ledge':
       return { ...STILL, depth: LEDGE_DEPTH };
     case 'ledgeStand':

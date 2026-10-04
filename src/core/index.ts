@@ -10,6 +10,7 @@ export * from './stages';
 export * from './registry';
 export { characterOf, validateCharacter } from './character';
 export { climbFrames, isLedgeClimb, type LedgeClimb } from './ledge';
+export { dodgeFrames, type DodgeFrames } from './dodge-frames';
 export { createMatch, step } from './simulation';
 export { leader, playedFrames, score, timeLeftFrames } from './rules';
 export {
