@@ -106,7 +106,8 @@ describe('character definitions', () => {
   });
 
   it('let a faster character walk further', () => {
-    const right = [inputOf({ x: 1 })];
+    // Half tilted from the start: a walk, never a flick into a dash (#146).
+    const right = [inputOf({ x: 0.5 })];
     const walked = (id: string) => {
       const start = withFighter(run(solo(id), 120), 0, { position: { x: -6, y: 0 } });
       return fighter(run(start, 30, right), 0).position.x - fighter(start, 0).position.x;

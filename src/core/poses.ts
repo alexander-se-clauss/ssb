@@ -1,6 +1,6 @@
 /**
  * Which pose a fighter's body shows, and how it gets there. Each movement state has a pose; idle
- * breathes and sways, running swings arms and legs, and the body blends towards the current
+ * breathes and sways, walking and running swing arms and legs, and the body blends towards the current
  * target a little each frame, so switching states never pops. The pose lives in `FighterState`,
  * so hurtboxes follow it and the view only interpolates and draws it.
  */
@@ -19,8 +19,12 @@ const TUMBLE_HITSTUN = Math.round(POSE.tumbleSpeed * HITSTUN_PER_KNOCKBACK);
 /** The pose for what the fighter is doing right now; `null` while a move's keyframes lead. */
 export const poseName = (fighter: FighterState): PoseName | null => {
   switch (fighter.action) {
+    case 'walk':
+    case 'dash':
     case 'run':
-      return 'run';
+    case 'skid':
+    case 'runTurn':
+      return fighter.action;
     case 'jumpsquat':
       return 'crouch';
     case 'landing':
@@ -89,6 +93,19 @@ export const targetPose = (fighter: FighterState, frame: number): Pose => {
       lowerLegFront: base.lowerLegFront + 8 * breath,
       upperLegBack: base.upperLegBack + 3 * breath,
       lowerLegBack: base.lowerLegBack + 6 * breath,
+    };
+  }
+  if (name === 'walk') {
+    // A shorter, slower stride than the run's, arms swinging loosely.
+    const stride = wave(fighter.actionFrame, POSE.walkCycleFrames);
+    return {
+      ...base,
+      upperLegFront: base.upperLegFront - 25 * stride,
+      upperLegBack: base.upperLegBack + 25 * stride,
+      lowerLegFront: base.lowerLegFront + 30 * Math.max(0, -stride),
+      lowerLegBack: base.lowerLegBack + 30 * Math.max(0, stride),
+      upperArmFront: base.upperArmFront + 15 * stride,
+      upperArmBack: base.upperArmBack - 15 * stride,
     };
   }
   if (name === 'run') {

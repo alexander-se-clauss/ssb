@@ -6,7 +6,11 @@ import type { Pose } from './skeleton';
 
 export type PoseName =
   | 'idle'
+  | 'walk'
+  | 'dash'
   | 'run'
+  | 'skid'
+  | 'runTurn'
   | 'jump'
   | 'fall'
   | 'jab'
@@ -71,7 +75,33 @@ export const POSES: Readonly<Record<PoseName, Pose>> = {
     upperLegBack: 200,
     lowerLegBack: 25,
   },
-  // Dash: leaning hard into the run, arms swept back.
+  // Walking (#146): upright and loose, arms hanging; the stride swings it.
+  walk: {
+    torso: 10,
+    head: -6,
+    upperArmFront: 165,
+    lowerArmFront: -25,
+    upperArmBack: 192,
+    lowerArmBack: -20,
+    upperLegFront: 168,
+    lowerLegFront: 18,
+    upperLegBack: 192,
+    lowerLegBack: 18,
+  },
+  // Initial dash (#146): a deep lunge, front leg reaching, back leg pushing off, arms flung.
+  dash: {
+    torso: 48,
+    head: -36,
+    upperArmFront: 218,
+    lowerArmFront: 25,
+    upperArmBack: 135,
+    lowerArmBack: -60,
+    upperLegFront: 118,
+    lowerLegFront: 55,
+    upperLegBack: 228,
+    lowerLegBack: 35,
+  },
+  // Run: leaning hard into the run, arms swept back; the stride swings it.
   run: {
     torso: 38,
     head: -28,
@@ -83,6 +113,32 @@ export const POSES: Readonly<Record<PoseName, Pose>> = {
     lowerLegFront: 35,
     upperLegBack: 185,
     lowerLegBack: 35,
+  },
+  // Skid (#146): leaning back against the slide, front heel dug in, arms out for balance.
+  skid: {
+    torso: -8,
+    head: 8,
+    upperArmFront: 100,
+    lowerArmFront: -20,
+    upperArmBack: 122,
+    lowerArmBack: -30,
+    upperLegFront: 135,
+    lowerLegFront: 8,
+    upperLegBack: 195,
+    lowerLegBack: 70,
+  },
+  // Run turnaround (#146): braking with the body already twisting round, one arm flung back.
+  runTurn: {
+    torso: -16,
+    head: 18,
+    upperArmFront: 245,
+    lowerArmFront: -40,
+    upperArmBack: 80,
+    lowerArmBack: -30,
+    upperLegFront: 128,
+    lowerLegFront: 20,
+    upperLegBack: 205,
+    lowerLegBack: 60,
   },
   // Rising: knees tucked up to the chest, fists pulled in.
   jump: {
