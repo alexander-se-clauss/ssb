@@ -275,6 +275,13 @@ type MoveDef = AttackMoveDef; // block and counter became fields instead (#50, #
   mine). To count them, a `SpawnedObject` records the `moveId` that spawned it. The limit is per
   move, not per spawn, since a move with several spawns is one attack.
 
+### Amendment (2026-10-04, #147)
+
+- A jump press from the short hop button (`PlayerInput.shortHop`) is the same buffered `'jump'`,
+  marked `shortHop: true`; a ground jump from it leaves at the character's `shortHopVelocity`.
+  `FighterState.shortHop` carries the choice through the jump squat. Pressed together with jump,
+  the full jump wins.
+
 ## Consequences
 
 - New moves are data. Tests, tools and an AI agent can write and check them without new code.

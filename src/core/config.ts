@@ -53,6 +53,7 @@ export const FIGHTER = {
   jumpSquatFrames: 3,
   jumpVelocity: 0.35,
   airJumpVelocity: 0.32,
+  shortHopVelocity: 0.26,
   airJumps: 1,
   weight: 1,
   landingLagFrames: 4,
@@ -72,6 +73,7 @@ export const RIVET_STATS = {
   fastFallSpeed: 0.45,
   jumpVelocity: 0.36,
   airJumpVelocity: 0.33,
+  shortHopVelocity: 0.28,
 } as const satisfies CharacterStats;
 
 /**
@@ -94,6 +96,7 @@ export const VELA_STATS = {
   fastFallSpeed: 0.36,
   jumpVelocity: 0.33,
   airJumpVelocity: 0.29,
+  shortHopVelocity: 0.22,
   airJumps: 2,
   weight: 0.82,
 } as const satisfies CharacterStats;

@@ -10,11 +10,11 @@ npm ci
 npm run dev      # open http://localhost:5173
 ```
 
-| Device     | Move               | Jump              | Aim up   | Drop / fast-fall | Attack | Special | Dodge       | Start |
-| ---------- | ------------------ | ----------------- | -------- | ---------------- | ------ | ------- | ----------- | ----- |
-| Left keys  | A / D              | Space             | W        | S                | F      | G       | H           | Enter |
-| Right keys | ← / →              | Num 0             | ↑        | ↓                | .      | /       | Right Shift | Enter |
-| Gamepad    | Left stick / D-pad | X / Y or stick up | Stick up | Stick down       | A      | B       | L / R       | Start |
+| Device     | Move               | Jump          | Short hop | Aim up   | Drop / fast-fall | Attack | Special | Dodge       | Start |
+| ---------- | ------------------ | ------------- | --------- | -------- | ---------------- | ------ | ------- | ----------- | ----- |
+| Left keys  | A / D              | Space         | V         | W        | S                | F      | G       | H           | Enter |
+| Right keys | ← / →              | Num 0         | Num 1     | ↑        | ↓                | .      | /       | Right Shift | Enter |
+| Gamepad    | Left stick / D-pad | X or stick up | Y         | Stick up | Stick down       | A      | B       | L / R       | Start |
 
 A direction held while pressing attack gives a tilt; pressing the direction and attack together
 (or flicking the stick) gives a smash. Dodge on its own (or with up on the keyboard) sidesteps into
