@@ -28,7 +28,7 @@ browsers, rendering or networking.
 | Layer    | Folder         | May import                         | Contains                                                                        |
 | -------- | -------------- | ---------------------------------- | ------------------------------------------------------------------------------- |
 | Core     | `src/core`     | core only                          | Types, physics, combat, moves, rules, stages, registry, skeleton, `step`, clock |
-| Ports    | `src/ports`    | core                               | Interfaces between client and game, and audio                                   |
+| Ports    | `src/ports`    | core                               | Interfaces between client and game, training controls, and audio                |
 | Adapters | `src/adapters` | core (via index), ports, libraries | Keyboard, gamepad, local session, Three.js, HUD, Web Audio                      |
 | App      | `src/app`      | everything                         | `main.ts` wiring, screens and menus, debug handle, CSS                          |
 
@@ -236,6 +236,7 @@ saving may fail (blocked storage); the defaults or the current values then simpl
 
 `src/app/screens.ts` lists the screens (title, main menu, options, sound, controls, character select,
 stage select, match, results) and the allowed moves between them, as plain data with a unit test.
+A versus match ends in results; training is left from its panel straight to the main menu.
 `App` shows menu screens as HTML over the canvas. Behind the title and the menus stands one
 decorative Three.js scene, the menu backdrop (`menu-backdrop.ts`): a fighter in a forward smash
 on a stone platform in a spotlight, fog, rising embers (`ember-drift.ts`) and broken pillars
@@ -318,6 +319,16 @@ clock (`plateLayout` in `dom-hud/hud-plates.ts`, tested, with `heat` and `stockM
 portrait comes from the composition root (`DomHudOptions.portrait`), so the HUD itself needs no
 WebGL; the styles are in `match-hud.css`.
 
+Training mode (#144, ADR 0008) is data in the match: `MatchConfig.training` starts a match
+with `MatchState.training` (the dummy's `TrainingSettings` and the measurements). `step` hands the
+dummy `dummyInput` instead of its slot's input, never ends the match and costs no stocks, and
+`trackTraining` (`training.ts`) counts the combo (hits while the dummy stays in hitstun or hitlag)
+and follows the last hit until attacker and dummy can both act: the frame advantage. The
+`TrainingControls` port pauses, advances one frame, changes settings (`configureTraining`) and
+resets (`resetTraining`) between frames; `LocalTrainingSession` implements it. `TrainingHud`
+(`dom-hud/training-hud.ts`, text from `training-readout.ts`) draws the readout, and the panel is a
+`MenuPanel` in `App` (`training-menu.ts` holds its rows).
+
 Menus with a way back show a Back button in their top left corner, except results and the
 rules overlay, whose own buttons (Main menu, Done) do that job. Every screen listens on `window`,
 so each handler checks and marks the event in `key-events.ts`: one key press changes the screen at
@@ -341,7 +352,9 @@ The seam is `GameSession`. The plan for online play (see "Later" in the product 
 2. Add `RemoteGameSession implements GameSession` in `src/adapters/remote-session`. `setInput`
    sends inputs over a WebSocket; `update` applies received snapshots and predicts locally with
    the same `step()`.
-3. Change one line in `src/app/main.ts` to pick the remote session. Views and inputs stay as
+3. `TrainingControls` (ADR 0008) is a second seam: a remote session implements it or refuses
+   training, which is local only today.
+4. Change one line in `src/app/main.ts` to pick the remote session. Views and inputs stay as
    they are. Sound, hit sparks and KO bursts come from session events, so the remote session
    must report each `hit` and `ko` exactly once, even when a rollback replays predicted frames.
 
@@ -364,3 +377,4 @@ Other logic follows the same pattern: define a port first, implement locally, sw
 - [0005 Body pose is part of the game state](adr/0005-body-pose-in-game-state.md)
 - [0006 Moves are plain data run by one move runner](adr/0006-move-definition-format.md)
 - [0007 Sound plays through an audio port, synthesized for now](adr/0007-audio-port.md)
+- [0008 Training mode: dummy and readout in core, pause and settings through a port](adr/0008-training-controls-port.md)

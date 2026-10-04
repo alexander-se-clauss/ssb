@@ -652,3 +652,30 @@
     height: 190px;
   }
 }
+
+/* Training panel (#144): a column on the right, so the paused fight stays in view. */
+.menu.menu-overlay.menu-training {
+  align-items: flex-end;
+  padding: 24px 2.5%;
+  background: none !important;
+  backdrop-filter: none;
+}
+
+.menu-training .menu-composition {
+  width: min(480px, 100%);
+  gap: 14px;
+  padding: 20px 24px;
+  background: rgb(7 5 4 / 92%);
+  border-left: 3px solid var(--k-gold);
+}
+
+.menu-training .menu-heading h1 {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+}
+
+.menu-training .menu-options > button,
+.menu-training .menu-row button:not(.menu-step) {
+  font-size: clamp(0.9rem, 1.6vw, 1.1rem);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}

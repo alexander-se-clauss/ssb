@@ -8,6 +8,7 @@ import { insideZone, limitObjects, moveObjects, resolveObjectHits, spawnObjects 
 import { validateCharacter } from './character';
 import { findCharacter, findStage } from './registry';
 import { leader, timeLeftFrames } from './rules';
+import { configureTraining, createTraining, trackTraining, withDummyInput } from './training';
 import type {
   FighterState,
   GameEvent,
@@ -52,8 +53,12 @@ export const createMatch = (config: MatchConfig): MatchState => {
   if (!Number.isInteger(goFrame) || goFrame < 0) {
     throw new Error(`Countdown must be a whole number of frames: ${goFrame}`);
   }
-  const stocks = config.rules.mode === 'stock' ? config.rules.stocks : 0;
-  return {
+  const training = config.training;
+  if (training && !config.players[training.dummy]) {
+    throw new Error(`No player in the dummy's slot ${training.dummy}`);
+  }
+  const stocks = config.rules.mode === 'stock' && !training ? config.rules.stocks : 0;
+  const state: MatchState = {
     frame: 0,
     phase: goFrame > 0 ? 'countdown' : 'playing',
     goFrame,
@@ -66,7 +71,9 @@ export const createMatch = (config: MatchConfig): MatchState => {
     nextObjectId: 0,
     events: [],
     winner: null,
+    ...(training ? { training: createTraining(training) } : {}),
   };
+  return training ? configureTraining(state, training) : state;
 };
 
 /** The ledge a fighter holds, as a list of zero or one index. */
@@ -81,7 +88,8 @@ const isOutsideBlastZone = (fighter: FighterState, state: MatchState): boolean =
 
 /** Handles one fighter leaving the blast zone: a fall, a lost stock, and a respawn if allowed. */
 const handleKo = (fighter: FighterState, state: MatchState, events: GameEvent[]): FighterState => {
-  const stockMatch = state.rules.mode === 'stock';
+  // Training (#144) counts no stocks: everyone respawns.
+  const stockMatch = state.rules.mode === 'stock' && !state.training;
   const stocks = stockMatch ? fighter.stocks - 1 : 0;
   const falls = fighter.falls + 1;
   const zone = state.stage.blastZone;
@@ -132,6 +140,7 @@ const matchResult = (
   fighters: readonly FighterState[],
   state: MatchState,
 ): { finished: boolean; winner: PlayerSlot | null } => {
+  if (state.training) return { finished: false, winner: null };
   if (state.rules.mode === 'time') {
     // This step ends the match when it brings the clock to zero.
     const finished = (timeLeftFrames(state) ?? 0) <= 1;
@@ -172,7 +181,12 @@ const countdownStep = (state: MatchState, inputs: readonly PlayerInput[]): Match
 export const step = (state: MatchState, inputs: readonly PlayerInput[]): MatchState => {
   if (state.phase === 'finished') return { ...state, events: [] };
   if (state.phase === 'countdown') return countdownStep(state, inputs);
+  if (state.training) return trackTraining(state, playStep(state, withDummyInput(state, inputs)));
+  return playStep(state, inputs);
+};
 
+/** One frame of play: fighters, combat, objects, KOs and the match result. */
+const playStep = (state: MatchState, inputs: readonly PlayerInput[]): MatchState => {
   // Fighters on a ledge go first: whether they hold on, climb or let go decides which ledges are
   // free this frame. The others follow in slot order, each seeing the ledges held after those
   // updates, so of two fighters reaching a free ledge together the lower slot gets it.

@@ -99,6 +99,15 @@ describe('joining on character select', () => {
     expect(allReady(apply(two, { type: 'confirm', player: 1 }))).toBe(true);
   });
 
+  it('is ready with one player for training, who fights the dummy', () => {
+    const alone = apply(
+      createSelect(4, 1),
+      { type: 'join', device: 2 },
+      { type: 'confirm', player: 0 },
+    );
+    expect(allReady(alone)).toBe(true);
+  });
+
   it('moves each cursor through the grid, wrapping around', () => {
     const state = apply(twoPlayers(), { type: 'move', player: 0, dx: 1, dy: 0 });
     expect(state.cursors).toEqual([1, 0]);

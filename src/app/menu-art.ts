@@ -26,7 +26,7 @@ const fighter = (pose: Pose, facing: 1 | -1, x: number, y: number, scale: number
 };
 
 export type MenuArtwork =
-  'versus' | 'settings' | 'display' | 'controls' | 'sound' | 'rematch' | 'home';
+  'versus' | 'training' | 'settings' | 'display' | 'controls' | 'sound' | 'rematch' | 'home';
 
 /** Bold, original line art for the menu destinations; labels remain ordinary HTML. */
 export const menuArtwork = (kind: MenuArtwork): SVGSVGElement => {
@@ -41,6 +41,9 @@ export const menuArtwork = (kind: MenuArtwork): SVGSVGElement => {
       '<path d="M211 56A69 69 0 1 0 219 117M211 25V60H177"/><path d="M134 64L170 90L134 116Z"/>',
     sound:
       '<path d="M70 70H105L150 35V145L105 110H70ZM180 65Q200 90 180 115M200 45Q235 90 200 135"/>',
+    // A target on a stand: the training dummy (#144).
+    training:
+      '<circle cx="150" cy="78" r="52"/><circle cx="150" cy="78" r="22"/><path d="M150 130V158M112 158H188"/>',
     home: '<path d="M62 91L150 29L238 91M83 77V150H217V77M130 150V104H170V150"/>',
   };
   const markup =
