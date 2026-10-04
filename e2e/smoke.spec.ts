@@ -198,6 +198,8 @@ test('training: one player against a dummy, with a readout and a pause panel', a
   expect(state.fighters).toHaveLength(2);
   expect(state.training?.settings.dummy).toBe(1);
   await expect(page.locator('.training-hud')).toBeVisible();
+  // How the last aerial landed (#149), a dash before the first one.
+  await expect(page.locator('.training-hud')).toContainText('L-cancel');
 
   // Escape pauses into the panel: no frames run until it closes.
   await page.keyboard.press('Escape');

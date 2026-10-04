@@ -120,12 +120,12 @@ describe('air dodge', () => {
     expect(fighter(attacked, 0)).toMatchObject({ action: 'attack', moveId: 'neutralAir' });
   });
 
-  it('starts as soon as an aerial ends when pressed late in it', () => {
+  it('is not kept from a press late in an aerial: that press L-cancels instead (#149)', () => {
     let state = step(inTheAir({ position: { x: 6, y: 10 } }), [inputOf({ attack: true })]);
     state = run(state, findMove('neutralAir').totalFrames - 4, [NONE]);
     state = airDodge(state);
     state = run(state, 4, [NONE]);
-    expect(fighter(state, 0).action).toBe('airDodge');
+    expect(fighter(state, 0)).toMatchObject({ action: 'airborne', airDodgeUsed: false });
   });
 });
 

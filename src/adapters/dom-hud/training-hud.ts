@@ -17,7 +17,8 @@ const row = (label: string): { element: HTMLElement; value: HTMLElement } => {
 
 /**
  * The training readout (#144) in the bottom left corner: the combo counter (lit while the combo
- * runs), the last hit's frame advantage, and the current move's frame and frame data.
+ * runs), the last hit's frame advantage, the current move's frame and frame data, and whether the
+ * last aerial landing was L-cancelled (#149).
  */
 export class TrainingHud implements GameView {
   private readonly root: HTMLElement;
@@ -25,6 +26,7 @@ export class TrainingHud implements GameView {
   private readonly advantage = row('Advantage');
   private readonly move = row('Move');
   private readonly frames = row('Frames');
+  private readonly lCancel = row('L-cancel');
   private shown = '';
 
   constructor(container: HTMLElement) {
@@ -36,6 +38,7 @@ export class TrainingHud implements GameView {
       this.advantage.element,
       this.move.element,
       this.frames.element,
+      this.lCancel.element,
     );
     container.append(this.root);
   }
@@ -66,6 +69,7 @@ export class TrainingHud implements GameView {
     this.frames.value.textContent = move
       ? `${move.active ? `active ${move.active[0]}–${move.active[1]} · ` : ''}total ${move.total}`
       : '–';
+    this.lCancel.value.textContent = readout.lCancel;
   }
 
   resize(): void {}

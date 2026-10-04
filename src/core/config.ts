@@ -208,6 +208,14 @@ export const LEDGE = {
  */
 export const HELPLESS = { drift: 0.7, landingLagFrames: 10 } as const;
 
+/**
+ * L-cancel (#149), as in Melee: a dodge press during an aerial halves its landing lag if the
+ * fighter lands within `windowFrames` of it (the press frame counts as the first), though never
+ * below the normal landing lag. A new press only counts `lockoutFrames` after the last one that
+ * did, so mashing the button misses.
+ */
+export const L_CANCEL = { windowFrames: 7, lockoutFrames: 20 } as const;
+
 /** Hitstun frames per unit of launch speed. */
 export const HITSTUN_PER_KNOCKBACK = 40;
 

@@ -116,6 +116,13 @@ export interface FighterState {
   readonly hitstunFrames: number;
   /** Frames left in the `landing` action: an aerial's landing lag, or the normal one. */
   readonly landingLagFrames: number;
+  /**
+   * Frames since the dodge press during an aerial that counts for an L-cancel (#149), or `null`
+   * when there is none: none yet, landed, or the lockout is over.
+   */
+  readonly lCancelPress: number | null;
+  /** How the last landing out of an aerial went (#149), for the training readout. */
+  readonly lastLanding: AerialLanding | null;
   /** Frames left frozen by a hit (ADR 0006): nothing moves, the move and pose stand still. */
   readonly hitlagFrames: number;
   readonly invulnerableFrames: number;
@@ -259,6 +266,12 @@ export interface MatchState {
   /** Present only in training mode (#144): the dummy's settings and what the HUD measures. */
   readonly training?: TrainingState;
 }
+
+/**
+ * How an aerial ended on landing (#149): within an auto-cancel window (#148), or between them
+ * with or without an L-cancel.
+ */
+export type AerialLanding = 'autoCancelled' | 'lCancelled' | 'missed';
 
 /** What the training dummy does on its own (#144). */
 export type DummyBehaviour = 'stand' | 'crouch' | 'jump' | 'dodge';
