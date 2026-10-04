@@ -75,7 +75,8 @@ export const moveOnGround = (
         return actionFrame === 1 ? into('idle', back, 0) : dash(back);
       }
       if (actionFrame >= stats.initialDashFrames) {
-        return holds(facing) ? into('run', facing, vx) : into('idle', facing, vx);
+        // A dash let go of ends on the spot, without sliding on in the standing pose.
+        return holds(facing) ? into('run', facing, vx) : into('idle', facing, 0);
       }
       return into('dash', facing, facing * stats.dashSpeed);
     case 'run':

@@ -80,6 +80,13 @@ describe('Melee-style ground movement (#146)', () => {
       expect(actions[FIGHTER.initialDashFrames]).toBe('idle');
     });
 
+    it('stops where the dash ends instead of sliding on while standing', () => {
+      const frames = play(standing(), [RIGHT, ...hold(NONE, FIGHTER.initialDashFrames + 10)]);
+      const stood = fighter(frames[FIGHTER.initialDashFrames] ?? last(frames), 0);
+      expect(stood.velocity.x).toBe(0);
+      expect(fighter(last(frames), 0).position.x).toBeCloseTo(stood.position.x);
+    });
+
     it('does not start from a stick pushed slowly: that walks at walkSpeed', () => {
       const frames = play(standing(), [...slowPush(1), ...hold(RIGHT, 30)]);
       expect(frames.every((s) => fighter(s, 0).action !== 'dash')).toBe(true);
