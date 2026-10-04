@@ -1,6 +1,6 @@
 # 0008 Training mode: dummy and readout in core, pause and settings through a port
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-04
 
 ## Context

@@ -122,7 +122,8 @@ describe('helpless after a recovery move (#44)', () => {
   });
 
   it('still drifts, though more slowly, and does not fast-fall', () => {
-    const state = helpless();
+    // High enough to fall for a while without leaving the blast zone.
+    const state = helpless(10, 14);
     const drifted = fighter(run(state, 30, [inputOf({ x: -1 })]), 0);
     expect(drifted.position.x).toBeLessThan(fighter(state, 0).position.x - 1);
     expect(Math.abs(drifted.velocity.x)).toBeCloseTo(CAPSULE.stats.airSpeed * HELPLESS.drift, 6);
@@ -166,7 +167,8 @@ describe('helpless after a recovery move (#44)', () => {
     // P2 drops past P1 with a neutral air, facing it.
     const attacker = withFighter(state, 1, {
       position: { x: p1.position.x + 0.6, y: p1.position.y + 1 },
-      velocity: { x: 0, y: 0 },
+      // Falling as fast as P1, so the neutral air keeps up with it.
+      velocity: { x: 0, y: p1.velocity.y },
       grounded: false,
       action: 'airborne',
       facing: -1,

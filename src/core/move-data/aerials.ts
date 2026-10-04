@@ -144,8 +144,8 @@ export const UP_AIR: MoveDef = {
       priority: 1,
       damage: 11,
       angle: 85,
-      baseKnockback: 0.14,
-      knockbackGrowth: 0.0039,
+      baseKnockback: 0.168,
+      knockbackGrowth: 0.00468,
     },
     {
       anchor: { bone: 'lowerLegFront', at: 0 },
@@ -155,8 +155,8 @@ export const UP_AIR: MoveDef = {
       priority: 0,
       damage: 8,
       angle: 85,
-      baseKnockback: 0.11,
-      knockbackGrowth: 0.0034,
+      baseKnockback: 0.132,
+      knockbackGrowth: 0.00408,
     },
   ],
   poses: [

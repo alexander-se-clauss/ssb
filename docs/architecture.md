@@ -70,7 +70,9 @@ Move data is one file per family in `move-data/` (`jab.ts`, `tilts.ts`, `smashes
 landing while it runs ends it and puts the fighter in the `landing` action for that many frames
 (`landingLagFrames`). Landing from a jump or fall without one costs the character's `landingLagFrames`;
 a fighter in hitstun lands without lag. An aerial press still in the buffer on landing is
-dropped, and during an aerial the fighter drifts and fast-falls like `airborne`. A
+dropped, and during an aerial the fighter drifts and fast-falls like `airborne`. As in Melee,
+holding down while falling drops at once (for as long as it is held) at the character's `fastFallSpeed` (#145), instead of
+speeding up to it; `air-physics.test.ts` pins each fighter's full hop and fast fall. A
 press of attack or special picks a move slot from the situation and the stick (`move-slots.ts`:
 jab, tilts and smashes on the ground, five aerials, four specials), and the character's `moves`
 table fills each slot with a move id or leaves it empty. The press goes into

@@ -28,22 +28,26 @@ export const RULE_LIMITS = {
   timeLimitStepSeconds: 60,
 } as const;
 
-/** The capsule's stats (`CharacterStats`); other characters start from them. */
+/**
+ * The capsule's stats (`CharacterStats`), the base every character starts from. The air physics
+ * are Melee-near (#145): a full hop of about 40 frames, fast falls, and a fast fall that drops at
+ * once at `fastFallSpeed`. `air-physics.test.ts` pins airtime, apex and fast fall per fighter.
+ */
 export const FIGHTER = {
   width: 0.8,
   height: 1.6,
   walkSpeed: 0.14,
   groundAcceleration: 0.02,
   groundFriction: 0.015,
-  airSpeed: 0.1,
-  airAcceleration: 0.008,
+  airSpeed: 0.11,
+  airAcceleration: 0.01,
   airFriction: 0.002,
-  gravity: 0.012,
-  maxFallSpeed: 0.22,
-  fastFallSpeed: 0.32,
+  gravity: 0.0175,
+  maxFallSpeed: 0.3,
+  fastFallSpeed: 0.42,
   jumpSquatFrames: 3,
-  jumpVelocity: 0.3,
-  airJumpVelocity: 0.27,
+  jumpVelocity: 0.35,
+  airJumpVelocity: 0.32,
   airJumps: 1,
   weight: 1,
   landingLagFrames: 4,
@@ -51,12 +55,18 @@ export const FIGHTER = {
 
 /**
  * Rivet, fighter 1 (#39): the all-rounder, as heavy and as fast as the capsule, on a shorter and
- * broader body (`STOCKY` in `skeleton.ts`).
+ * broader body (`STOCKY` in `skeleton.ts`). He falls a little faster (#145): a shorter full hop
+ * and a quicker drop, so his weight shows in the air too.
  */
 export const RIVET_STATS = {
   ...FIGHTER,
   width: 0.85,
   height: 1.42,
+  gravity: 0.019,
+  maxFallSpeed: 0.32,
+  fastFallSpeed: 0.45,
+  jumpVelocity: 0.36,
+  airJumpVelocity: 0.33,
 } as const satisfies CharacterStats;
 
 /**
@@ -68,13 +78,13 @@ export const VELA_STATS = {
   width: 0.75,
   walkSpeed: 0.17,
   groundAcceleration: 0.026,
-  airSpeed: 0.12,
-  airAcceleration: 0.01,
-  gravity: 0.0105,
-  maxFallSpeed: 0.19,
-  fastFallSpeed: 0.28,
-  jumpVelocity: 0.29,
-  airJumpVelocity: 0.25,
+  airSpeed: 0.13,
+  airAcceleration: 0.012,
+  gravity: 0.0145,
+  maxFallSpeed: 0.25,
+  fastFallSpeed: 0.36,
+  jumpVelocity: 0.33,
+  airJumpVelocity: 0.29,
   airJumps: 2,
   weight: 0.82,
 } as const satisfies CharacterStats;
