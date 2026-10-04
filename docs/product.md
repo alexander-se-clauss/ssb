@@ -146,8 +146,10 @@ a playable build; it is done when that build works, not on a date.
 - [x] **S5 Off-stage play.** Ledge grab (#40) and getups (#41), larger blast zones in stage
       data (#42), a camera that follows fighters off-stage (#43), helpless state (#44); character
       definitions (#37), per-character air jumps (#38), and fighter 1: Rivet (#39). Epics #7, #8.
-- [ ] **S6 Guard and specials.** Block and counter, spawned objects and projectiles, particle
-      effects (fire, hit, KO), side and down specials, fighter 2. Epics #6, #7, #9.
+- [x] **S6 Guard and specials.** Spawned objects and projectiles (#45, #46), particle effects
+      for fire, hits and KOs (#47, #48), Rivet's block and Vela's counter on the down special
+      (#50, #51) as cancel targets with the dodge (#52), Vela as fighter 2 (#53), and side
+      specials for both (#49). Epics #6, #7, #9.
 - [ ] **S7 Movement tuning.** A Melee-near tempo: training mode first, faster air physics,
       Melee dash with dash dance and pivot, a short hop button, auto-cancel windows and
       L-cancel, repeated dodges get weaker, dash and landing dust, movement benchmarks as
