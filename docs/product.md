@@ -86,9 +86,9 @@ deliberate change to the feel. Frames at 60 per second.
 
 | Fighter | Full hop | Short hop | Fast fall from the top | Dash dance window | To full run |
 | ------- | -------- | --------- | ---------------------- | ----------------- | ----------- |
-| Capsule | 40       | 29        | 8                      | 10                | 13          |
-| Rivet   | 37       | 29        | 8                      | 10                | 13          |
-| Vela    | 46       | 30        | 10                     | 9                 | 12          |
+| Capsule | 40       | 29        | 9                      | 10                | 13          |
+| Rivet   | 37       | 29        | 9                      | 10                | 13          |
+| Vela    | 46       | 30        | 11                     | 9                 | 12          |
 
 A short-hop neutral air, from the press until the fighter can act again, takes 38 frames (Vela
 39), 36 with an L-cancel (Vela 37). A roll covers 2.2 units and gives control back after 31 frames, a

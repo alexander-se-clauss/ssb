@@ -68,18 +68,28 @@ const airtime = (characterId: string, button: PlayerInput): number => {
   );
 };
 
-/** Frames from the top of a full hop to the ground, holding down from the top. */
+/**
+ * Frames from the highest point of a full hop to the landing, counting the landing frame and
+ * holding down once falling: the same convention as `air-physics.test.ts`.
+ */
 const fastFall = (characterId: string): number => {
-  const up = until(
-    standing(characterId),
-    (_, n) => (n < 10 ? inputOf({ jump: true }) : NONE),
-    (s) => !p1(s).grounded && p1(s).velocity.y <= 0,
-  );
-  return until(
-    up.state,
-    () => DOWN,
-    (s) => p1(s).grounded,
-  ).steps;
+  let state = standing(characterId);
+  let frame = 0;
+  let apex = { y: -Infinity, frame: 0 };
+  let airborne = false;
+  for (; frame < 400; frame += 1) {
+    const f = p1(state);
+    const falling = airborne && f.velocity.y <= 0;
+    state = step(state, [falling ? DOWN : frame < 10 ? inputOf({ jump: true }) : NONE]);
+    const next = p1(state);
+    if (!next.grounded) {
+      airborne = true;
+      if (next.position.y > apex.y) apex = { y: next.position.y, frame };
+    } else if (airborne) {
+      return frame - apex.frame;
+    }
+  }
+  throw new Error(`${characterId} never landed`);
 };
 
 /** Dash frames on which a flick back starts a dash the other way: the dash dance window. */
@@ -169,7 +179,7 @@ const BENCHMARKS = [
     id: CAPSULE.id,
     fullHop: 40,
     shortHop: 29,
-    fastFall: 8,
+    fastFall: 9,
     dashDance: 10,
     toFullRun: 13,
     roll: { frames: 31, distance: 2.2 },
@@ -181,7 +191,7 @@ const BENCHMARKS = [
     id: RIVET.id,
     fullHop: 37,
     shortHop: 29,
-    fastFall: 8,
+    fastFall: 9,
     dashDance: 10,
     toFullRun: 13,
     roll: { frames: 31, distance: 2.2 },
@@ -193,7 +203,7 @@ const BENCHMARKS = [
     id: VELA.id,
     fullHop: 46,
     shortHop: 30,
-    fastFall: 10,
+    fastFall: 11,
     dashDance: 9,
     toFullRun: 12,
     roll: { frames: 31, distance: 2.2 },
@@ -210,7 +220,7 @@ describe('movement benchmarks (#152)', () => {
       expect(measureOnce(pinned.id).shortHop).toBe(pinned.shortHop);
     });
 
-    it(`fast-falls from the top of a full hop in ${pinned.fastFall} frames`, () => {
+    it(`fast-falls from the top of a full hop, landing frame included, in ${pinned.fastFall} frames`, () => {
       expect(measureOnce(pinned.id).fastFall).toBe(pinned.fastFall);
     });
 
