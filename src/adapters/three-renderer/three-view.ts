@@ -11,6 +11,7 @@ import {
   type BoneId,
   type FighterState,
   type GameEvent,
+  type MatchState,
   type Rect,
   type SkeletonDef,
   type StageDef,
@@ -21,6 +22,7 @@ import { bodyParts } from './body-layout';
 import { dodgeMotion, lerpAngle, ROLL_PIVOT } from './dodge-motion';
 import { BOX_COLORS, hurtboxColor } from './debug-colors';
 import { EffectLayer, type Emitter } from './effect-layer';
+import { dustFor } from './dust';
 import { burstFor, type Burst } from './hit-effects';
 import { ObjectLayer } from './object-layer';
 import { buildScenery, type Scenery } from './scenery';
@@ -90,10 +92,12 @@ export class ThreeView implements GameView {
   private readonly objects: ObjectLayer;
   /** Reused every drawing, so the render loop makes no garbage for it. */
   private readonly emitters: Emitter[] = [];
-  /** Sparks and KO bursts from events since the last drawing (#48). */
+  /** Sparks and KO bursts from events (#48) and dust (#151) since the last drawing. */
   private readonly bursts: Burst[] = [];
   /** Where the latest KO burst is and how many game frames the camera still keeps it in view. */
   private koFocus: { area: Rect; frames: number } | null = null;
+  /** The state the dust (#151) was last read from, so a drawing spanning frames misses none. */
+  private dustSeen: MatchState | null = null;
   private showBoxes = false;
 
   constructor(
@@ -129,6 +133,7 @@ export class ThreeView implements GameView {
       const body = this.updateFighter(fighter, before, alpha, current.frame, emitters);
       if (body) bodies.push(body);
     }
+    this.addDust(current);
     this.objects.update(previous.objects, current.objects, alpha);
     for (const object of current.objects) {
       const at = object.effect === undefined ? undefined : this.objects.drawnAt(object.id);
@@ -159,6 +164,19 @@ export class ThreeView implements GameView {
     const { x, y } = event.position;
     const area = { left: x - 1, right: x + 1, bottom: y - 1, top: y + 1 };
     this.koFocus = { area, frames: KO_LINGER_FRAMES };
+  }
+
+  /** Puffs dust (#151) for what fighters did since the dust was last read. */
+  private addDust(current: MatchState): void {
+    const seen = this.dustSeen;
+    if (seen?.frame === current.frame) return;
+    this.dustSeen = current;
+    if (!seen) return;
+    for (const fighter of current.fighters) {
+      const before = seen.fighters.find((f) => f.slot === fighter.slot);
+      const puff = before && dustFor(before, fighter);
+      if (puff) this.bursts.push(puff);
+    }
   }
 
   /** Turns the debug overlay of hurtboxes and attack hitboxes on or off. */

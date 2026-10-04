@@ -103,6 +103,20 @@ export const EFFECTS: Readonly<Record<string, EffectPreset>> = {
     opacity: 1,
     capacity: 300,
   },
+  // Dash and landing dust (#151): a soft grey puff that drifts up a little and fades.
+  dust: {
+    rate: 0,
+    life: 28,
+    jitter: 0.2,
+    spread: 0.08,
+    lift: 0.03,
+    rise: -0.001,
+    drag: 0.86,
+    size: 0.9,
+    colors: [0xfffaf0, 0xa89f8e],
+    opacity: 0.9,
+    capacity: 400,
+  },
   // A KO burst (#48): a big, slow-fading blast of light where a fighter left the blast zone.
   ko: {
     rate: 0,
