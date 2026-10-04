@@ -100,7 +100,7 @@ export const PULSE_SHOT: MoveDef = {
 /**
  * Thruster (#53), Vela's up special and recovery: after a short ignition she boosts up and
  * forward on her boot jets, much further sideways than Rivet's Spring Jack climbs, hitting anyone
- * she rams on the way. Helpless after, with its own landing lag if she touches down early.
+ * she rams on the way, hardest at the start. Helpless after, with its own landing lag if she touches down early.
  */
 export const THRUSTER: MoveDef = {
   kind: 'attack',
@@ -117,6 +117,18 @@ export const THRUSTER: MoveDef = {
       angle: 60,
       baseKnockback: 0.2,
       knockbackGrowth: 0.004,
+    },
+    // The rest of the boost still rams, weaker; one group, so a target is hit only once.
+    {
+      anchor: { bone: 'torso', at: 0.5 },
+      radius: 0.45,
+      from: 12,
+      to: 28,
+      priority: 0,
+      damage: 4,
+      angle: 55,
+      baseKnockback: 0.16,
+      knockbackGrowth: 0.003,
     },
   ],
   poses: [

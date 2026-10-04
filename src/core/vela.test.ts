@@ -188,6 +188,27 @@ describe('Vela, fighter 2 (#53)', () => {
       expect(recover(RIVET.id).action).not.toBe('ledge');
     });
 
+    it('hits a fighter it rams late in the boost, not only at the start', () => {
+      const boost = (state: MatchState, frame: number) => {
+        let next = hold(state, UP_SPECIAL, 1);
+        while (fighter(next, 0).actionFrame < frame) next = hold(next, NONE, 1);
+        return next;
+      };
+      // Where the boost carries her by frame 22, with nobody in the way.
+      const alone = withFighter(match(VELA.id, RIVET.id), 1, { position: { x: -6, y: 0 } });
+      const ahead = fighter(boost(alone, 22), 0).position;
+      // Rivet hangs there in the air as she reaches frame 18.
+      let state = boost(alone, 18);
+      state = withFighter(state, 1, {
+        position: { x: ahead.x, y: ahead.y },
+        velocity: { x: 0, y: 0 },
+        grounded: false,
+        action: 'airborne',
+      });
+      state = hold(state, NONE, 8);
+      expect(fighter(state, 1).damage).toBeGreaterThan(0);
+    });
+
     it('knocks away a fighter it boosts through', () => {
       let state = hold(faceOff(VELA.id, RIVET.id, 0.6), UP_SPECIAL, 1);
       state = hold(state, NONE, 30);
