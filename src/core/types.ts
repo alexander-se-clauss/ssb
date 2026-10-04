@@ -22,6 +22,11 @@ export interface PlayerInput {
   readonly special: boolean;
   /** The dodge button (#35). Named after Melee's shield button; this game has no shield. */
   readonly shield: boolean;
+  /**
+   * The short hop button (#147): jumps like `jump`, but a ground jump leaves at the fighter's
+   * `shortHopVelocity`, low enough for a quick aerial. In the air it is the air jump.
+   */
+  readonly shortHop: boolean;
   /** The Start button. Menus use it; the simulation ignores it. */
   readonly start: boolean;
 }
@@ -66,6 +71,8 @@ export interface BufferedInput {
   readonly face: 1 | -1;
   /** Frames since the press, not counting hitlag; dropped after `INPUT.bufferFrames`. */
   readonly age: number;
+  /** A jump pressed with the short hop button (#147); a ground jump from it is a short hop. */
+  readonly shortHop?: boolean;
 }
 
 /** One target hit by one hitbox group of the current move (ADR 0006). */
@@ -83,6 +90,8 @@ export interface FighterState {
   readonly facing: 1 | -1;
   readonly grounded: boolean;
   readonly jumpsRemaining: number;
+  /** The jump squat under way ends in a short hop (#147), not a full jump. */
+  readonly shortHop: boolean;
   /** The facing before the stick last turned the fighter, and frames since (`DODGE.turnGraceFrames`). */
   readonly turnedFrom: { readonly facing: 1 | -1; readonly age: number } | null;
   /** The air dodge is used up until the fighter lands or is hit (#36). */
@@ -332,6 +341,8 @@ export interface CharacterStats {
   /** Take-off speed of the ground jump and of an air jump; they set the jump heights. */
   readonly jumpVelocity: number;
   readonly airJumpVelocity: number;
+  /** Take-off speed of a ground jump from the short hop button (#147): about 30 frames up. */
+  readonly shortHopVelocity: number;
   /** Jumps in the air after leaving the ground (Melee's double jump is 1); landing resets them. */
   readonly airJumps: number;
   /** Knockback is divided by it: heavier characters fly less far. */

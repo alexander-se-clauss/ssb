@@ -25,12 +25,13 @@ const BUTTON = {
 /** Button names for the controls screen, matching the layout `sample()` reads. */
 export const GAMEPAD_LABELS = {
   move: 'Left stick / D-pad',
-  jump: 'X / Y or stick up',
+  jump: 'X or stick up',
   up: 'Stick up',
   down: 'Stick down',
   attack: 'A',
   special: 'B',
   dodge: 'L / R',
+  shortHop: 'Y',
   start: 'Start',
 } as const;
 
@@ -40,8 +41,8 @@ export type GamepadReader = () => readonly (GamepadLike | null)[];
 const browserGamepads: GamepadReader = () => navigator.getGamepads();
 
 /**
- * One gamepad as a player's input, with Melee's layout: A attacks, B specials, X and Y jump,
- * the triggers dodge, Start starts, the left stick or d-pad moves. The browser Gamepad API has no events for
+ * One gamepad as a player's input, with Melee's layout: A attacks, B specials, X jumps (Y short
+ * hops, #147), the triggers dodge, Start starts, the left stick or d-pad moves. The browser Gamepad API has no events for
  * buttons, so `sample()` polls the pad; the app calls it once per frame.
  */
 export class GamepadInputSource implements InputSource {
@@ -67,10 +68,12 @@ export class GamepadInputSource implements InputSource {
     return {
       x,
       y,
-      jump: is(BUTTON.x) || is(BUTTON.y) || y >= STICK.tapJump,
+      // Tap-jump is a full jump, as is X; Y is the short hop button (#147).
+      jump: is(BUTTON.x) || y >= STICK.tapJump,
       attack: is(BUTTON.a),
       special: is(BUTTON.b),
       shield: is(BUTTON.leftTrigger) || is(BUTTON.rightTrigger),
+      shortHop: is(BUTTON.y),
       start: is(BUTTON.start),
     };
   }

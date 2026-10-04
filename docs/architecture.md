@@ -33,14 +33,17 @@ browsers, rendering or networking.
 | App      | `src/app`      | everything                         | `main.ts` wiring, screens and menus, debug handle, CSS                          |
 
 A character is plain data too (`CharacterDef` in `types.ts`, registered in `registry.ts`): its
-`stats` (`CharacterStats`: body box, walk, dash and run speeds, dash and skid frames, air speed, gravity, fall speeds, jump speeds,
+`stats` (`CharacterStats`: body box, walk, dash and run speeds, dash and skid frames, air speed, gravity, fall speeds, jump and short hop speeds,
 `airJumps`, weight, landing lag), its `skeleton` and its `moves`. The capsule's stats are `FIGHTER` in
 `config.ts`, and other characters' stats sit beside them (`RIVET_STATS`, `VELA_STATS`); rules every fighter
 shares are `FIGHTER_RULES`. Rivet (#39) has his own `STOCKY` skeleton in `skeleton.ts` and his
 specials in `move-data/rivet.ts`; Vela (#53) plays on `HUMANOID` with her specials in
 `move-data/vela.ts`. `FighterState.jumpsRemaining`
 counts the ground jump plus `airJumps` on the ground, and only the air jumps once airborne;
-landing gives them all back. Core code reads a fighter's
+landing gives them all back. The short hop button (`PlayerInput.shortHop`, #147) jumps like
+`jump`, but a ground jump from it leaves at the character's `shortHopVelocity` (about 30 frames in
+the air, `short-hop.test.ts`); the buffered press carries `shortHop`, and `FighterState.shortHop`
+remembers it through the jump squat. In the air it is the air jump, from a ledge the ledge jump; tap-jump stays a full jump. Core code reads a fighter's
 definition with `characterOf` (`character.ts`), so movement, knockback (divided by the target's
 `weight`), hurtboxes and bone hitboxes follow the character it plays. Looks stay in the view.
 Fighter bodies are core data too (`skeleton.ts`): a 2D skeleton of bones with lengths and parents,

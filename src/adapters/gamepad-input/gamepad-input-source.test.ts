@@ -28,19 +28,25 @@ describe('GamepadInputSource', () => {
       attack: false,
       special: false,
       shield: false,
+      shortHop: false,
       start: false,
     });
   });
 
-  it('maps the face buttons like Melee: A attacks, B specials, X and Y jump', () => {
+  it('maps the face buttons: A attacks, B specials, X jumps, Y short hops (#147)', () => {
     const { source, set } = sourceFor(pad([0]));
     expect(source.sample()).toMatchObject({ attack: true, special: false, jump: false });
     set(pad([1]));
     expect(source.sample()).toMatchObject({ attack: false, special: true });
     set(pad([2]));
-    expect(source.sample().jump).toBe(true);
+    expect(source.sample()).toMatchObject({ jump: true, shortHop: false });
     set(pad([3]));
-    expect(source.sample().jump).toBe(true);
+    expect(source.sample()).toMatchObject({ jump: false, shortHop: true });
+  });
+
+  it('keeps tap-jump a full jump', () => {
+    const { source } = sourceFor(pad([], [0, -1, 0, 0]));
+    expect(source.sample()).toMatchObject({ jump: true, shortHop: false });
   });
 
   it('maps the Start button to start', () => {

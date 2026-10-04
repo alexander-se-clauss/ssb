@@ -27,6 +27,17 @@ describe('KeyboardInputSource', () => {
     expect(source.sample()).toMatchObject({ y: 1, jump: true });
   });
 
+  it('short hops on V for the left keys and Num 1 for the right keys (#147)', () => {
+    const target = new EventTarget();
+    const left = new KeyboardInputSource(PLAYER_ONE_KEYS, target);
+    const right = new KeyboardInputSource(PLAYER_TWO_KEYS, target);
+    target.dispatchEvent(key('keydown', 'KeyV'));
+    expect(left.sample()).toMatchObject({ shortHop: true, jump: false });
+    expect(right.sample().shortHop).toBe(false);
+    target.dispatchEvent(key('keydown', 'Numpad1'));
+    expect(right.sample()).toMatchObject({ shortHop: true, jump: false });
+  });
+
   it('keeps a tap that is released before the next sample', () => {
     const target = new EventTarget();
     const source = new KeyboardInputSource(PLAYER_ONE_KEYS, target);
@@ -55,6 +66,7 @@ describe('describeKeys', () => {
       attack: 'F',
       special: 'G',
       dodge: 'H',
+      shortHop: 'V',
       start: 'Enter',
     });
     expect(describeKeys(PLAYER_TWO_KEYS)).toEqual({
@@ -65,6 +77,7 @@ describe('describeKeys', () => {
       attack: '.',
       special: '/',
       dodge: 'Right Shift',
+      shortHop: 'Num 1',
       start: 'Enter',
     });
   });

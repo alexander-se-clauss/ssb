@@ -60,7 +60,7 @@ export const ledgeOption = (
   previous: PlayerInput,
   facing: 1 | -1,
 ): LedgeOption | null => {
-  if (pressed(input, previous, 'jump')) return 'jump';
+  if (pressed(input, previous, 'jump') || pressed(input, previous, 'shortHop')) return 'jump';
   if (pressed(input, previous, 'shield')) return 'roll';
   if (pressed(input, previous, 'attack') || pressed(input, previous, 'special')) return 'attack';
   const pushed = (now: number, before: number) => now > LEDGE.stick && before <= LEDGE.stick;

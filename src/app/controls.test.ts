@@ -9,6 +9,7 @@ const P1: ControlLabels = {
   attack: 'F',
   special: 'G',
   dodge: 'H',
+  shortHop: 'V',
   start: 'Enter',
 };
 const P2: ControlLabels = {
@@ -19,6 +20,7 @@ const P2: ControlLabels = {
   attack: '.',
   special: '/',
   dodge: 'Right Shift',
+  shortHop: 'Num 1',
   start: 'Enter',
 };
 
@@ -27,6 +29,7 @@ describe('controls screen', () => {
     expect(controlRows([P1, P2])).toEqual([
       ['Move', 'A / D', '← / →'],
       ['Jump', 'Space', 'Num 0'],
+      ['Short hop', 'V', 'Num 1'],
       ['Aim up (up tilt, up smash)', 'W', '↑'],
       ['Drop / fast-fall', 'S', '↓'],
       ['Attack · pick in menus', 'F', '.'],

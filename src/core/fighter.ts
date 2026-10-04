@@ -45,6 +45,7 @@ export const createFighter = (
     facing: spawn.x > 0 ? -1 : 1,
     grounded: false,
     jumpsRemaining: stats.airJumps,
+    shortHop: false,
     airDodgeUsed: false,
     turnedFrom: null,
     action: 'airborne',
@@ -114,15 +115,21 @@ export const updateFighter = (
       ? 'special'
       : null;
   const dodgePress = pressed(input, prev, 'shield');
+  // The jump button jumps in full; the short hop button (#147) only jumps low from the ground.
+  const jumpPressed = pressed(input, prev, 'jump') || pressed(input, prev, 'shortHop');
+  const shortHopPressed = pressed(input, prev, 'shortHop') && !pressed(input, prev, 'jump');
   const press = (grounded: boolean): BufferedInput | null => {
     // A jump waits in the buffer like any press, so it is not lost while an aerial or a dodge
     // plays out. Not with no jump left, and not in hitstun: jumping out of it needs a fresh
     // press, as in Melee.
     const jumpPress = (): BufferedInput | null =>
-      pressed(input, prev, 'jump') &&
-      (grounded || fighter.jumpsRemaining > 0) &&
-      fighter.action !== 'hitstun'
-        ? { action: 'jump', face: fighter.facing, age: 0 }
+      jumpPressed && (grounded || fighter.jumpsRemaining > 0) && fighter.action !== 'hitstun'
+        ? {
+            action: 'jump',
+            face: fighter.facing,
+            age: 0,
+            ...(shortHopPressed && { shortHop: true }),
+          }
         : null;
     if (button === null) {
       if (!dodgePress) return jumpPress();
@@ -279,6 +286,7 @@ export const updateFighter = (
   } = fighter;
   // Widened again: the fighter can grab a ledge this frame, though it held none before.
   let action: FighterAction = fighter.action;
+  let shortHop = fighter.shortHop;
   turnedFrom =
     turnedFrom && turnedFrom.age < DODGE.turnGraceFrames
       ? { ...turnedFrom, age: turnedFrom.age + 1 }
@@ -361,8 +369,7 @@ export const updateFighter = (
   const bufferedDodge =
     buffer && isDodge(buffer.action) && dodgeCanStart(buffer.action) ? buffer.action : undefined;
   // A jump without one left is dropped too. A jump pressed with another button counts at once.
-  const bufferedJump =
-    (buffer?.action === 'jump' || pressed(input, prev, 'jump')) && jumpsRemaining > 0;
+  const bufferedJump = (buffer?.action === 'jump' || jumpPressed) && jumpsRemaining > 0;
   if (
     buffer &&
     bufferedMove === undefined &&
@@ -442,7 +449,8 @@ export const updateFighter = (
     } else if (actionFrame >= stats.jumpSquatFrames || !grounded) {
       // A second press during the squat is not kept for a double jump at take-off.
       if (buffer?.action === 'jump') buffer = null;
-      vy = stats.jumpVelocity;
+      vy = shortHop ? stats.shortHopVelocity : stats.jumpVelocity;
+      shortHop = false;
       // This is the ground jump, also when the fighter slid off an edge while crouched, which
       // has used it up already.
       jumpsRemaining = Math.min(jumpsRemaining, stats.airJumps);
@@ -455,10 +463,13 @@ export const updateFighter = (
   } else if (buffer && bufferedDodge !== undefined) {
     startDodge(bufferedDodge, buffer.face);
   } else if (bufferedJump) {
+    // From the buffer, or pressed with another button just now.
+    const short = buffer?.action === 'jump' ? buffer.shortHop === true : shortHopPressed;
     if (buffer?.action === 'jump') buffer = null;
     if (grounded) {
       action = 'jumpsquat';
       actionFrame = 0;
+      shortHop = short;
     } else {
       vy = stats.airJumpVelocity;
       jumpsRemaining -= 1;
@@ -678,6 +689,8 @@ export const updateFighter = (
     facing,
     grounded,
     jumpsRemaining,
+    // Only a jump squat under way carries it; one cut short by a move or a hit forgets it.
+    shortHop: action === 'jumpsquat' && shortHop,
     airDodgeUsed,
     turnedFrom,
     action,

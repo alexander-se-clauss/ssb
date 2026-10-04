@@ -462,7 +462,7 @@
     letter-spacing: 0.15em;
   }
   .menu-table :is(th, td) {
-    padding: 7px 4px;
+    padding: 4px;
     font-size: 0.72rem;
     overflow-wrap: anywhere;
   }
@@ -502,7 +502,9 @@
   }
   .menu-table :is(th, td) {
     font-size: 0.7rem;
-    padding: 5px 8px;
+    /* Tight rows, so the whole controls ledger fits under the title on a phone held sideways. */
+    padding: 3px 8px;
+    line-height: 1.2;
   }
   .menu-stage-select .menu-composition {
     width: min(460px, 100%);
