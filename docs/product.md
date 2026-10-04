@@ -92,7 +92,10 @@ Smash meets Monster Hunter: defense is about commitment and timing, not a panic 
   held. Hits from the front deal under a third of their damage and push him back instead of
   launching him; a smash-strength hit breaks the guard and stuns him for longer.
 - **Vela**, a bounty hunter in power armour with an arm cannon: plays like the capsule until she
-  becomes fighter 2 in S6.
+  becomes fighter 2 in S6. Down special _Riposte_ (#51), a counter, on the ground and in the air:
+  she waits in a low stance, and a hit that lands in its window deals her nothing and sets off
+  _Riposte Blast_, a point-blank shot from the cannon, turned to where the hit came from. A whiffed Riposte
+  leaves her open for a moment.
 
 ## Non-goals (for now)
 

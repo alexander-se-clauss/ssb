@@ -127,6 +127,17 @@ export interface GuardDef {
   readonly breakStun: number;
 }
 
+/**
+ * A counter (#51): a hit that connects on frames `[from, to)` deals no damage and no launch;
+ * the fighter turns to where it came from and starts `into`, its counterattack, unhittable until
+ * that attack's hitboxes are done. It works on the ground and in the air.
+ */
+export interface CounterDef {
+  readonly from: number;
+  readonly to: number;
+  readonly into: MoveId;
+}
+
 export interface PoseKey {
   readonly frame: number;
   readonly pose: Pose;
@@ -172,6 +183,8 @@ export interface AttackMoveDef {
   readonly effects?: readonly EffectKey[];
   /** Makes the move a block (#50); it starts only on the ground. */
   readonly guard?: GuardDef;
+  /** Makes the move a counter (#51). */
+  readonly counter?: CounterDef;
 }
 
 /** Every move is an attack move; a block is one with a `guard` (#50). */
@@ -316,6 +329,14 @@ export const validateMove = (move: MoveDef): void => {
     if (!(Number.isInteger(guard.breakStun) && guard.breakStun >= 0)) {
       fail(`guard needs a whole breakStun of 0 or more (${guard.breakStun})`);
     }
+  }
+  if (move.counter) {
+    const { from, to } = move.counter;
+    if (!Number.isInteger(from) || !Number.isInteger(to) || from < 0 || to <= from) {
+      fail(`counter has an empty or broken window [${from}, ${to})`);
+    }
+    if (to > move.totalFrames) fail(`counter ends after the move (${to})`);
+    if (guard) fail('a move cannot both guard and counter');
   }
   if (
     move.landingLag !== undefined &&

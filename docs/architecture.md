@@ -146,6 +146,12 @@ the blocker stays in its move. A hit of `breakDamage` or more breaks the guard a
 with `breakStun` more hitstun. The guard's `hold` frame keeps the move waiting while special is
 held. A move with a guard cannot start in the air and ends when the blocker leaves the ground.
 The `hit` event says `guard: 'blocked'` or `'broken'`, and the view throws off blue shards.
+A counter is a move with a `counter` (#51): on its window frames `activeCounter` returns it, and
+`applyHit` turns a hit from any side, a fighter's or an object's, into no damage: the fighter
+faces where it came from (the attacker's feet or the object) and starts the counter's `into`
+move, unhittable until that move's hitboxes are done. Both freeze in hitlag as for a hit. A
+whiffed counter just plays out its recovery frames. The `hit` event says `guard: 'countered'`
+with no damage, and the view flashes gold.
 Ledges are stage data (`StageDef.ledges`, #40): a fighter falling near a free one snaps to hang
 from it (`ledge.ts` works out where from the character's own hanging pose), with brief
 invulnerability and its air jumps and air dodge back, and lets go after `LEDGE.hangFrames`

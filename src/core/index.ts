@@ -13,6 +13,7 @@ export { climbFrames, isLedgeClimb, type LedgeClimb } from './ledge';
 export { createMatch, step } from './simulation';
 export { leader, playedFrames, score, timeLeftFrames } from './rules';
 export {
+  activeCounter,
   activeEffects,
   activeGuard,
   activeHitboxes,

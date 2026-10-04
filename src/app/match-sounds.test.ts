@@ -131,6 +131,20 @@ describe('eventCue', () => {
     expect(heavy.strength).toBe(1);
   });
 
+  it('makes a countered hit heard, though it deals no damage (#51)', () => {
+    const caught = eventCue({
+      type: 'hit',
+      attacker: 0,
+      target: 1,
+      damage: 0,
+      position: { x: 0, y: 1 },
+      launch: 0,
+      guard: 'countered',
+    });
+    expect(caught.cue).toBe('hit');
+    expect(caught.strength).toBeGreaterThan(0.3);
+  });
+
   it('plays ko and match-end for those events', () => {
     expect(eventCue({ type: 'ko', slot: 0, stocksLeft: 2, position: { x: 22, y: 0 } }).cue).toBe(
       'ko',

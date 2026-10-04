@@ -10,8 +10,11 @@ describe('character and stage registry', () => {
     expect(STAGES.map((s) => s.id)).toContain('battlefield');
   });
 
-  it('gives Vela the capsule moveset until she gets her own, and Rivet its normals (#39)', () => {
-    expect(findCharacter('vela')?.moves).toEqual(findCharacter('capsule')?.moves);
+  it('gives Vela the capsule moveset plus her counter (#51), and Rivet its normals (#39)', () => {
+    expect(findCharacter('vela')?.moves).toEqual({
+      ...findCharacter('capsule')?.moves,
+      downSpecial: 'riposte',
+    });
     expect(findCharacter('rivet')?.moves).toMatchObject(findCharacter('capsule')?.moves ?? {});
   });
 

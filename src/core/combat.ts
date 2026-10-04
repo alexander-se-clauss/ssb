@@ -2,7 +2,15 @@ import { characterOf } from './character';
 import { HITLAG, HITSTUN_PER_KNOCKBACK } from './config';
 import { circleIntersectsCapsule, type Vec2 } from './math';
 import { findMove } from './move-data';
-import type { EffectId, GuardDef, HitboxAnchor, HitboxDef, HitDef } from './moves';
+import {
+  moveTiming,
+  type CounterDef,
+  type EffectId,
+  type GuardDef,
+  type HitboxAnchor,
+  type HitboxDef,
+  type HitDef,
+} from './moves';
 import { plantedBoneSegments, type BoneId } from './skeleton';
 import type { FighterState, GameEvent, GuardOutcome, PlayerSlot } from './types';
 
@@ -71,6 +79,14 @@ export const activeGuard = (fighter: FighterState): GuardDef | undefined => {
   const { guard } = findMove(fighter.moveId);
   const frame = fighter.actionFrame;
   return guard && frame >= guard.from && frame < guard.to ? guard : undefined;
+};
+
+/** The fighter's counter this frame (#51): its counter move's, on the window frames. */
+export const activeCounter = (fighter: FighterState): CounterDef | undefined => {
+  if (fighter.action !== 'attack' || fighter.moveId === null) return undefined;
+  const { counter } = findMove(fighter.moveId);
+  const frame = fighter.actionFrame;
+  return counter && frame >= counter.from && frame < counter.to ? counter : undefined;
 };
 
 /**
@@ -167,6 +183,35 @@ export const applyHit = (
 ): HitResult => {
   const { stats } = characterOf(target.characterId);
   const hitlag = hitlagFrames(hit);
+  const counter = activeCounter(target);
+  if (counter) {
+    // Countered (#51): no damage; the fighter turns to the hit and strikes back, out of reach
+    // until its counterattack is done.
+    const strike = moveTiming(findMove(counter.into));
+    const facing =
+      from.x === target.position.x ? target.facing : from.x > target.position.x ? 1 : -1;
+    return {
+      hitlag,
+      launch: 0,
+      damage: 0,
+      guard: 'countered',
+      target: {
+        ...target,
+        facing,
+        // Set after this frame's update, so the counterattack plays from its frame 1 on, as
+        // hitstun starts counting after the hit.
+        actionFrame: 0,
+        moveId: counter.into,
+        hitTargets: [],
+        hitlagFrames: Math.max(target.hitlagFrames, hitlag),
+        // Invulnerability does not run down in hitlag, so the freeze needs no extra frames.
+        invulnerableFrames: Math.max(
+          target.invulnerableFrames,
+          strike.startupFrames + strike.activeFrames,
+        ),
+      },
+    };
+  }
   const guard = activeGuard(target);
   const fromFront = (from.x - target.position.x) * target.facing >= 0;
   if (guard && fromFront && hit.damage < guard.breakDamage) {
@@ -236,16 +281,17 @@ export const resolveCombat = (
 
     for (const target of fighters) {
       if (target.slot === attacker.slot) continue;
-      if (target.action === 'eliminated' || target.invulnerableFrames > 0) continue;
+      // As it is now: a counter (#51) another attacker set off this frame already protects it.
+      const now = next[target.slot] ?? target;
+      if (target.action === 'eliminated' || now.invulnerableFrames > 0) continue;
       const groupsHit = attacker.hitTargets
         .filter((record) => record.slot === target.slot)
         .map((record) => record.group);
       const hitbox = strikingHitbox(hitboxes, target, groupsHit);
       if (!hitbox) continue;
 
-      const current = next[target.slot] ?? target;
       const result = applyHit(
-        current,
+        now,
         hitbox.attack,
         attacker.facing,
         attacker.slot,

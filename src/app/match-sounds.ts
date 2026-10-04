@@ -10,11 +10,20 @@ export interface FightCue {
 /** Damage at which a hit sounds as heavy as it gets. */
 const HEAVIEST_HIT_DAMAGE = 20;
 
+/** A countered hit (#51) deals nothing, but still sounds like a solid clash. */
+const COUNTERED_STRENGTH = 0.6;
+
 /** The sound for a session event: hits by their damage, KOs and the end of the match. */
 export const eventCue = (event: GameEvent): FightCue => {
   switch (event.type) {
     case 'hit':
-      return { cue: 'hit', strength: Math.min(1, event.damage / HEAVIEST_HIT_DAMAGE) };
+      return {
+        cue: 'hit',
+        strength:
+          event.guard === 'countered'
+            ? COUNTERED_STRENGTH
+            : Math.min(1, event.damage / HEAVIEST_HIT_DAMAGE),
+      };
     case 'ko':
       return { cue: 'ko' };
     case 'match-end':
