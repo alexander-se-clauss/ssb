@@ -26,7 +26,7 @@ const press = (state: MatchState, input = ATTACK): MatchState => step(state, [in
 
 /** The first frame of each move's cancel window into the next jab. */
 const windowOf = (id: string) => {
-  const cancel = findMove(id).cancels[0];
+  const cancel = findMove(id).cancels.find((c) => c.on === 'jab');
   if (!cancel) throw new Error(`${id} has a cancel`);
   return cancel;
 };
@@ -40,7 +40,7 @@ describe('jab combo', () => {
     state = press(until(state, 'jab2', windowOf('jab2').from));
     expect(fighter(state, 0)).toMatchObject({ moveId: 'jab3', actionFrame: 0 });
     // The kick ends the chain: no window, so it plays out.
-    expect(findMove('jab3').cancels).toEqual([]);
+    expect(findMove('jab3').cancels.some((c) => c.on === 'jab')).toBe(false);
   });
 
   it('keeps a buffered jab 2 when jump is pressed after it', () => {

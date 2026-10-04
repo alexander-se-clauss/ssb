@@ -72,7 +72,7 @@ A move is a `MoveDef` of plain data, and one generic move runner in core plays a
 ```ts
 type MoveId = string;
 type MoveSlot = 'jab' | 'forwardTilt' | 'upSmash' | 'neutralAir' | 'upSpecial'; // ... all in #28
-type BufferedAction = MoveSlot | 'spotDodge' | 'roll' | 'airDodge' | 'block'; // #35, #36
+type BufferedAction = MoveSlot | 'spotDodge' | 'roll' | 'airDodge' | 'block'; // superseded, see the amendments
 
 type HitboxAnchor = { readonly bone: BoneId; readonly at: number } | { readonly feet: Vec2 };
 
@@ -259,8 +259,14 @@ type MoveDef = AttackMoveDef; // block and counter became fields instead (#50, #
 - **Counter (#51)** is the same pattern: an optional `counter` (`CounterDef`: a frame window and
   the move it goes `into`). A move cannot both guard and counter, and `into` must name a known
   move, as a cancel's does.
-- Block sits in the character's `downSpecial` slot. The `'block'` buffered action stays unused
-  until #52 decides whether cancels name it.
+- Block and counter sit in the character's `downSpecial` slot, so a cancel names them as
+  `downSpecial` (#52). The `'block'` buffered action is gone.
+
+### Amendment (2026-10-04, #52)
+
+- **Dodge as a cancel target.** `CancelDef.on` may be `'dodge'`: in that window any buffered
+  dodge that can start (sidestep or roll on the ground, air dodge in the air) cuts the move short.
+  Such a cancel names no `into`.
 
 ## Consequences
 
