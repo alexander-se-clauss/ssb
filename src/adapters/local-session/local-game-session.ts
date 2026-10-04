@@ -13,11 +13,11 @@ import type { GameSession, SessionView, Unsubscribe } from '../../ports';
 /** Runs the authoritative simulation in the browser. Used for local (couch) multiplayer. */
 export class LocalGameSession implements GameSession {
   readonly localSlots: readonly PlayerSlot[];
-  private readonly clock = new FixedStepClock(TICK_MS);
+  protected readonly clock = new FixedStepClock(TICK_MS);
   private readonly inputs: PlayerInput[];
   private readonly listeners = new Set<(event: GameEvent) => void>();
   private previous: MatchState;
-  private current: MatchState;
+  protected current: MatchState;
 
   constructor(initial: MatchState) {
     this.previous = initial;
@@ -42,6 +42,12 @@ export class LocalGameSession implements GameSession {
     for (const event of this.current.events) {
       for (const listener of this.listeners) listener(event);
     }
+  }
+
+  /** Replaces the state outside a tick, e.g. a reset; nothing is interpolated across it. */
+  protected replaceState(state: MatchState): void {
+    this.previous = state;
+    this.current = state;
   }
 
   view(): SessionView {

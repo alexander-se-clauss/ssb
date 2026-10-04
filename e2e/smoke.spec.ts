@@ -127,7 +127,7 @@ test('start opens the main menu, and Escape goes back', async ({ page }) => {
   await page.goto('/');
   await page.keyboard.press('Space');
   await expect.poll(() => screen(page)).toBe('main-menu');
-  await expect(page.getByRole('button')).toHaveText(['◀ Back', 'VS. Mode', 'Options']);
+  await expect(page.getByRole('button')).toHaveText(['◀ Back', 'VS. Mode', 'Training', 'Options']);
   await page.keyboard.press('Escape');
   await expect.poll(() => screen(page)).toBe('title');
 });
@@ -159,7 +159,7 @@ test('a screen change wipes the old screen away without delaying the new one', a
   await page.keyboard.press('Enter');
   await expect(screenAtWipe).toHaveAttribute('data-screen-at-wipe', 'main-menu');
   // Its copy of the old screen is hidden from the page: only the real menu is found.
-  await expect(page.getByRole('button')).toHaveText(['◀ Back', 'VS. Mode', 'Options']);
+  await expect(page.getByRole('button')).toHaveText(['◀ Back', 'VS. Mode', 'Training', 'Options']);
   await expect(page.locator('.screen-wipe')).toHaveCount(0);
 
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -178,9 +178,47 @@ test('VS. Mode leads to character select', async ({ page }) => {
   await expect.poll(() => screen(page)).toBe('character-select');
 });
 
+test('training: one player against a dummy, with a readout and a pause panel', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => screen(page)).toBe('main-menu');
+  await page.getByRole('button', { name: 'Training' }).click();
+  await expect.poll(() => screen(page)).toBe('character-select');
+  // One player is enough in training.
+  await tap(page, 'KeyF');
+  await expect.poll(async () => (await characterSelect(page))?.devices).toContain(0);
+  await tap(page, 'KeyF');
+  // Three slots: the fourth is the dummy's.
+  await expect.poll(() => picks(page)).toEqual(['capsule', null, null]);
+  for (const next of ['stage-select', 'match']) {
+    await page.keyboard.press('Enter');
+    await expect.poll(() => screen(page)).toBe(next);
+  }
+  const state = await gameState(page);
+  expect(state.fighters).toHaveLength(2);
+  expect(state.training?.settings.dummy).toBe(1);
+  await expect(page.locator('.training-hud')).toBeVisible();
+
+  // Escape pauses into the panel: no frames run until it closes.
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('heading', { name: 'Training' })).toBeVisible();
+  const paused = (await gameState(page)).frame;
+  await nextFrames(page);
+  expect((await gameState(page)).frame).toBe(paused);
+  await page.getByRole('button', { name: 'Advance frame' }).click();
+  await expect.poll(async () => (await gameState(page)).frame).toBe(paused + 1);
+  await page.getByRole('button', { name: /^Dummy percent/ }).focus();
+  await page.keyboard.press('ArrowRight');
+  await expect.poll(async () => (await gameState(page)).fighters[1]?.damage).toBe(10);
+
+  await page.getByRole('button', { name: 'Exit training' }).click();
+  await expect.poll(() => screen(page)).toBe('main-menu');
+});
+
 test('Options holds game settings and shows the controls', async ({ page }) => {
   await page.goto('/');
   await page.keyboard.press('Enter');
+  await page.keyboard.press('ArrowDown');
   await page.keyboard.press('ArrowDown');
   await expect(page.getByRole('button', { name: 'Options' })).toBeFocused();
   await page.keyboard.press('Enter');
@@ -658,7 +696,9 @@ test('the whole menu flow works with gamepads only', async ({ page }) => {
   await pressBoth(page);
   await expect.poll(() => screen(page)).toBe('main-menu');
 
-  // Down to Options, in and back out with B.
+  // Down past Training to Options, in and back out with B.
+  await flick(page, 0, 0, 1);
+  await expect(page.getByRole('button', { name: 'Training' })).toBeFocused();
   await flick(page, 0, 0, 1);
   await expect(page.getByRole('button', { name: 'Options' })).toBeFocused();
   await press(page, 0, PAD.a);
@@ -915,6 +955,7 @@ test('only the focused entry lights up, and confirmation never delays navigation
   // The diamond marker before the label shows which entry is selected.
   const marked = () =>
     option.evaluate((button) => getComputedStyle(button, '::before').opacity === '1');
+  await page.keyboard.press('ArrowDown');
   await page.keyboard.press('ArrowDown');
   await expect(option).toBeFocused();
   await expect.poll(marked).toBe(true);

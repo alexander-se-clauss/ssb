@@ -13,6 +13,8 @@ import {
 import { OverridableInput } from '../adapters/debug-input/overridable-input';
 import { GAMEPAD_LABELS, GamepadInputSource } from '../adapters/gamepad-input/gamepad-input-source';
 import { LocalGameSession } from '../adapters/local-session/local-game-session';
+import { LocalTrainingSession } from '../adapters/local-session/local-training-session';
+import { TrainingHud } from '../adapters/dom-hud/training-hud';
 import { ThreeView } from '../adapters/three-renderer/three-view';
 import { fighterPortrait } from '../adapters/three-renderer/fighter-portrait';
 import { WebAudioOutput } from '../adapters/web-audio/web-audio-output';
@@ -69,6 +71,7 @@ const app = new App(container, {
     })),
   ],
   createSession: (config) => new LocalGameSession(createMatch(config)),
+  createTrainingSession: (config) => new LocalTrainingSession(createMatch(config)),
   createViews: (root, session) => {
     const { stage } = session.view().current;
     // The camera keeps fighters below the HUD plates, whatever their size on this screen. The HUD
@@ -94,7 +97,9 @@ const app = new App(container, {
     };
     const hud = new DomHud(root, { portrait });
     huds.push(hud);
-    return [view, hud, listening];
+    // Training (#144) adds its readout: combo, frame advantage and frame data.
+    const training = session.view().current.training ? [new TrainingHud(root)] : [];
+    return [view, hud, listening, ...training];
   },
   controls: [
     { device: 'Left keys', labels: describeKeys(PLAYER_ONE_KEYS) },

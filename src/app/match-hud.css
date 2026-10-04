@@ -286,3 +286,41 @@
     flex-basis: auto;
   }
 }
+
+/* Training mode (#144): the readout in the bottom left corner. */
+.training-hud {
+  position: absolute;
+  left: 2.5%;
+  /* Above the button bar the training panel shows. */
+  bottom: 84px;
+  display: grid;
+  gap: 4px;
+  min-width: 240px;
+  padding: 12px 16px;
+  border-left: 3px solid var(--k-gold);
+  background: rgb(7 5 4 / 72%);
+  color: var(--k-text);
+  font-family: var(--font-label);
+  pointer-events: none;
+}
+
+.training-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  font-size: 0.95rem;
+}
+
+.training-label {
+  color: var(--k-muted);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.training-value {
+  font-variant-numeric: tabular-nums;
+}
+
+.training-row.live .training-value {
+  color: var(--k-gold);
+}

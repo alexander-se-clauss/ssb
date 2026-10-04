@@ -4,6 +4,7 @@
  */
 interface E2eFighter {
   stocks: number;
+  damage: number;
   position: { x: number; y: number };
   grounded: boolean;
   action: string;
@@ -20,6 +21,7 @@ interface Window {
           stage: { id: string };
           fighters: E2eFighter[];
           rules: { mode: string; stocks: number; timeLimitSeconds: number };
+          training?: { settings: { dummy: number } };
         }
       | undefined;
     characterSelect():
