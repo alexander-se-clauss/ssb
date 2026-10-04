@@ -118,6 +118,19 @@ describe('repeated dodges get weaker (#150)', () => {
     expect(fighter(rested, 0).dodgeRestFrames).toBe(repeat.wearOffFrames);
   });
 
+  it('counts an air dodge that ends on the frame it starts, by landing at once', () => {
+    let state = withFighter(standing(), 0, {
+      position: { x: 0, y: 0.1 },
+      velocity: { x: 0, y: -0.2 },
+      grounded: false,
+      action: 'airborne',
+    });
+    state = step(state, [inputOf({ y: -1, shield: true })]);
+    expect(fighter(state, 0)).toMatchObject({ grounded: true, action: 'landing' });
+    while (fighter(state, 0).action === 'landing') state = step(state, [NONE]);
+    expect(playDodge(state).invulnerable).toBe(fullInvulnerable - repeat.invulnerableLoss);
+  });
+
   it('weakens rolls the same way, and the roll still covers its distance', () => {
     const [first, second] = inARow(2, ROLL);
     const fullRoll = DODGE.roll.invulnerableTo - DODGE.roll.invulnerableFrom;

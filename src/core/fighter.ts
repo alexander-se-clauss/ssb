@@ -117,9 +117,12 @@ const ageLCancel = (since: number | null): number | null =>
 const pressLCancel = (since: number | null, pressedNow: boolean): number | null =>
   pressedNow && since === null ? 0 : since;
 
-/** Frames since the last dodge ended, one frame on (#150), counted no further than it matters. */
-const restFrom = (fighter: FighterState): number =>
-  baseDodge(fighter.action) !== undefined
+/**
+ * Frames since the last dodge ended, one frame on (#150), counted no further than it matters. A
+ * dodge that started this frame counts too, also one that ended at once by landing.
+ */
+const restFrom = (fighter: FighterState, dodgeStarted = false): number =>
+  dodgeStarted || baseDodge(fighter.action) !== undefined
     ? 0
     : Math.min(fighter.dodgeRestFrames + 1, DODGE.repeat.wearOffFrames);
 
@@ -387,9 +390,11 @@ export const updateFighter = (
     // The turn is settled once a move starts; a roll cancelled out of it must not undo it.
     turnedFrom = null;
   };
+  let dodgeStarted = false;
   /** Starts a buffered dodge; `face` is the way a roll travels. */
   const startDodge = (dodge: DodgeKind, face: 1 | -1): void => {
     actionFrame = 0;
+    dodgeStarted = true;
     // One more in a row unless the last dodge ended long enough ago (#150).
     // Counted no further than the floor, where later dodges are no weaker.
     dodgeStreak =
@@ -763,7 +768,7 @@ export const updateFighter = (
     airDodgeUsed,
     dodgeStreak,
     // Counted from the frame after the last dodge ended (#150), and no further than it matters.
-    dodgeRestFrames: restFrom(fighter),
+    dodgeRestFrames: restFrom(fighter, dodgeStarted),
     turnedFrom,
     action,
     actionFrame,
