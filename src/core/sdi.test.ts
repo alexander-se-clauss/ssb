@@ -160,10 +160,13 @@ describe('smash DI during hitlag (#155)', () => {
     expect(after.position.x).toBeCloseTo(edge + half, 9);
   });
 
-  it('is no longer on the ground once a flick lifts it', () => {
-    const after = frozenAt({ x: 0, y: 0 }, true, inputOf({ y: 1 }));
-    expect(after).toMatchObject({ grounded: false });
-    expect(after.position.y).toBeCloseTo(SDI.distance, 9);
+  it('moves a fighter held on the ground by a crouch cancel only along it, as in Melee', () => {
+    const up = frozenAt({ x: 0, y: 0 }, true, inputOf({ y: 1 }));
+    expect(up).toMatchObject({ grounded: true, position: { x: 0, y: 0 } });
+    const diagonal = frozenAt({ x: 0, y: 0 }, true, inputOf({ x: -1, y: 1 }));
+    expect(diagonal).toMatchObject({ grounded: true });
+    expect(diagonal.position.y).toBe(0);
+    expect(diagonal.position.x).toBeCloseTo(-SDI.distance * Math.SQRT1_2, 9);
   });
 
   it("lets a fighter slip out of a multi-hit move: Rivet's spring jack", () => {

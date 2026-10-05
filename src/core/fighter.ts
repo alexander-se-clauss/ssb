@@ -1,6 +1,16 @@
 import { CENTRED_STICK, attackInput, trackStick } from './attack-input';
 import { characterOf } from './character';
-import { DODGE, FIGHTER_RULES, HELPLESS, INPUT, KNOCKBACK, L_CANCEL, LEDGE, STICK } from './config';
+import {
+  CROUCH,
+  DODGE,
+  FIGHTER_RULES,
+  HELPLESS,
+  INPUT,
+  KNOCKBACK,
+  L_CANCEL,
+  LEDGE,
+  STICK,
+} from './config';
 import { NEUTRAL_INPUT, pressed } from './input';
 import {
   climbPosition,
@@ -31,7 +41,8 @@ import type {
   StageDef,
 } from './types';
 
-const DROP_THRESHOLD = -0.5;
+/** Stick held down past this drops through a platform; crouching (#156) needs the same. */
+const DROP_THRESHOLD = -CROUCH.stick;
 
 export const createFighter = (
   slot: PlayerSlot,
@@ -231,13 +242,11 @@ export const updateFighter = (
     // SDI (#155): each fresh flick while frozen by a hit moves the fighter a little that way.
     const sdi = fighter.action === 'hitstun' && isSdiFlick(input, prev);
     const position = sdi
-      ? smashDi(fighter.position, input, stage, character.stats.width / 2)
+      ? smashDi(fighter.position, input, stage, character.stats.width / 2, fighter.grounded)
       : fighter.position;
     return {
       ...fighter,
       position,
-      // Lifted off the ground by a flick up, it is in the air.
-      grounded: fighter.grounded && position.y <= fighter.position.y,
       velocity: {
         x: fighter.velocity.x - fighter.knockback.x + knockback.x,
         y: fighter.velocity.y - fighter.knockback.y + knockback.y,

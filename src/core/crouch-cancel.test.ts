@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { applyHit, hitstunOf, knockback, launchSpeed } from './combat';
 import { CROUCH, KNOCKBACK } from './config';
 import type { HitDef } from './moves';
+import { isCrouching } from './crouch';
 import { poseName } from './poses';
 import { CAPSULE } from './registry';
 import { createMatch, step } from './simulation';
@@ -137,6 +138,30 @@ describe('crouch cancel (#156)', () => {
     };
     // Held down, a crouch would turn a sideways launch by the full DI angle.
     expect(slide(DOWN)).toEqual(slide(NONE));
+  });
+
+  it('keeps the slide free of DI after an SDI flick up during the freeze', () => {
+    const slide = (flickUp: boolean) => {
+      let state = hitWith(faceOff(0, DOWN), JAB, DOWN);
+      for (let frame = 0; fighter(state, 1).hitlagFrames > 0; frame += 1) {
+        const last = fighter(state, 1).hitlagFrames === 1;
+        const stick = last
+          ? inputOf({ x: 1, y: 1 })
+          : flickUp && frame === 1
+            ? inputOf({ y: 1 })
+            : NONE;
+        state = step(state, [NONE, stick]);
+      }
+      return fighter(state, 1);
+    };
+    expect(slide(true).grounded).toBe(true);
+    expect(slide(true).knockback).toEqual(slide(false).knockback);
+  });
+
+  it('crouches and drops through a platform at the same stick position, never both', () => {
+    const at = (y: number) => ({ ...fighter(faceOff(0, NONE), 1), previousInput: inputOf({ y }) });
+    expect(isCrouching(at(-CROUCH.stick))).toBe(false);
+    expect(isCrouching(at(-CROUCH.stick - 0.01))).toBe(true);
   });
 
   it('crouches again after the hitstun and cancels the next hit too', () => {

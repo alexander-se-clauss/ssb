@@ -78,7 +78,8 @@ flick of the stick from the centre moves the hit fighter a fixed distance that w
 through a platform it stands on or is above, nor sideways into a solid one.
 Crouch cancel (#156, `crouch.ts`, `CROUCH` in `config.ts`): a fighter standing with the stick held
 down crouches and takes two thirds of a hit's knockback; below the tumble threshold it stays on
-the ground and only slides, by the horizontal part of the knockback, with no DI. Holding down
+the ground and only slides, by the horizontal part of the knockback, with no DI; SDI then moves
+it only along the ground. Holding down
 on a pass-through platform still drops through it, so there is no crouch cancel on one yet.
 Move data is one file per family in `move-data/` (`jab.ts`, `tilts.ts`, `smashes.ts`,
 `aerials.ts`, `ledge.ts`, and a file of specials per character, `rivet.ts` and `vela.ts`, each registered in `move-data/index.ts`). A move with a `landingLag` is an aerial:
