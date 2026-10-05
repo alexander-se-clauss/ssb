@@ -21,7 +21,8 @@ A direction held while pressing attack gives a tilt; pressing the direction and 
 the background, with down towards the camera; with left or right held it rolls that way (away from
 where you face, it rolls back without turning). In the air, dodge is an air dodge the way the stick points (once until you land or
 are hit). There is no shield: dodging is the defence, and grab beats a dodge in its endlag; while
-holding, attack pummels, and the held player mashes any button or the stick to break free.
+holding, attack pummels, a push of the stick throws that way, and the held player mashes any button
+or the stick to break free.
 
 Menus: Enter or Space to start, arrow keys or W/S to move, Enter to pick; a gamepad moves with
 the stick or d-pad, Start or A picks and B goes back. Esc or the Back button goes back. On character

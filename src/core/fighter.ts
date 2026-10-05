@@ -34,7 +34,7 @@ import {
   type DownedAction,
 } from './tech';
 import { baseDodge, dodgeFrames } from './dodge-frames';
-import { mashes } from './grab';
+import { mashes, throwSlot } from './grab';
 import { isGroundMovement, moveOnGround } from './ground-movement';
 import { findMove } from './move-data';
 import { standsOn } from './stages';
@@ -453,7 +453,7 @@ export const updateFighter = (
     return { ...next, pose: nextPose(next, frame) };
   }
 
-  // In a grab (#159): the holder stands still and pummels with attack; the held fighter hangs
+  // In a grab (#159): the holder stands still, pummels with attack or throws; the held fighter hangs
   // where the simulation puts it, breaking free in time, sooner the more it mashes. The
   // simulation settles the catch, the pummel's hit and the release. Presses are not kept.
   if (fighter.action === 'holding' || fighter.action === 'pummel' || fighter.action === 'grabbed') {
@@ -471,6 +471,9 @@ export const updateFighter = (
       previousInput: input,
     };
     const escape = fighter.escapeFrames - 1 - mashes(input, prev) * GRAB.mash.frames;
+    // A fresh stick push while holding throws that way (#160); the throw holds on until it lets go.
+    const toss = fighter.action === 'holding' ? throwSlot(input, prev, fighter.facing) : undefined;
+    const throwMove = toss === undefined ? undefined : moves[toss];
     const next: FighterState =
       fighter.action === 'grabbed'
         ? { ...base, escapeFrames: Math.max(escape, 0) }
@@ -478,9 +481,11 @@ export const updateFighter = (
           ? actionFrame >= GRAB.pummel.totalFrames
             ? { ...base, action: 'holding', actionFrame: 0 }
             : base
-          : button === 'attack'
-            ? { ...base, action: 'pummel', actionFrame: 0 }
-            : base;
+          : throwMove !== undefined
+            ? { ...base, action: 'attack', actionFrame: 0, moveId: throwMove, hitTargets: [] }
+            : button === 'attack'
+              ? { ...base, action: 'pummel', actionFrame: 0 }
+              : base;
     return { ...next, pose: nextPose(next, frame) };
   }
 

@@ -159,6 +159,17 @@ export interface GrabBoxDef {
   readonly to: number;
 }
 
+/**
+ * A throw (#160): on `frame` the move lets go of the fighter it holds, launching it with `hit`
+ * (the knockback formula as for any hit, so weight and DI count) towards `direction`: 1 the way
+ * the thrower faces, -1 behind it, where the thrown fighter is moved first.
+ */
+export interface ThrowDef {
+  readonly frame: number;
+  readonly direction: 1 | -1;
+  readonly hit: HitDef;
+}
+
 export interface PoseKey {
   readonly frame: number;
   readonly pose: Pose;
@@ -219,6 +230,8 @@ export interface AttackMoveDef {
   readonly counter?: CounterDef;
   /** Makes the move a grab (#159); it has no hitboxes then. */
   readonly grab?: GrabBoxDef;
+  /** Makes the move a throw (#160), started while holding; it has no hitboxes then. */
+  readonly throw?: ThrowDef;
 }
 
 /** Every move is an attack move; a block is one with a `guard` (#50). */
@@ -232,7 +245,11 @@ export interface MoveTiming {
 
 /** Startup, active and recovery are not stored; they follow from the hitbox or grab windows. */
 export const moveTiming = (move: MoveDef): MoveTiming => {
-  const windows = [...move.hitboxes, ...(move.grab ? [move.grab] : [])];
+  const windows = [
+    ...move.hitboxes,
+    ...(move.grab ? [move.grab] : []),
+    ...(move.throw ? [{ from: move.throw.frame, to: move.throw.frame + 1 }] : []),
+  ];
   const starts = windows.map((window) => window.from);
   const ends = windows.map((window) => window.to);
   const startupFrames = starts.length > 0 ? Math.min(...starts) : move.totalFrames;
@@ -395,6 +412,24 @@ export const validateMove = (move: MoveDef): void => {
     if (!(radius > 0)) fail('grab box needs a positive radius');
     checkAnchor(move.grab.anchor, 'grab box');
     if (move.hitboxes.length > 0) fail('a grab cannot also have hitboxes');
+  }
+  if (move.throw) {
+    const { frame, direction, hit } = move.throw;
+    if (!Number.isInteger(frame) || frame < 1 || frame >= move.totalFrames) {
+      fail(`throw lets go outside the move (${frame})`);
+    }
+    if (direction !== 1 && direction !== -1) fail(`throw direction must be 1 or -1 (${direction})`);
+    const { damage, angle, baseKnockback, knockbackGrowth } = hit;
+    if (![damage, angle, baseKnockback, knockbackGrowth].every(Number.isFinite)) {
+      fail('throw has a bad hit number');
+    }
+    const scale = hit.hitlagScale ?? 1;
+    if (!(Number.isFinite(scale) && scale >= 0)) fail('throw has a bad hitlagScale');
+    if (move.hitboxes.length > 0 || move.grab) fail('a throw cannot also hit or grab');
+    // Cancelled before it lets go, the throw would drop its catch without throwing.
+    if (move.cancels.some(({ from }) => from <= frame)) {
+      fail(`throw can be cancelled before it lets go (${frame})`);
+    }
   }
   if (
     move.landingLag !== undefined &&

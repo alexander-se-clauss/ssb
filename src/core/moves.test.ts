@@ -46,6 +46,24 @@ describe('move data', () => {
     expect(() => validateMove({ ...JAB, helpless: true, cancels: [] })).not.toThrow();
   });
 
+  it('refuses a throw that lets go outside the move, hits badly, or can be cancelled first', () => {
+    const THROW = findMove('upThrow');
+    const toss = THROW.throw;
+    if (!toss) throw new Error('The up throw is a throw');
+    const broken = (patch: Partial<MoveDef>): MoveDef => ({ ...THROW, ...patch });
+    expect(() => validateMove(broken({ throw: { ...toss, frame: 0 } }))).toThrow(/upThrow/);
+    expect(() => validateMove(broken({ throw: { ...toss, frame: THROW.totalFrames } }))).toThrow(
+      /upThrow/,
+    );
+    expect(() =>
+      validateMove(broken({ throw: { ...toss, hit: { ...toss.hit, hitlagScale: -1 } } })),
+    ).toThrow(/hitlagScale/);
+    expect(() =>
+      validateMove(broken({ cancels: [{ from: toss.frame, to: toss.frame + 2, on: 'dodge' }] })),
+    ).toThrow(/cancelled/);
+    expect(() => validateMove(broken({ hitboxes: JAB.hitboxes }))).toThrow(/throw/);
+  });
+
   it('refuses a hitbox on a bone the skeleton does not have, or off the bone', () => {
     const on = (anchor: unknown): MoveDef => ({
       ...JAB,

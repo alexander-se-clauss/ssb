@@ -27,7 +27,8 @@ export const PRESS_SLOTS = [
 /**
  * Every slot: the press slots, the attack from the ledge (#41), which climbing starts, the
  * attack out of a knockdown (#158), and the grabs (#159), which the grab button picks from by what
- * the fighter is doing: standing, dashing or running, or turning out of a run.
+ * the fighter is doing: standing, dashing or running, or turning out of a run, and the throws
+ * (#160), which a stick push while holding picks.
  */
 export const MOVE_SLOTS = [
   ...PRESS_SLOTS,
@@ -36,6 +37,10 @@ export const MOVE_SLOTS = [
   'grab',
   'dashGrab',
   'pivotGrab',
+  'forwardThrow',
+  'backThrow',
+  'upThrow',
+  'downThrow',
 ] as const;
 
 export type PressSlot = (typeof PRESS_SLOTS)[number];
