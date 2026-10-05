@@ -1,6 +1,7 @@
 /** Every move in the game, by id. Characters map their move slots to these ids (#28). */
 import { validateMove, type MoveDef, type MoveId } from '../moves';
 import { BACK_AIR, DOWN_AIR, FORWARD_AIR, NEUTRAL_AIR, UP_AIR } from './aerials';
+import { GETUP_ATTACK } from './getup';
 import { JAB, JAB2, JAB3 } from './jab';
 import { LEDGE_ATTACK } from './ledge';
 import { HAYMAKER, IRON_GUARD, SPRING_JACK, WRENCH_TOSS } from './rivet';
@@ -24,6 +25,7 @@ const ALL: readonly MoveDef[] = [
   UP_AIR,
   DOWN_AIR,
   LEDGE_ATTACK,
+  GETUP_ATTACK,
   HAYMAKER,
   SPRING_JACK,
   IRON_GUARD,

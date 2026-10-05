@@ -7,6 +7,7 @@ import {
   HELPLESS,
   INPUT,
   KNOCKBACK,
+  KNOCKDOWN,
   L_CANCEL,
   LEDGE,
   STICK,
@@ -23,6 +24,14 @@ import {
 import { approach, type Vec2 } from './math';
 import { influence } from './di';
 import { isSdiFlick, smashDi } from './sdi';
+import {
+  downedFrames,
+  getupOption,
+  isDowned,
+  landTumble,
+  techTimers,
+  type DownedAction,
+} from './tech';
 import { baseDodge, dodgeFrames } from './dodge-frames';
 import { isGroundMovement, moveOnGround } from './ground-movement';
 import { findMove } from './move-data';
@@ -77,6 +86,8 @@ export const createFighter = (
     damageDealt: 0,
     lastHitBy: null,
     staleMoves: [],
+    techWindow: 0,
+    techLockout: 0,
     hitstunFrames: 0,
     landingLagFrames: 0,
     lCancelPress: null,
@@ -253,6 +264,8 @@ export const updateFighter = (
         y: fighter.velocity.y - fighter.knockback.y + knockback.y,
       },
       knockback,
+      // A tech press (#158) counts while frozen, so a tumble that lands right after can tech.
+      ...techTimers(fighter, dodgePress, true),
       hitlagFrames: fighter.hitlagFrames - 1,
       buffer: latest(press(fighter.grounded), fighter.buffer),
       lCancelPress: pressLCancel(fighter.lCancelPress, dodgePress && lCancelling),
@@ -356,6 +369,78 @@ export const updateFighter = (
     return { ...next, pose: nextPose(next, frame) };
   }
 
+  // On the ground after a tumble (#158): a tech or getup plays out its frames, a roll travelling
+  // at an even speed and stopping at the edge (keeping its facing, unlike a dodge roll); a
+  // knockdown bounces, then waits for an option. Presses are not kept, as on a ledge climb.
+  if (isDowned(fighter.action)) {
+    const actionFrame = fighter.actionFrame + 1;
+    const base: FighterState = {
+      ...fighter,
+      velocity: { x: 0, y: 0 },
+      knockback: { x: 0, y: 0 },
+      actionFrame,
+      buffer: null,
+      invulnerableFrames: Math.max(fighter.invulnerableFrames - 1, 0),
+      dodgeRestFrames: restFrom(fighter),
+      techLockout: Math.max(fighter.techLockout - 1, 0),
+      stick,
+      previousInput: input,
+    };
+    const start = (action: Exclude<DownedAction, 'knockdown'>): FighterState => ({
+      ...base,
+      action,
+      actionFrame: 0,
+      invulnerableFrames: Math.max(
+        base.invulnerableFrames,
+        downedFrames(action).invulnerableFrames,
+      ),
+    });
+    let next: FighterState;
+    if (fighter.action === 'knockdown') {
+      const lying = actionFrame - KNOCKDOWN.bounceFrames;
+      const option =
+        lying < 0
+          ? null
+          : lying >= KNOCKDOWN.lieFrames
+            ? 'getup'
+            : getupOption(input, prev, fighter.facing);
+      const attack = moves.getupAttack;
+      next =
+        option === null
+          ? base
+          : option !== 'getupAttack'
+            ? start(option)
+            : attack === undefined
+              ? start('getup')
+              : {
+                  ...base,
+                  action: 'attack',
+                  moveId: attack,
+                  actionFrame: 0,
+                  hitTargets: [],
+                  invulnerableFrames: Math.max(
+                    base.invulnerableFrames,
+                    KNOCKDOWN.attack.invulnerableFrames,
+                  ),
+                };
+    } else {
+      const { totalFrames, moveTo, distance, way } = downedFrames(fighter.action);
+      const support = stage.platforms.find((p) =>
+        standsOn(fighter.position.x, fighter.position.y, p),
+      );
+      const step = actionFrame <= moveTo ? (way * fighter.facing * distance) / moveTo : 0;
+      const x = support
+        ? Math.min(Math.max(fighter.position.x + step, support.bounds.left), support.bounds.right)
+        : fighter.position.x + step;
+      next = {
+        ...base,
+        position: { x, y: fighter.position.y },
+        ...(actionFrame >= totalFrames && { action: 'idle' as const, actionFrame: 0 }),
+      };
+    }
+    return { ...next, pose: nextPose(next, frame) };
+  }
+
   let { x: px, y: py } = fighter.position;
   // The fighter's own speed. What is left of a launch (#153) moves it on top and decays on its
   // own, so gravity and drift act on the fighter while the launch fades, as in Melee.
@@ -379,6 +464,11 @@ export const updateFighter = (
   let action: FighterAction = fighter.action;
   let shortHop = fighter.shortHop;
   let lCancelPress = pressLCancel(ageLCancel(fighter.lCancelPress), dodgePress && lCancelling);
+  // The tech window (#158): a dodge press in the air opens it, unless a recent press locks it out.
+  const timers = techTimers(fighter, dodgePress);
+  let { techWindow } = timers;
+  const { techLockout } = timers;
+  let downInvulnerable = 0;
   let lastLanding = fighter.lastLanding;
   turnedFrom =
     turnedFrom && turnedFrom.age < DODGE.turnGraceFrames
@@ -687,10 +777,26 @@ export const updateFighter = (
           : undefined;
       if (aerial) lastLanding = aerial.how;
       lCancelPress = null;
+      // A tumble lands in a tech or a knockdown (#158), and the ground stops what is left of it.
+      const downed =
+        fighter.tumbling && (action === 'hitstun' || action === 'airborne')
+          ? landTumble(techWindow, input, facing)
+          : undefined;
+      if (downed) {
+        action = downed;
+        actionFrame = 0;
+        vx = 0;
+        launch = { x: 0, y: 0 };
+        hitstunFrames = 0;
+        buffer = null;
+        techWindow = 0;
+        if (downed !== 'knockdown') downInvulnerable = downedFrames(downed).invulnerableFrames;
+      }
       // An aerial or air dodge ends on landing, with its own landing lag; a plain landing has a
       // short one. A launched fighter in hitstun lands without lag.
-      const lag =
-        action === 'airborne'
+      const lag = downed
+        ? undefined
+        : action === 'airborne'
           ? stats.landingLagFrames
           : action === 'helpless'
             ? HELPLESS.landingLagFrames
@@ -834,7 +940,10 @@ export const updateFighter = (
       fighter.invulnerableFrames - 1,
       dodgeInvulnerable ? 1 : 0,
       ledge ? LEDGE.invulnerableFrames : 0,
+      downInvulnerable,
     ),
+    techWindow,
+    techLockout,
     ledge: ledge ? caught : null,
     ledgeRegrabFrames: regrab,
     stick,

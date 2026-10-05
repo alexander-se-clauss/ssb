@@ -6,6 +6,7 @@
 import { TRAINING } from './config';
 import { createFighter } from './fighter';
 import { NEUTRAL_INPUT, inputOf } from './input';
+import { isDowned } from './tech';
 import type {
   AdvantageWatch,
   FighterState,
@@ -125,7 +126,9 @@ export const resetTraining = (state: MatchState): MatchState => {
 };
 
 /** Hitstun or the freeze of a hit: the next hit on such a dummy continues the combo. */
-const stunned = (f: FighterState): boolean => f.action === 'hitstun' || f.hitlagFrames > 0;
+/** Hit and not free to act: in hitstun or hitlag, or down after a tumble (#158). */
+const stunned = (f: FighterState): boolean =>
+  f.action === 'hitstun' || f.hitlagFrames > 0 || isDowned(f.action);
 
 /** The attacker is busy while frozen, while the move that hit plays on, or in its landing lag. */
 const attackerBusy = (f: FighterState, watch: AdvantageWatch): boolean =>

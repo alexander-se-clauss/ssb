@@ -24,8 +24,11 @@ export const PRESS_SLOTS = [
   'downSpecial',
 ] as const;
 
-/** Every slot: the press slots, and the attack from the ledge (#41), which climbing starts. */
-export const MOVE_SLOTS = [...PRESS_SLOTS, 'ledgeAttack'] as const;
+/**
+ * Every slot: the press slots, the attack from the ledge (#41), which climbing starts, and the
+ * attack out of a knockdown (#158).
+ */
+export const MOVE_SLOTS = [...PRESS_SLOTS, 'ledgeAttack', 'getupAttack'] as const;
 
 export type PressSlot = (typeof PRESS_SLOTS)[number];
 export type MoveSlot = (typeof MOVE_SLOTS)[number];

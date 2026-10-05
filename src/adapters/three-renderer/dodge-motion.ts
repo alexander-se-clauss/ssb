@@ -1,4 +1,12 @@
-import { DODGE, LEDGE, climbFrames, dodgeFrames, type FighterState } from '../../core';
+import {
+  DODGE,
+  KNOCKDOWN,
+  LEDGE,
+  TECH,
+  climbFrames,
+  dodgeFrames,
+  type FighterState,
+} from '../../core';
 import { MAIN_BLOCK_DEPTH } from './scenery/common';
 
 /** How far a sidestep moves the body out of the stage plane, in stage units. */
@@ -55,6 +63,17 @@ export const dodgeMotion = (
       const travel = fighter.action === 'forwardRoll' ? fighter.facing : -fighter.facing;
       const { moveFrom, moveTo } = DODGE.roll;
       return { ...STILL, spin: -travel * TURN * progress(frame, moveFrom, moveTo) };
+    }
+    case 'techForward':
+    case 'techBack':
+    case 'getupForward':
+    case 'getupBack': {
+      // A tech roll or getup roll (#158) somersaults along the stage like a dodge roll.
+      const forward = fighter.action === 'techForward' || fighter.action === 'getupForward';
+      const travel = forward ? fighter.facing : -fighter.facing;
+      const tech = fighter.action === 'techForward' || fighter.action === 'techBack';
+      const { moveTo } = tech ? TECH.roll : KNOCKDOWN.roll;
+      return { ...STILL, spin: -travel * TURN * progress(frame, 0, moveTo) };
     }
     case 'airDodge':
       return { ...STILL, yaw: TURN * progress(frame, 0, lastSafe()) };

@@ -140,6 +140,21 @@ describe('training mode', () => {
       expect(trainingOf(state).comboDamage).toBeCloseTo(fighter(state, 1).damage);
     });
 
+    it('adds a hit on a dummy lying in a knockdown (#158)', () => {
+      const first = jab(faceOff(training()));
+      const damage = fighter(first, 1).damage;
+      let state = run(first, 40, [NONE]);
+      state = faceOff(state, { action: 'knockdown', actionFrame: 5, damage });
+      state = { ...state, training: { ...trainingOf(first), watch: null } };
+      // A low down tilt, as a jab passes over a fighter lying flat.
+      state = step(state, [inputOf({ y: -1, attack: true })]);
+      for (let i = 0; i < 20 && !state.events.some((e) => e.type === 'hit'); i += 1) {
+        state = step(state, [NONE]);
+      }
+      expect(state.events).toContainEqual(expect.objectContaining({ type: 'hit', target: 1 }));
+      expect(trainingOf(state)).toMatchObject({ comboHits: 2, comboActive: true });
+    });
+
     it('ends the combo when the dummy can act again, and keeps its count for the HUD', () => {
       let state = jab(faceOff(training()));
       state = run(state, 120, [NONE]);
