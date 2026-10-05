@@ -32,7 +32,11 @@ const clampPercent = (percent: number): number =>
  * The stick the dummy holds for its DI (#154) while frozen by a hit: towards the stage's centre
  * and up, or away from whoever hit it and down. `undefined` when it holds none.
  */
-const diStick = (state: MatchState, dummy: FighterState, settings: TrainingSettings) => {
+const diStick = (
+  state: MatchState,
+  dummy: FighterState,
+  settings: TrainingSettings,
+): PlayerInput | undefined => {
   if (settings.di === 'none' || dummy.hitlagFrames === 0 || dummy.action !== 'hitstun') {
     return undefined;
   }
@@ -41,6 +45,7 @@ const diStick = (state: MatchState, dummy: FighterState, settings: TrainingSetti
     const { left, right } = state.stage.blastZone;
     return inputOf({ x: -side((left + right) / 2), y: 1 });
   }
+  // A dummy in hitstun was always hit by someone; the stage's centre is only a fallback.
   const attacker = dummy.lastHitBy === null ? undefined : state.fighters[dummy.lastHitBy];
   return inputOf({ x: side(attacker?.position.x ?? 0), y: -1 });
 };

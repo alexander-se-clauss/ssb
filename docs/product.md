@@ -71,8 +71,8 @@ Training in the main menu (#144) is how we measure before we tune. One or more p
 character select as usual and fight a dummy on any stage, with no lives and no clock; a KO
 respawns. Enter or Escape (Start on a pad) pauses into the training panel on the right: Resume,
 Advance frame (one frame per press), the dummy's percent (in steps of 10) and whether it is
-frozen there, what the dummy does (stand, crouch, jump, dodge; holding a direction for DI comes
-with DI in S8), the dummy's fighter, Reset positions and Exit training. A readout in the bottom
+frozen there, what the dummy does (stand, crouch, jump, dodge), the DI it holds when hit (none,
+survival, combo; #154), the dummy's fighter, Reset positions and Exit training. A readout in the bottom
 left shows the combo (hits while the dummy stays in hitstun, and their damage; lit while it
 runs), the last hit's frame advantage, and the first player's current or last move with its
 frame, phase (startup, active, endlag), active frames and total.

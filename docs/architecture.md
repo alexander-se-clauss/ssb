@@ -355,7 +355,8 @@ WebGL; the styles are in `match-hud.css`.
 
 Training mode (#144, ADR 0008) is data in the match: `MatchConfig.training` starts a match
 with `MatchState.training` (the dummy's `TrainingSettings` and the measurements). `step` hands the
-dummy `dummyInput` instead of its slot's input (its behaviour, or its DI while a hit freezes it), never ends the match and costs no stocks, and
+dummy `dummyInput` instead of its slot's input (its behaviour, or its DI while a hit freezes
+it), never ends the match and costs no stocks, and
 `trackTraining` (`training.ts`) counts the combo (hits while the dummy stays in hitstun or hitlag)
 and follows the last hit until attacker and dummy can both act: the frame advantage. The
 `TrainingControls` port pauses, advances one frame, changes settings (`configureTraining`) and
