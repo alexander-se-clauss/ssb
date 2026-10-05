@@ -34,8 +34,10 @@ export const throwSlot = (
   previous: PlayerInput,
   facing: 1 | -1,
 ): 'forwardThrow' | 'backThrow' | 'upThrow' | 'downThrow' | undefined => {
+  // Swung straight from one side to the other counts too, as for mashing.
   const pushed = (now: number, before: number): boolean =>
-    Math.abs(now) >= GRAB.throwStick && Math.abs(before) < GRAB.throwStick;
+    Math.abs(now) >= GRAB.throwStick &&
+    (Math.abs(before) < GRAB.throwStick || Math.sign(now) !== Math.sign(before));
   const x = pushed(input.x, previous.x) ? input.x : 0;
   const y = pushed(input.y, previous.y) ? input.y : 0;
   if (x === 0 && y === 0) return undefined;

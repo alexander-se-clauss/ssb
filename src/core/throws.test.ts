@@ -181,6 +181,11 @@ describe('throws (#160)', () => {
     expect(fighter(nudged, 0).action).toBe('holding');
   });
 
+  it('counts a stick swung from one side to the other as a fresh push', () => {
+    const held = withFighter(holding(), 0, { previousInput: FORWARD });
+    expect(fighter(step(held, [BACK, NONE]), 0).moveId).toBe('backThrow');
+  });
+
   it('lets go when the thrower is hit before the throw frame', () => {
     let state = step(holding({ players: 3 }), [BACK, NONE, NONE]);
     state = withFighter(state, 2, { position: { x: -0.8, y: 0 }, facing: 1 });
