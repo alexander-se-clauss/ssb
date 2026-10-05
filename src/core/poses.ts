@@ -4,7 +4,7 @@
  * target a little each frame, so switching states never pops. The pose lives in `FighterState`,
  * so hurtboxes follow it and the view only interpolates and draws it.
  */
-import { DODGE, LEDGE, POSE } from './config';
+import { DODGE, KNOCKDOWN, LEDGE, POSE, TECH } from './config';
 import { isCrouching } from './crouch';
 import { findMove } from './move-data';
 import type { MoveDef } from './moves';
@@ -57,6 +57,18 @@ export const poseName = (fighter: FighterState): PoseName | null => {
     case 'hitstun':
       // Decided by the launch, not the current speed, so a tumble stays a tumble as it slows.
       return fighter.tumbling ? 'tumble' : 'hurt';
+    case 'tech':
+    case 'getup':
+      // Up off the ground in one push, knees tucked (#158).
+      return 'crouch';
+    case 'techForward':
+    case 'techBack':
+      return fighter.actionFrame < TECH.roll.moveTo ? 'roll' : 'crouch';
+    case 'getupForward':
+    case 'getupBack':
+      return fighter.actionFrame < KNOCKDOWN.roll.moveTo ? 'roll' : 'crouch';
+    case 'knockdown':
+      return 'downed';
     case 'idle':
       return isCrouching(fighter) ? 'crouch' : 'idle';
     case 'eliminated':

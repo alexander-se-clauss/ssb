@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DODGE, LEDGE, type FighterAction } from '../../core';
+import { DODGE, KNOCKDOWN, LEDGE, TECH, type FighterAction } from '../../core';
 import { DODGE_DEPTH, LEDGE_DEPTH, dodgeMotion, lerpAngle } from './dodge-motion';
 import { MAIN_BLOCK_DEPTH } from './scenery/common';
 
@@ -21,6 +21,17 @@ describe('dodge motion', () => {
     expect(spin(DODGE.air.invulnerableTo - 1 - 2 * DODGE.repeat.invulnerableLoss)).toBeCloseTo(
       TURN,
     );
+  });
+
+  it.each([
+    ['techForward', TECH.roll.moveTo, -1],
+    ['techBack', TECH.roll.moveTo, 1],
+    ['getupForward', KNOCKDOWN.roll.moveTo, -1],
+    ['getupBack', KNOCKDOWN.roll.moveTo, 1],
+  ] as const)('somersaults a %s roll (#158) once along the way it travels', (action, end, sign) => {
+    expect(at(action, end / 2).spin).toBeCloseTo((sign * TURN) / 2, 9);
+    expect(wrap(at(action, end).spin)).toBeCloseTo(0, 9);
+    expect(at('tech', 10)).toEqual({ depth: 0, spin: 0, yaw: 0 });
   });
 
   it('leaves fighters alone unless they dodge', () => {

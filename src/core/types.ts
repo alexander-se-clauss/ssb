@@ -59,6 +59,16 @@ export type FighterAction =
   | 'ledgeRoll'
   | 'ledgeAttack'
   | 'hitstun'
+  /** Landed a tumble inside the tech window (#158): in place, or rolling forward or back. */
+  | 'tech'
+  | 'techForward'
+  | 'techBack'
+  /** Landed a tumble without a tech (#158): bouncing, then lying until it gets up. */
+  | 'knockdown'
+  /** Getting up from a knockdown (#158): in place, or rolling forward or back. */
+  | 'getup'
+  | 'getupForward'
+  | 'getupBack'
   | 'eliminated';
 
 /** A press waiting until the fighter can act on it (ADR 0006). */
@@ -136,6 +146,13 @@ export interface FighterState {
    * on its first hit. Emptied when it loses a stock.
    */
   readonly staleMoves: readonly MoveId[];
+  /**
+   * Frames left of the tech window a dodge press in the air opened (#158); a tumble that lands
+   * while it is open techs.
+   */
+  readonly techWindow: number;
+  /** Frames left in which a dodge press opens no new tech window, so mashing fails (#158). */
+  readonly techLockout: number;
   /** Who hit this fighter last since it respawned; gets the KO credit. */
   readonly lastHitBy: PlayerSlot | null;
   readonly hitstunFrames: number;

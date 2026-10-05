@@ -47,6 +47,7 @@ export type PoseName =
   | 'ledge'
   | 'hurt'
   | 'tumble'
+  | 'downed'
   | 'haymakerWindup'
   | 'haymaker'
   | 'springJackStart'
@@ -602,6 +603,19 @@ export const POSES: Readonly<Record<PoseName, Pose>> = {
     lowerLegFront: 40,
     upperLegBack: 240,
     lowerLegBack: -30,
+  },
+  // Knocked down (#158): flat on the back, head behind, legs out in front.
+  downed: {
+    torso: -90,
+    head: 0,
+    upperArmFront: 165,
+    lowerArmFront: 10,
+    upperArmBack: 195,
+    lowerArmBack: -10,
+    upperLegFront: 104,
+    lowerLegFront: 0,
+    upperLegBack: 106,
+    lowerLegBack: 0,
   },
   // Rivet's neutral special (#39): the fist swung far back over the shoulder, weight on the back
   // foot.

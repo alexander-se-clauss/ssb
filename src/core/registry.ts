@@ -30,6 +30,7 @@ export const CAPSULE: CharacterDef = {
     upAir: 'upAir',
     downAir: 'downAir',
     ledgeAttack: 'ledgeAttack',
+    getupAttack: 'getupAttack',
   },
 };
 

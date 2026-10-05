@@ -86,8 +86,15 @@ of a fighter's last nine hits, newest first, each use of a move once (on its fir
 block but not when countered; for a spawned object, each object). A hit's damage, and so its knockback, is scaled by
 `damageScale`: 9% less for a copy in the newest slot down to 1% in the oldest, 5% more for a move
 not in the queue. A lost stock empties it.
+Tech and knockdown (#158, `tech.ts`, `TECH` and `KNOCKDOWN` in `config.ts`): a dodge press in the
+air opens a tech window (`techWindow`) and locks out new ones for a while (`techLockout`). A
+tumbling fighter that lands inside the window techs in place or rolls (`tech`, `techForward`,
+`techBack`); otherwise it is knocked down (`knockdown`): it bounces, lies, and gets up in place,
+rolls (`getup`, `getupForward`, `getupBack`) or plays the `getupAttack` move slot. These actions
+run in their own branch of `updateFighter`; each is invulnerable at first and then open to a tech
+chase. Landing in a tumble stops what is left of the launch.
 Move data is one file per family in `move-data/` (`jab.ts`, `tilts.ts`, `smashes.ts`,
-`aerials.ts`, `ledge.ts`, and a file of specials per character, `rivet.ts` and `vela.ts`, each registered in `move-data/index.ts`). A move with a `landingLag` is an aerial:
+`aerials.ts`, `ledge.ts`, `getup.ts`, and a file of specials per character, `rivet.ts` and `vela.ts`, each registered in `move-data/index.ts`). A move with a `landingLag` is an aerial:
 landing while it runs ends it and puts the fighter in the `landing` action for that many frames
 (`landingLagFrames`). An aerial's `autoCancel` windows (#148, `auto-cancel.test.ts`) mark its
 first and last frames, clear of the hitboxes: landing in them costs only the normal landing lag,

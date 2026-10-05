@@ -260,6 +260,35 @@ export const STALE = {
 } as const;
 
 /**
+ * Teching (#158), as in Melee: a dodge press in the air opens a window of `windowFrames` (the
+ * press frame first); a tumbling fighter that lands inside it techs instead of being knocked
+ * down: in place, or a roll the way the stick holds past `stick`. After a press, further presses
+ * are ignored for `lockoutFrames`, so mashing fails. A roll travels `distance` evenly until frame
+ * `moveTo`.
+ */
+export const TECH = {
+  windowFrames: 20,
+  lockoutFrames: 40,
+  stick: 0.5,
+  inPlace: { totalFrames: 26, invulnerableFrames: 20 },
+  roll: { totalFrames: 40, invulnerableFrames: 20, moveTo: 30, distance: 2.2 },
+} as const;
+
+/**
+ * A missed tech (#158): the fighter bounces for `bounceFrames`, deaf to input, then lies until
+ * it gets up (stick up or jump), rolls (stick sideways past `TECH.stick`) or attacks; after
+ * `lieFrames` of lying it gets up on its own. Each getup is invulnerable at first and then open
+ * to a tech chase until it can act.
+ */
+export const KNOCKDOWN = {
+  bounceFrames: 26,
+  lieFrames: 60,
+  getup: { totalFrames: 30, invulnerableFrames: 22 },
+  roll: { totalFrames: 35, invulnerableFrames: 22, moveTo: 28, distance: 2.0 },
+  attack: { invulnerableFrames: 20 },
+} as const;
+
+/**
  * Directional influence (#154), as in Melee: the stick held on the last frame of hitlag turns a
  * launch by up to `maxDegrees`, scaled by how far it points across the launch.
  */
