@@ -29,10 +29,38 @@ const clampPercent = (percent: number): number =>
   Math.min(Math.max(Math.round(percent), 0), TRAINING.maxPercent);
 
 /**
- * The dummy's input this frame: nothing, down held, or jump or dodge pressed whenever it was
- * released last frame, so the dummy repeats them as soon as it can.
+ * The stick the dummy holds for its DI (#154) while frozen by a hit: towards the stage's centre
+ * and up, or away from whoever hit it and down. `undefined` when it holds none.
  */
-export const dummyInput = (dummy: FighterState, settings: TrainingSettings): PlayerInput => {
+const diStick = (
+  state: MatchState,
+  dummy: FighterState,
+  settings: TrainingSettings,
+): PlayerInput | undefined => {
+  if (settings.di === 'none' || dummy.hitlagFrames === 0 || dummy.action !== 'hitstun') {
+    return undefined;
+  }
+  const side = (from: number): number => (dummy.position.x >= from ? 1 : -1);
+  if (settings.di === 'survival') {
+    const { left, right } = state.stage.blastZone;
+    return inputOf({ x: -side((left + right) / 2), y: 1 });
+  }
+  // A dummy in hitstun was always hit by someone; the stage's centre is only a fallback.
+  const attacker = dummy.lastHitBy === null ? undefined : state.fighters[dummy.lastHitBy];
+  return inputOf({ x: side(attacker?.position.x ?? 0), y: -1 });
+};
+
+/**
+ * The dummy's input this frame: its DI while a hit freezes it, else nothing, down held, or jump
+ * or dodge pressed whenever it was released last frame, so it repeats them as soon as it can.
+ */
+export const dummyInput = (
+  state: MatchState,
+  dummy: FighterState,
+  settings: TrainingSettings,
+): PlayerInput => {
+  const di = diStick(state, dummy, settings);
+  if (di) return di;
   switch (settings.behaviour) {
     case 'stand':
       return NEUTRAL_INPUT;
@@ -54,7 +82,9 @@ export const withDummyInput = (
   const dummy = settings && state.fighters[settings.dummy];
   if (!settings || !dummy) return inputs;
   return state.fighters.map((f) =>
-    f.slot === settings.dummy ? dummyInput(dummy, settings) : (inputs[f.slot] ?? NEUTRAL_INPUT),
+    f.slot === settings.dummy
+      ? dummyInput(state, dummy, settings)
+      : (inputs[f.slot] ?? NEUTRAL_INPUT),
   );
 };
 

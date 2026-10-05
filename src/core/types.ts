@@ -296,11 +296,18 @@ export type AerialLanding = 'autoCancelled' | 'lCancelled' | 'missed';
 /** What the training dummy does on its own (#144). */
 export type DummyBehaviour = 'stand' | 'crouch' | 'jump' | 'dodge';
 
+/**
+ * The stick the dummy holds when hit (#154): none, survival DI (towards the stage's centre and
+ * up) or combo DI (away from the attacker and down).
+ */
+export type DummyDi = 'none' | 'survival' | 'combo';
+
 /** Set in the training panel; the session applies them between frames. */
 export interface TrainingSettings {
   /** The slot the dummy plays; it ignores that slot's input. */
   readonly dummy: PlayerSlot;
   readonly behaviour: DummyBehaviour;
+  readonly di: DummyDi;
   /** The dummy's damage after a reset or a change here. */
   readonly percent: number;
   /** Holds the dummy at `percent`, so every try of a combo starts the same. */

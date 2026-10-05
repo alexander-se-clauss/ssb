@@ -71,7 +71,9 @@ Knockback and hitstun follow Melee's formula (#153, `KNOCKBACK` in `config.ts`,
 direction each frame while gravity acts on the fighter's own speed. A launch of 80 knockback or
 more makes the target tumble (`tumbling`) until it acts or lands. Other speed in the air above
 the character's `airSpeed`, such as from running off a ledge, bleeds off at
-`FIGHTER_RULES.launchDecay`.
+`FIGHTER_RULES.launchDecay`. Directional influence (#154, `di.ts`, `DI` in `config.ts`): the stick
+a fighter holds on the last frame of hitlag turns `knockback` by up to 18 degrees, the most when
+held across the launch.
 Move data is one file per family in `move-data/` (`jab.ts`, `tilts.ts`, `smashes.ts`,
 `aerials.ts`, `ledge.ts`, and a file of specials per character, `rivet.ts` and `vela.ts`, each registered in `move-data/index.ts`). A move with a `landingLag` is an aerial:
 landing while it runs ends it and puts the fighter in the `landing` action for that many frames
@@ -353,7 +355,8 @@ WebGL; the styles are in `match-hud.css`.
 
 Training mode (#144, ADR 0008) is data in the match: `MatchConfig.training` starts a match
 with `MatchState.training` (the dummy's `TrainingSettings` and the measurements). `step` hands the
-dummy `dummyInput` instead of its slot's input, never ends the match and costs no stocks, and
+dummy `dummyInput` instead of its slot's input (its behaviour, or its DI while a hit freezes
+it), never ends the match and costs no stocks, and
 `trackTraining` (`training.ts`) counts the combo (hits while the dummy stays in hitstun or hitlag)
 and follows the last hit until attacker and dummy can both act: the frame advantage. The
 `TrainingControls` port pauses, advances one frame, changes settings (`configureTraining`) and

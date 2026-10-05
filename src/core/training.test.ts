@@ -16,6 +16,7 @@ const NONE = inputOf({});
 const SETTINGS: TrainingSettings = {
   dummy: 1,
   behaviour: 'stand',
+  di: 'none',
   percent: 0,
   freezePercent: false,
 };

@@ -1,7 +1,7 @@
-import { TRAINING, type DummyBehaviour, type TrainingSettings } from '../core';
+import { TRAINING, type DummyBehaviour, type DummyDi, type TrainingSettings } from '../core';
 
 /** A setting row in the training panel (#144). */
-export type TrainingField = 'percent' | 'freeze' | 'behaviour' | 'fighter';
+export type TrainingField = 'percent' | 'freeze' | 'behaviour' | 'di' | 'fighter';
 
 export interface TrainingRow {
   readonly field: TrainingField;
@@ -15,6 +15,15 @@ const BEHAVIOUR_LABEL: Readonly<Record<DummyBehaviour, string>> = {
   crouch: 'Crouch',
   jump: 'Jump',
   dodge: 'Dodge',
+};
+
+/** The dummy's DI (#154): none, survival DI (in and up) or combo DI (away and down). */
+export const DIS: readonly DummyDi[] = ['none', 'survival', 'combo'];
+
+const DI_LABEL: Readonly<Record<DummyDi, string>> = {
+  none: 'None',
+  survival: 'Survival',
+  combo: 'Combo',
 };
 
 const wrap = (index: number, size: number): number => ((index % size) + size) % size;
@@ -45,6 +54,8 @@ export const adjustTraining = (
       return { ...settings, freezePercent: !settings.freezePercent };
     case 'behaviour':
       return { ...settings, behaviour: cycle(BEHAVIOURS, settings.behaviour, delta) };
+    case 'di':
+      return { ...settings, di: cycle(DIS, settings.di, delta) };
   }
 };
 
@@ -53,5 +64,6 @@ export const trainingRows = (settings: TrainingSettings, dummyName: string): Tra
   { field: 'percent', label: `Dummy percent: ${settings.percent}%` },
   { field: 'freeze', label: `Freeze percent: ${settings.freezePercent ? 'On' : 'Off'}` },
   { field: 'behaviour', label: `Dummy: ${BEHAVIOUR_LABEL[settings.behaviour]}` },
+  { field: 'di', label: `Dummy DI: ${DI_LABEL[settings.di]}` },
   { field: 'fighter', label: `Dummy fighter: ${dummyName}` },
 ];
