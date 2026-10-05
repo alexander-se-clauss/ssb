@@ -20,6 +20,8 @@ export {
   activeHitboxes,
   hurtboxes,
   knockback,
+  launchSpeed,
+  hitstunOf,
   type ActiveEffect,
   type Hitbox,
   type Hurtbox,

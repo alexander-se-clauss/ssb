@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { activeHitboxes, knockback } from './combat';
+import { activeHitboxes, knockback, launchSpeed } from './combat';
 import { findMove } from './move-data';
 import { moveTiming } from './moves';
 import { CAPSULE } from './registry';
@@ -57,7 +57,9 @@ describe('match events for the view (#48)', () => {
   it('reports how hard the hit launched, which grows with the damage', () => {
     const light = jabHit(0).event;
     const heavy = jabHit(120).event;
-    expect(light.launch).toBeCloseTo(knockback(JAB_HIT, JAB_HIT.damage, CAPSULE.stats.weight));
+    expect(light.launch).toBeCloseTo(
+      launchSpeed(knockback(JAB_HIT, JAB_HIT.damage, CAPSULE.stats.weight)),
+    );
     expect(heavy.launch).toBeGreaterThan(light.launch * 2);
   });
 

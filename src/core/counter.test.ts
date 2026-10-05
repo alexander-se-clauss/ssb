@@ -98,7 +98,7 @@ describe("Vela's counter (#51)", () => {
     const state = countering(COUNTER.from, -1);
     const { target } = applyHit(
       fighter(state, 0),
-      { damage: 8, angle: 40, baseKnockback: 0.2, knockbackGrowth: 0.004 },
+      { damage: 8, angle: 40, baseKnockback: 18, knockbackGrowth: 104 },
       -1,
       1,
       { x: 0.8, y: 0 },
@@ -158,7 +158,7 @@ describe("Vela's counter (#51)", () => {
 
   it('counters a projectile in a match, with no damage and no credit', () => {
     const state = countering(COUNTER.from);
-    const shot = { damage: 6, angle: 30, baseKnockback: 0.2, knockbackGrowth: 0.002 };
+    const shot = { damage: 6, angle: 30, baseKnockback: 25, knockbackGrowth: 65 };
     const incoming: MatchState = {
       ...state,
       objects: [
@@ -192,7 +192,7 @@ describe("Vela's counter (#51)", () => {
     const early = countering(COUNTER.from - 1);
     const struck = applyHit(
       fighter(early, 0),
-      { damage: JAB_DAMAGE, angle: 40, baseKnockback: 0.1, knockbackGrowth: 0.002 },
+      { damage: JAB_DAMAGE, angle: 40, baseKnockback: 5, knockbackGrowth: 70 },
       -1,
       1,
       { x: 0.8, y: 0 },
@@ -206,7 +206,7 @@ describe("Vela's counter (#51)", () => {
     const recovering = countering(COUNTER.to);
     const struck = applyHit(
       fighter(recovering, 0),
-      { damage: JAB_DAMAGE, angle: 40, baseKnockback: 0.1, knockbackGrowth: 0.002 },
+      { damage: JAB_DAMAGE, angle: 40, baseKnockback: 5, knockbackGrowth: 70 },
       -1,
       1,
       { x: 0.8, y: 0 },
@@ -242,7 +242,7 @@ describe("Vela's counter (#51)", () => {
 
   it('counters a projectile the same way', () => {
     const state = countering(COUNTER.from);
-    const shot = { damage: 6, angle: 30, baseKnockback: 0.2, knockbackGrowth: 0.002 };
+    const shot = { damage: 6, angle: 30, baseKnockback: 25, knockbackGrowth: 65 };
     const result = applyHit(fighter(state, 0), shot, -1, 1, { x: 1.5, y: 0.8 });
     expect(result.guard).toBe('countered');
     expect(result.damage).toBe(0);

@@ -20,8 +20,8 @@ export const JAB: MoveDef = {
       // Light and nearly flat, so the target stays in reach for jab 2.
       damage: 4,
       angle: 20,
-      baseKnockback: 0.05,
-      knockbackGrowth: 0.002,
+      baseKnockback: 0,
+      knockbackGrowth: 87,
     },
     {
       anchor: { bone: 'upperArmFront', at: 1 },
@@ -31,8 +31,8 @@ export const JAB: MoveDef = {
       priority: 0,
       damage: 3,
       angle: 20,
-      baseKnockback: 0.04,
-      knockbackGrowth: 0.0015,
+      baseKnockback: 0,
+      knockbackGrowth: 78,
     },
   ],
   poses: [
@@ -62,8 +62,8 @@ export const JAB2: MoveDef = {
       priority: 0,
       damage: 4,
       angle: 20,
-      baseKnockback: 0.05,
-      knockbackGrowth: 0.002,
+      baseKnockback: 0,
+      knockbackGrowth: 87,
     },
   ],
   poses: [
@@ -92,8 +92,8 @@ export const JAB3: MoveDef = {
       priority: 1,
       damage: 8,
       angle: 45,
-      baseKnockback: 0.25,
-      knockbackGrowth: 0.0035,
+      baseKnockback: 40,
+      knockbackGrowth: 68,
     },
     {
       anchor: { bone: 'lowerLegFront', at: 0 },
@@ -103,8 +103,8 @@ export const JAB3: MoveDef = {
       priority: 0,
       damage: 6,
       angle: 45,
-      baseKnockback: 0.2,
-      knockbackGrowth: 0.003,
+      baseKnockback: 30,
+      knockbackGrowth: 72,
     },
   ],
   poses: [

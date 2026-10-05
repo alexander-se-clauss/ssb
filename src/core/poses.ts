@@ -4,7 +4,7 @@
  * target a little each frame, so switching states never pops. The pose lives in `FighterState`,
  * so hurtboxes follow it and the view only interpolates and draws it.
  */
-import { DODGE, HITSTUN_PER_KNOCKBACK, LEDGE, POSE } from './config';
+import { DODGE, LEDGE, POSE } from './config';
 import { findMove } from './move-data';
 import type { MoveDef } from './moves';
 import { POSES, type PoseName } from './pose-data';
@@ -12,9 +12,6 @@ import { BONE_IDS, type BoneId, type Pose } from './skeleton';
 import type { FighterState } from './types';
 
 export { POSES, type PoseName };
-
-/** Hitstun of a launch at `POSE.tumbleSpeed`; longer hitstun means a tumble. */
-const TUMBLE_HITSTUN = Math.round(POSE.tumbleSpeed * HITSTUN_PER_KNOCKBACK);
 
 /** The pose for what the fighter is doing right now; `null` while a move's keyframes lead. */
 export const poseName = (fighter: FighterState): PoseName | null => {
@@ -54,11 +51,11 @@ export const poseName = (fighter: FighterState): PoseName | null => {
     case 'attack':
       return fighter.moveId === null ? 'idle' : null;
     case 'airborne':
-      return fighter.velocity.y > 0 ? 'jump' : 'fall';
+      // A tumble (#153) goes on after its hitstun until the fighter acts.
+      return fighter.tumbling ? 'tumble' : fighter.velocity.y > 0 ? 'jump' : 'fall';
     case 'hitstun':
-      // Decided by the launch, not the current speed, so a tumble stays a tumble as it slows:
-      // hitstun is set from the launch speed and counts down as `actionFrame` counts up.
-      return fighter.hitstunFrames + fighter.actionFrame >= TUMBLE_HITSTUN ? 'tumble' : 'hurt';
+      // Decided by the launch, not the current speed, so a tumble stays a tumble as it slows.
+      return fighter.tumbling ? 'tumble' : 'hurt';
     case 'idle':
     case 'eliminated':
       return 'idle';

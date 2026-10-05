@@ -86,7 +86,20 @@ export interface FighterState {
   /** Registry id of the character this fighter plays. */
   readonly characterId: string;
   readonly position: Vec2;
+  /**
+   * Total speed this frame: its own movement plus what is left of a launch (`knockback`).
+   */
   readonly velocity: Vec2;
+  /**
+   * What is left of the last launch (#153), part of `velocity`: it decays along its direction
+   * each frame while the fighter's own speed falls with gravity, as in Melee.
+   */
+  readonly knockback: Vec2;
+  /**
+   * Launched hard enough to tumble (#153): from the hit until the fighter acts or lands. A
+   * weaker hit only flinches.
+   */
+  readonly tumbling: boolean;
   readonly facing: 1 | -1;
   readonly grounded: boolean;
   readonly jumpsRemaining: number;
@@ -365,7 +378,10 @@ export interface CharacterStats {
   readonly shortHopVelocity: number;
   /** Jumps in the air after leaving the ground (Melee's double jump is 1); landing resets them. */
   readonly airJumps: number;
-  /** Knockback is divided by it: heavier characters fly less far. */
+  /**
+   * In Melee's units (Mario 100): the percent part of knockback is scaled by
+   * `200 / (weight + 100)`, so heavier characters fly less far (#153).
+   */
   readonly weight: number;
   /** Landing lag after a jump or fall without an aerial running; aerials set their own. */
   readonly landingLagFrames: number;

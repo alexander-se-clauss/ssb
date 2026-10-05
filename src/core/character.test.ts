@@ -20,7 +20,7 @@ vi.mock('./registry', async (importOriginal) => {
     bones: base.skeleton.bones.map((bone) => ({ ...bone, length: bone.length * 1.5 })),
   };
   const extra: CharacterDef[] = [
-    { ...base, id: 'heavy', name: 'Heavy', stats: { ...base.stats, weight: 2 } },
+    { ...base, id: 'heavy', name: 'Heavy', stats: { ...base.stats, weight: 300 } },
     { ...base, id: 'floaty', name: 'Floaty', stats: { ...base.stats, gravity: 0.006 } },
     { ...base, id: 'quick', name: 'Quick', stats: { ...base.stats, walkSpeed: 0.28 } },
     { ...base, id: 'flyer', name: 'Flyer', stats: { ...base.stats, airJumps: 3 } },
@@ -95,8 +95,8 @@ describe('character definitions', () => {
     const heavy = run(faceOff('heavy'), 4, jab);
     expect(fighter(light, 1).action).toBe('hitstun');
     expect(fighter(heavy, 1).action).toBe('hitstun');
-    expect(fighter(heavy, 1).velocity.x).toBeCloseTo(fighter(light, 1).velocity.x / 2);
-    expect(fighter(heavy, 1).hitstunFrames).toBeLessThan(fighter(light, 1).hitstunFrames);
+    expect(fighter(heavy, 1).velocity.x).toBeLessThan(fighter(light, 1).velocity.x);
+    expect(fighter(heavy, 1).hitstunFrames).toBeLessThanOrEqual(fighter(light, 1).hitstunFrames);
   });
 
   it('let a character with lower gravity fall more slowly', () => {

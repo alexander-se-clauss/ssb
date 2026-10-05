@@ -1,6 +1,6 @@
 import { CENTRED_STICK, attackInput, trackStick } from './attack-input';
 import { characterOf } from './character';
-import { DODGE, FIGHTER_RULES, HELPLESS, INPUT, L_CANCEL, LEDGE, STICK } from './config';
+import { DODGE, FIGHTER_RULES, HELPLESS, INPUT, KNOCKBACK, L_CANCEL, LEDGE, STICK } from './config';
 import { NEUTRAL_INPUT, pressed } from './input';
 import {
   climbPosition,
@@ -10,7 +10,7 @@ import {
   ledgeOption,
   type LedgeClimb,
 } from './ledge';
-import { approach } from './math';
+import { approach, type Vec2 } from './math';
 import { baseDodge, dodgeFrames } from './dodge-frames';
 import { isGroundMovement, moveOnGround } from './ground-movement';
 import { findMove } from './move-data';
@@ -44,6 +44,8 @@ export const createFighter = (
     characterId,
     position: spawn,
     velocity: { x: 0, y: 0 },
+    knockback: { x: 0, y: 0 },
+    tumbling: false,
     facing: spawn.x > 0 ? -1 : 1,
     grounded: false,
     jumpsRemaining: stats.airJumps,
@@ -324,7 +326,11 @@ export const updateFighter = (
   }
 
   let { x: px, y: py } = fighter.position;
-  let { x: vx, y: vy } = fighter.velocity;
+  // The fighter's own speed. What is left of a launch (#153) moves it on top and decays on its
+  // own, so gravity and drift act on the fighter while the launch fades, as in Melee.
+  let launch = decayLaunch(fighter.knockback);
+  let vx = fighter.velocity.x - fighter.knockback.x;
+  let vy = fighter.velocity.y - fighter.knockback.y;
   let {
     facing,
     grounded,
@@ -617,11 +623,11 @@ export const updateFighter = (
     vy = fastFalling ? -stats.fastFallSpeed : Math.max(vy - stats.gravity, -stats.maxFallSpeed);
   }
 
-  const nextX = px + vx;
-  const nextY = py + vy;
+  const nextX = px + vx + launch.x;
+  const nextY = py + vy + launch.y;
 
   // Landing: feet crossed a platform top from above this frame.
-  if (!grounded && vy <= 0) {
+  if (!grounded && vy + launch.y <= 0) {
     const landing = stage.platforms.find(
       (p) =>
         !(p.passThrough && wantsDrop) &&
@@ -634,6 +640,8 @@ export const updateFighter = (
       px = nextX;
       py = landing.bounds.top;
       vy = 0;
+      // The ground stops a launch's fall; along the ground it slides on.
+      launch = { x: launch.x, y: 0 };
       grounded = true;
       jumpsRemaining = stats.airJumps + 1;
       airDodgeUsed = false;
@@ -701,12 +709,15 @@ export const updateFighter = (
     if (smallest === pushDown) {
       py = b.bottom - stats.height;
       vy = Math.min(vy, 0);
+      launch = { x: launch.x, y: Math.min(launch.y, 0) };
     } else if (smallest === pushLeft) {
       px = b.left - half;
       vx = Math.min(vx, 0);
+      launch = { x: Math.min(launch.x, 0), y: launch.y };
     } else {
       px = b.right + half;
       vx = Math.max(vx, 0);
+      launch = { x: Math.max(launch.x, 0), y: launch.y };
     }
   }
 
@@ -732,7 +743,7 @@ export const updateFighter = (
   const caught =
     !grounded &&
     (action === 'airborne' || action === 'helpless' || inRecovery) &&
-    vy <= 0 &&
+    vy + launch.y <= 0 &&
     input.y >= DROP_THRESHOLD &&
     regrab === 0
       ? ledgeInReach(stage, character, { x: px, y: py }, ledgesTaken)
@@ -742,6 +753,7 @@ export const updateFighter = (
     ({ x: px, y: py } = hangPosition(ledge, character));
     vx = 0;
     vy = 0;
+    launch = { x: 0, y: 0 };
     facing = ledge.facing;
     action = 'ledge';
     actionFrame = 0;
@@ -759,7 +771,15 @@ export const updateFighter = (
   const moved: FighterState = {
     ...fighter,
     position: { x: px, y: py },
-    velocity: { x: vx, y: vy },
+    velocity: { x: vx + launch.x, y: vy + launch.y },
+    knockback: launch,
+    // A tumble lasts while the fighter only drifts: acting (a jump, a move, a dodge) or landing
+    // ends it.
+    tumbling:
+      fighter.tumbling &&
+      !grounded &&
+      (action === 'hitstun' ||
+        (action === 'airborne' && jumpsRemaining === fighter.jumpsRemaining)),
     facing,
     grounded,
     jumpsRemaining,
@@ -791,4 +811,13 @@ export const updateFighter = (
   };
   // Eased before combat, so hurtboxes built from the pose match this frame's body.
   return { ...moved, pose: nextPose(moved, frame) };
+}; /**
+ * What is left of a launch after one more frame (#153): slower by `KNOCKBACK.decayPerFrame` along
+ * its direction, and stopped rather than reversed.
+ */
+const decayLaunch = ({ x, y }: Vec2): Vec2 => {
+  const speed = Math.hypot(x, y);
+  if (speed <= KNOCKBACK.decayPerFrame) return { x: 0, y: 0 };
+  const scale = (speed - KNOCKBACK.decayPerFrame) / speed;
+  return { x: x * scale, y: y * scale };
 };

@@ -115,6 +115,8 @@ const handleKo = (fighter: FighterState, state: MatchState, events: GameEvent[])
       hitlagFrames: 0,
       buffer: null,
       velocity: { x: 0, y: 0 },
+      knockback: { x: 0, y: 0 },
+      tumbling: false,
     };
   }
   const respawned = createFighter(fighter.slot, fighter.characterId, state.stage, stocks);

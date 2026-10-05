@@ -1,5 +1,5 @@
 import { characterOf } from './character';
-import { HITLAG, HITSTUN_PER_KNOCKBACK } from './config';
+import { HITLAG, KNOCKBACK } from './config';
 import { circleIntersectsCapsule, type Vec2 } from './math';
 import { findMove } from './move-data';
 import {
@@ -146,12 +146,26 @@ export const strikingHitbox = (
   return best;
 };
 
-/** Launch speed in units per frame. Grows with the target's damage after the hit. */
+/**
+ * A hit's knockback in Melee's units (#153, `KNOCKBACK` in config): grows with the target's
+ * percent after the hit and the hit's damage, by the move's growth, on top of its base, and
+ * shrinks with the target's weight.
+ */
 export const knockback = (
-  attack: Pick<HitDef, 'baseKnockback' | 'knockbackGrowth'>,
+  attack: Pick<HitDef, 'damage' | 'baseKnockback' | 'knockbackGrowth'>,
   damageAfterHit: number,
   weight: number,
-): number => (attack.baseKnockback + damageAfterHit * attack.knockbackGrowth) / weight;
+): number => {
+  const p = damageAfterHit;
+  const scaled = (p / 10 + (p * attack.damage) / 20) * (200 / (weight + 100)) * 1.4 + 18;
+  return (scaled * attack.knockbackGrowth) / 100 + attack.baseKnockback;
+};
+
+/** The launch speed of `units` of knockback, in stage units per frame. */
+export const launchSpeed = (units: number): number => units * KNOCKBACK.speedPerUnit;
+
+/** The hitstun frames of `units` of knockback, as in Melee. */
+export const hitstunOf = (units: number): number => Math.floor(units * KNOCKBACK.hitstunPerUnit);
 
 /** How long a hit freezes attacker and target: longer for harder hits. */
 export const hitlagFrames = (attack: Pick<HitDef, 'damage' | 'hitlagScale'>): number =>
@@ -217,7 +231,7 @@ export const applyHit = (
   if (guard && fromFront && hit.damage < guard.breakDamage) {
     const damage = hit.damage * guard.damageScale;
     // By the hit alone, not the blocker's percent, so a guard at 120% slides no further.
-    const push = knockback(hit, hit.damage, stats.weight) * guard.pushback;
+    const push = launchSpeed(knockback(hit, hit.damage, stats.weight)) * guard.pushback;
     return {
       hitlag,
       launch: push,
@@ -227,7 +241,8 @@ export const applyHit = (
         ...target,
         damage: target.damage + damage,
         // Pushed straight back along the ground, the guard still up.
-        velocity: { x: -target.facing * push, y: target.velocity.y },
+        velocity: { x: -target.facing * push, y: target.velocity.y - target.knockback.y },
+        knockback: { x: 0, y: 0 },
         hitlagFrames: Math.max(target.hitlagFrames, hitlag),
         lastHitBy: by,
       },
@@ -235,8 +250,10 @@ export const applyHit = (
   }
   const broken = guard !== undefined && fromFront;
   const damage = target.damage + hit.damage;
-  const speed = knockback(hit, damage, stats.weight);
+  const units = knockback(hit, damage, stats.weight);
+  const speed = launchSpeed(units);
   const radians = (hit.angle * Math.PI) / 180;
+  const launch = { x: Math.cos(radians) * speed * direction, y: Math.sin(radians) * speed };
   return {
     hitlag,
     launch: speed,
@@ -245,7 +262,10 @@ export const applyHit = (
     target: {
       ...target,
       damage,
-      velocity: { x: Math.cos(radians) * speed * direction, y: Math.sin(radians) * speed },
+      // All of it is launch: the fighter's own speed starts again from nothing.
+      velocity: launch,
+      knockback: launch,
+      tumbling: units >= KNOCKBACK.tumbleFrom,
       grounded: false,
       // Launched off the ground, the ground jump is gone; the air jumps stay.
       jumpsRemaining: Math.min(target.jumpsRemaining, stats.airJumps),
@@ -256,7 +276,7 @@ export const applyHit = (
       // A hit gives the air dodge back, as in Ultimate.
       airDodgeUsed: false,
       moveId: null,
-      hitstunFrames: Math.round(speed * HITSTUN_PER_KNOCKBACK) + (broken ? guard.breakStun : 0),
+      hitstunFrames: hitstunOf(units) + (broken ? guard.breakStun : 0),
       // The launch is set now but held until the freeze ends.
       hitlagFrames: Math.max(target.hitlagFrames, hitlag),
       hitTargets: [],
