@@ -29,6 +29,7 @@ export {
 export * from './moves';
 export * from './move-slots';
 export { MOVES, findMove } from './move-data';
+export { activeGrabBox, isHolding, type GrabBox } from './grab';
 export { isArmed } from './objects';
 export { damageScale } from './stale';
 export { FixedStepClock } from './time';

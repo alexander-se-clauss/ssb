@@ -42,6 +42,10 @@ const anchorPoints = (fighter: FighterState): ((anchor: HitboxAnchor) => Vec2) =
   };
 };
 
+/** Where one anchor is on the fighter's body now. */
+export const anchorPoint = (fighter: FighterState, anchor: HitboxAnchor): Vec2 =>
+  anchorPoints(fighter)(anchor);
+
 /** The hitboxes of the fighter's move that are on this frame. Exported so views can draw them. */
 export const activeHitboxes = (fighter: FighterState): Hitbox[] => {
   if (fighter.action !== 'attack' || fighter.moveId === null) return [];

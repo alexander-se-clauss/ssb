@@ -10,6 +10,7 @@ const P1: ControlLabels = {
   special: 'G',
   dodge: 'H',
   shortHop: 'V',
+  grab: 'C',
   start: 'Enter',
 };
 const P2: ControlLabels = {
@@ -21,6 +22,7 @@ const P2: ControlLabels = {
   special: '/',
   dodge: 'Right Shift',
   shortHop: 'Num 1',
+  grab: 'Num 3',
   start: 'Enter',
 };
 
@@ -35,6 +37,7 @@ describe('controls screen', () => {
       ['Attack · pick in menus', 'F', '.'],
       ['Special · cancel in menus', 'G', '/'],
       ['Dodge (sidestep; roll with left or right; air dodge)', 'H', 'Right Shift'],
+      ['Grab (attack pummels)', 'C', 'Num 3'],
       ['Start · start the match', 'Enter', 'Enter'],
     ]);
   });

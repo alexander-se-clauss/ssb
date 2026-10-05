@@ -31,6 +31,9 @@ export const CAPSULE: CharacterDef = {
     downAir: 'downAir',
     ledgeAttack: 'ledgeAttack',
     getupAttack: 'getupAttack',
+    grab: 'grab',
+    dashGrab: 'dashGrab',
+    pivotGrab: 'pivotGrab',
   },
 };
 

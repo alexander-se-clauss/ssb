@@ -4,7 +4,7 @@
  * target a little each frame, so switching states never pops. The pose lives in `FighterState`,
  * so hurtboxes follow it and the view only interpolates and draws it.
  */
-import { DODGE, KNOCKDOWN, LEDGE, POSE, TECH } from './config';
+import { DODGE, GRAB, KNOCKDOWN, LEDGE, POSE, TECH } from './config';
 import { isCrouching } from './crouch';
 import { findMove } from './move-data';
 import type { MoveDef } from './moves';
@@ -69,6 +69,15 @@ export const poseName = (fighter: FighterState): PoseName | null => {
       return fighter.actionFrame < KNOCKDOWN.roll.moveTo ? 'roll' : 'crouch';
     case 'knockdown':
       return 'downed';
+    case 'holding':
+      return 'grab';
+    case 'pummel':
+      // A knee into the catch around the hit frame (#159).
+      return Math.abs(fighter.actionFrame - GRAB.pummel.hitFrame) <= 3 ? 'jab' : 'grab';
+    case 'grabbed':
+      return 'held';
+    case 'grabRelease':
+      return 'hurt';
     case 'idle':
       return isCrouching(fighter) ? 'crouch' : 'idle';
     case 'eliminated':

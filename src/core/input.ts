@@ -8,6 +8,7 @@ export const NEUTRAL_INPUT: PlayerInput = {
   special: false,
   shield: false,
   shortHop: false,
+  grab: false,
   start: false,
 };
 
@@ -20,5 +21,5 @@ export const inputOf = (partial: Partial<PlayerInput>): PlayerInput => ({
 export const pressed = (
   current: PlayerInput,
   previous: PlayerInput,
-  button: 'jump' | 'attack' | 'special' | 'shield' | 'shortHop' | 'start',
+  button: 'jump' | 'attack' | 'special' | 'shield' | 'shortHop' | 'grab' | 'start',
 ): boolean => current[button] && !previous[button];

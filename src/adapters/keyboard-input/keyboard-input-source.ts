@@ -13,6 +13,8 @@ export interface KeyMap {
   readonly shield: string;
   /** The short hop button (#147). */
   readonly shortHop: string;
+  /** The grab button (#159). */
+  readonly grab: string;
 }
 
 export const PLAYER_ONE_KEYS: KeyMap = {
@@ -25,6 +27,7 @@ export const PLAYER_ONE_KEYS: KeyMap = {
   special: 'KeyG',
   shield: 'KeyH',
   shortHop: 'KeyV',
+  grab: 'KeyC',
 };
 
 export const PLAYER_TWO_KEYS: KeyMap = {
@@ -37,6 +40,7 @@ export const PLAYER_TWO_KEYS: KeyMap = {
   special: 'Slash',
   shield: 'ShiftRight',
   shortHop: 'Numpad1',
+  grab: 'Numpad3',
 };
 
 /** Readable names for the keys a player uses, for the controls screen. */
@@ -49,6 +53,7 @@ export interface KeyLabels {
   readonly special: string;
   readonly dodge: string;
   readonly shortHop: string;
+  readonly grab: string;
   readonly start: string;
 }
 
@@ -82,6 +87,7 @@ export const describeKeys = (keys: KeyMap): KeyLabels => ({
   special: keyName(keys.special),
   dodge: keyName(keys.shield),
   shortHop: keyName(keys.shortHop),
+  grab: keyName(keys.grab),
   // Enter starts for every keyboard player, through the page's menu keys.
   start: 'Enter',
 });
@@ -130,6 +136,7 @@ export class KeyboardInputSource implements InputSource {
       special: is(k.special),
       shield: is(k.shield),
       shortHop: is(k.shortHop),
+      grab: is(k.grab),
       // Enter is the keyboard's start, handled as a menu key, not per player.
       start: false,
     };

@@ -28,7 +28,10 @@ interface Window {
       { devices: (number | null)[]; cursors: number[]; picks: (string | null)[] } | undefined;
     rules(): { mode: string; stocks: number; timeLimitSeconds: number };
     restart(): void;
-    hold(player: number, input: { x?: number; y?: number; jump?: boolean; attack?: boolean }): void;
+    hold(
+      player: number,
+      input: { x?: number; y?: number; jump?: boolean; attack?: boolean; grab?: boolean },
+    ): void;
     release(player: number): void;
     sounds(): {
       cues: string[];

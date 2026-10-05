@@ -2,6 +2,7 @@
 import { validateMove, type MoveDef, type MoveId } from '../moves';
 import { BACK_AIR, DOWN_AIR, FORWARD_AIR, NEUTRAL_AIR, UP_AIR } from './aerials';
 import { GETUP_ATTACK } from './getup';
+import { DASH_GRAB, GRAB_MOVE, PIVOT_GRAB } from './grab';
 import { JAB, JAB2, JAB3 } from './jab';
 import { LEDGE_ATTACK } from './ledge';
 import { HAYMAKER, IRON_GUARD, SPRING_JACK, WRENCH_TOSS } from './rivet';
@@ -26,6 +27,9 @@ const ALL: readonly MoveDef[] = [
   DOWN_AIR,
   LEDGE_ATTACK,
   GETUP_ATTACK,
+  GRAB_MOVE,
+  DASH_GRAB,
+  PIVOT_GRAB,
   HAYMAKER,
   SPRING_JACK,
   IRON_GUARD,

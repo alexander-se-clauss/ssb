@@ -27,6 +27,8 @@ export interface PlayerInput {
    * `shortHopVelocity`, low enough for a quick aerial. In the air it is the air jump.
    */
   readonly shortHop: boolean;
+  /** The grab button (#159), like Melee's Z: a grab on the ground, nothing in the air. */
+  readonly grab: boolean;
   /** The Start button. Menus use it; the simulation ignores it. */
   readonly start: boolean;
 }
@@ -69,6 +71,13 @@ export type FighterAction =
   | 'getup'
   | 'getupForward'
   | 'getupBack'
+  /** Holding a caught fighter (#159), and hitting it with a pummel while holding it. */
+  | 'holding'
+  | 'pummel'
+  /** Held by another fighter (#159) until it breaks free or the holder lets go. */
+  | 'grabbed'
+  /** Pushed apart after a grab ends without a throw (#159), shortly unable to act. */
+  | 'grabRelease'
   | 'eliminated';
 
 /** A press waiting until the fighter can act on it (ADR 0006). */
@@ -153,6 +162,15 @@ export interface FighterState {
   readonly techWindow: number;
   /** Frames left in which a dodge press opens no new tech window, so mashing fails (#158). */
   readonly techLockout: number;
+  /** The fighter this one holds (#159), while `holding` or in a `pummel`, else `null`. */
+  readonly holding: PlayerSlot | null;
+  /** The fighter holding this one (#159), while `grabbed`, else `null`. */
+  readonly heldBy: PlayerSlot | null;
+  /**
+   * Frames left until a `grabbed` fighter breaks free (#159): set by its percent when caught,
+   * cut faster by mashing.
+   */
+  readonly escapeFrames: number;
   /** Who hit this fighter last since it respawned; gets the KO credit. */
   readonly lastHitBy: PlayerSlot | null;
   readonly hitstunFrames: number;
