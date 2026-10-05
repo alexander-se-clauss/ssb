@@ -242,6 +242,13 @@ export const KNOCKBACK = {
 } as const;
 
 /**
+ * Crouching (#156): standing with the stick held down past `stick`. A crouched fighter takes
+ * `knockbackScale` of a hit's knockback, as in Melee's crouch cancel; below the tumble threshold
+ * it stays on the ground.
+ */
+export const CROUCH = { stick: 0.5, knockbackScale: 2 / 3 } as const;
+
+/**
  * Directional influence (#154), as in Melee: the stick held on the last frame of hitlag turns a
  * launch by up to `maxDegrees`, scaled by how far it points across the launch.
  */

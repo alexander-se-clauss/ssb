@@ -14,17 +14,18 @@ export const isSdiFlick = (input: PlayerInput, previous: PlayerInput): boolean =
 
 /**
  * Where a fighter `halfWidth` wide at `position` ends up after an SDI flick of `input` on
- * `stage`.
+ * `stage`. On the ground, as after a crouch cancel (#156), it moves only along it, as in Melee.
  */
 export const smashDi = (
   position: Vec2,
   input: PlayerInput,
   stage: StageDef,
   halfWidth: number,
+  onGround = false,
 ): Vec2 => {
   const length = Math.hypot(input.x, input.y);
   let x = position.x + (input.x / length) * SDI.distance;
-  let y = position.y + (input.y / length) * SDI.distance;
+  let y = onGround ? position.y : position.y + (input.y / length) * SDI.distance;
   for (const { bounds, passThrough } of stage.platforms) {
     // Not down through a platform any part of its body is over, before or after the flick, so
     // flicks out past an edge and then down still stop on top.

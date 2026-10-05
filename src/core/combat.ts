@@ -1,5 +1,6 @@
 import { characterOf } from './character';
-import { HITLAG, KNOCKBACK } from './config';
+import { CROUCH, HITLAG, KNOCKBACK } from './config';
+import { isCrouching } from './crouch';
 import { circleIntersectsCapsule, type Vec2 } from './math';
 import { findMove } from './move-data';
 import {
@@ -250,10 +251,17 @@ export const applyHit = (
   }
   const broken = guard !== undefined && fromFront;
   const damage = target.damage + hit.damage;
-  const units = knockback(hit, damage, stats.weight);
+  // Crouch cancel (#156): a crouch takes part of the knockback, and below a tumble the ground
+  // holds the fighter, which only slides back along it.
+  const crouched = isCrouching(target);
+  const units = knockback(hit, damage, stats.weight) * (crouched ? CROUCH.knockbackScale : 1);
+  const tumbling = units >= KNOCKBACK.tumbleFrom;
+  const grounded = crouched && !tumbling;
   const speed = launchSpeed(units);
   const radians = (hit.angle * Math.PI) / 180;
-  const launch = { x: Math.cos(radians) * speed * direction, y: Math.sin(radians) * speed };
+  const launch = grounded
+    ? { x: Math.cos(radians) * speed * direction, y: 0 }
+    : { x: Math.cos(radians) * speed * direction, y: Math.sin(radians) * speed };
   return {
     hitlag,
     launch: speed,
@@ -265,10 +273,12 @@ export const applyHit = (
       // All of it is launch: the fighter's own speed starts again from nothing.
       velocity: launch,
       knockback: launch,
-      tumbling: units >= KNOCKBACK.tumbleFrom,
-      grounded: false,
+      tumbling,
+      grounded,
       // Launched off the ground, the ground jump is gone; the air jumps stay.
-      jumpsRemaining: Math.min(target.jumpsRemaining, stats.airJumps),
+      jumpsRemaining: grounded
+        ? target.jumpsRemaining
+        : Math.min(target.jumpsRemaining, stats.airJumps),
       action: 'hitstun',
       actionFrame: 0,
       // Knocked off a ledge it held.
