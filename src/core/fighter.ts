@@ -76,6 +76,7 @@ export const createFighter = (
     falls: 0,
     damageDealt: 0,
     lastHitBy: null,
+    staleMoves: [],
     hitstunFrames: 0,
     landingLagFrames: 0,
     lCancelPress: null,

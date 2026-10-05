@@ -1,10 +1,11 @@
 /**
  * What the training HUD (#144) shows, as plain text from the match state: the combo counter,
  * the last hit's frame advantage, the first player's current (or last) move with its frames, and
- * whether its last aerial landing was L-cancelled (#149).
+ * whether its last aerial landing was L-cancelled (#149), and how stale that move is (#157).
  * Frames are counted from 1, as frame data usually is.
  */
 import {
+  damageScale,
   findMove,
   moveTiming,
   type AerialLanding,
@@ -33,6 +34,12 @@ export interface TrainingReadout {
   readonly move: MoveReadout | null;
   /** How the player's last aerial landing went; a dash before the first one. */
   readonly lCancel: string;
+  /**
+   * How stale the player's current (or last) move is (#157): its copies in the stale queue and
+   * the share of its damage its next use deals, like `2× · 84%` or `Fresh · 105%`. A use that
+   * just hit is already counted.
+   */
+  readonly stale: string;
 }
 
 const LANDING_LABEL: Readonly<Record<AerialLanding, string>> = {
@@ -105,6 +112,15 @@ const lCancelReadout = (state: MatchState, dummy: number): string => {
   return landing === null ? '–' : LANDING_LABEL[landing];
 };
 
+const staleReadout = (state: MatchState, dummy: number, lastMove: string | null): string => {
+  const player = state.fighters.find((f) => f.slot !== dummy);
+  const id = (player?.action === 'attack' ? player.moveId : null) ?? lastMove;
+  if (!player || !id) return '–';
+  const copies = player.staleMoves.filter((move) => move === id).length;
+  const share = `${Math.round(damageScale(player.staleMoves, id) * 100)}%`;
+  return `${copies === 0 ? 'Fresh' : `${copies}×`} · ${share}`;
+};
+
 /** The readout for a training match, or null for any other match. */
 export const trainingReadout = (state: MatchState): TrainingReadout | null => {
   const training = state.training;
@@ -117,5 +133,6 @@ export const trainingReadout = (state: MatchState): TrainingReadout | null => {
     advantage: advantage === null ? '–' : advantage > 0 ? `+${advantage}` : String(advantage),
     move: moveReadout(state, training.settings.dummy, training.lastMove),
     lCancel: lCancelReadout(state, training.settings.dummy),
+    stale: staleReadout(state, training.settings.dummy, training.lastMove),
   };
 };

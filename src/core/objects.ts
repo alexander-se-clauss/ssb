@@ -5,6 +5,7 @@
  */
 import { characterOf } from './character';
 import { applyHit, touchesBody } from './combat';
+import { damageScale, queueMove, staled } from './stale';
 import { findMove } from './move-data';
 import type { MoveId, ObjectBehavior, SpawnDef } from './moves';
 import type { Rect, Vec2 } from './math';
@@ -209,16 +210,30 @@ export const resolveObjectHits = (
         touchesBody(object.position, object.radius, fighter),
     );
     if (!target) return true;
+    // Stale moves (#157): each object is a use of the move that spawned it.
+    const owner = next[object.owner];
+    const scale = owner ? damageScale(owner.staleMoves, object.moveId) : 1;
     const {
       target: struck,
       launch,
       damage,
       guard,
-    } = applyHit(target, object.hit, launchDirection(object), object.owner, object.position);
+    } = applyHit(
+      target,
+      staled(object.hit, scale),
+      launchDirection(object),
+      object.owner,
+      object.position,
+    );
     next[target.slot] = struck;
-    const owner = next[object.owner];
     if (owner) {
-      next[object.owner] = { ...owner, damageDealt: owner.damageDealt + damage };
+      next[object.owner] = {
+        ...owner,
+        damageDealt: owner.damageDealt + damage,
+        // A shot a counter stopped did not land.
+        staleMoves:
+          guard === 'countered' ? owner.staleMoves : queueMove(owner.staleMoves, object.moveId),
+      };
     }
     events.push({
       type: 'hit',

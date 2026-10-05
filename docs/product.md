@@ -75,7 +75,8 @@ frozen there, what the dummy does (stand, crouch, jump, dodge), the DI it holds 
 survival, combo; #154), the dummy's fighter, Reset positions and Exit training. A readout in the bottom
 left shows the combo (hits while the dummy stays in hitstun, and their damage; lit while it
 runs), the last hit's frame advantage, and the first player's current or last move with its
-frame, phase (startup, active, endlag), active frames and total.
+frame, phase (startup, active, endlag), active frames and total, and how stale that move is
+(#157: its copies among the last nine hits and the share of its damage its next use deals).
 
 ## Movement feel
 
@@ -184,7 +185,7 @@ a playable build; it is done when that build works, not on a date.
       L-cancel (#149 done), repeated dodges get weaker (#150 done), dash and landing dust (#151 done), movement benchmarks as
       tests and a play-test sign-off (#152 done). Epic #142.
 - [ ] **S8 Combos and combat feel.** Melee knockback and hitstun (#153 done), DI (#154 done), SDI (#155 done), crouch cancel (#156 done),
-      stale moves, tech and knockdown, grabs and throws, screen shake and launch trails, each
+      stale moves (#157 done), tech and knockdown, grabs and throws, screen shake and launch trails, each
       fighter's combos pinned as tests. Epic #143.
 
 Later, not yet planned: charged smashes, rebindable keys, a CPU

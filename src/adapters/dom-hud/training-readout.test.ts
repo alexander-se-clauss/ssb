@@ -78,6 +78,21 @@ describe('trainingReadout', () => {
   });
 });
 
+describe('stale readout (#157)', () => {
+  const withQueue = (lastMove: string | null, staleMoves: readonly string[]) => {
+    const state = withTraining(match(), { lastMove });
+    const fighters = state.fighters.map((f) => (f.slot === 0 ? { ...f, staleMoves } : f));
+    return trainingReadout({ ...state, fighters })?.stale;
+  };
+
+  it("shows how stale the player's current move is, as a share of its damage", () => {
+    expect(withQueue(null, [])).toBe('–');
+    expect(withQueue('jab', ['forwardTilt'])).toBe('Fresh · 105%');
+    expect(withQueue('jab', ['jab'])).toBe('1× · 91%');
+    expect(withQueue('jab', ['jab', 'forwardTilt', 'jab'])).toBe('2× · 84%');
+  });
+});
+
 describe('phaseOf', () => {
   it('splits a move into startup, active and endlag frames', () => {
     expect(phaseOf('jab', JAB.startupFrames - 1)).toBe('startup');

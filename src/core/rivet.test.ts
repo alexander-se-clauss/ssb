@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { knockback } from './combat';
-import { FIGHTER } from './config';
+import { FIGHTER, STALE } from './config';
 import { findMove } from './move-data';
 import { CAPSULE, RIVET } from './registry';
 import { createMatch } from './simulation';
@@ -67,7 +67,7 @@ describe('Rivet, fighter 1 (#39)', () => {
       expect(frames).toBeGreaterThanOrEqual(18);
       expect(frames).toBeLessThanOrEqual(22);
       expect(fighter(hit, 0).position.x).toBeGreaterThan(0.3);
-      expect(fighter(hit, 1).damage).toBe(18);
+      expect(fighter(hit, 1).damage).toBe(18 * STALE.freshBonus);
     });
 
     it('is slower than the forward smash but launches harder', () => {
@@ -141,7 +141,7 @@ describe('Rivet, fighter 1 (#39)', () => {
       // Four carrying hits of 2% and the launcher of 5%, all landing.
       expect(hits).toBe(5);
       const target = fighter(next, 1);
-      expect(target.damage).toBe(13);
+      expect(target.damage).toBeCloseTo(13 * STALE.freshBonus, 9);
       // The last hit sends the target on up, past Rivet, who has stopped rising.
       expect(target.position.y).toBeGreaterThan(fighter(next, 0).position.y + 1);
       expect(target.velocity.y).toBeGreaterThan(fighter(next, 0).velocity.y);

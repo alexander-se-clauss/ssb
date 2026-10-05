@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { STALE } from './config';
 import { attackInput } from './attack-input';
 import {
   activeHitboxes,
@@ -41,25 +42,25 @@ describe('combat', () => {
   it('a jab damages, launches and stuns the opponent', () => {
     const state = run(faceOff(), JAB.startupFrames + 1, jab);
     const target = fighter(state, 1);
-    expect(target.damage).toBe(JAB.damage);
+    expect(target.damage).toBe(JAB.damage * STALE.freshBonus);
     expect(target.action).toBe('hitstun');
     expect(target.velocity.x).toBeGreaterThan(0);
     expect(target.velocity.y).toBeGreaterThan(0);
     expect(target.lastHitBy).toBe(0);
-    expect(fighter(state, 0).damageDealt).toBe(JAB.damage);
+    expect(fighter(state, 0).damageDealt).toBe(JAB.damage * STALE.freshBonus);
     expect(state.events).toContainEqual(
       expect.objectContaining({
         type: 'hit',
         attacker: 0,
         target: 1,
-        damage: JAB.damage,
+        damage: JAB.damage * STALE.freshBonus,
       }),
     );
   });
 
   it('one swing hits a target only once', () => {
     const state = run(faceOff(), JAB.totalFrames - 1, jab);
-    expect(fighter(state, 1).damage).toBe(JAB.damage);
+    expect(fighter(state, 1).damage).toBe(JAB.damage * STALE.freshBonus);
   });
 
   it('does not hit an opponent out of range', () => {
@@ -195,8 +196,12 @@ describe('which hitbox strikes', () => {
     // Group 0 already hit this target: no second hit.
     expect(fighter(step(swinging([{ slot: 1, group: 0 }]), []), 1).damage).toBe(0);
     // Another group, or group 0 on another target, does not protect it.
-    expect(fighter(step(swinging([{ slot: 1, group: 1 }]), []), 1).damage).toBe(JAB.damage);
-    expect(fighter(step(swinging([{ slot: 2, group: 0 }]), []), 1).damage).toBe(JAB.damage);
+    expect(fighter(step(swinging([{ slot: 1, group: 1 }]), []), 1).damage).toBe(
+      JAB.damage * STALE.freshBonus,
+    );
+    expect(fighter(step(swinging([{ slot: 2, group: 0 }]), []), 1).damage).toBe(
+      JAB.damage * STALE.freshBonus,
+    );
   });
 
   it('lands the jab with its fist, not its arm, when both touch', () => {
@@ -206,7 +211,7 @@ describe('which hitbox strikes', () => {
     if (!fist || !arm) throw new Error('Both jab hitboxes are on');
     expect(strikingHitbox([arm], fighter(before, 1), [])).toBe(arm);
     expect(strikingHitbox([fist], fighter(before, 1), [])).toBe(fist);
-    expect(fighter(after, 1).damage).toBe(fist.attack.damage);
+    expect(fighter(after, 1).damage).toBe(fist.attack.damage * STALE.freshBonus);
   });
 });
 
@@ -248,14 +253,14 @@ describe('hurtboxes per body part', () => {
   it('lets a crouch duck under a high attack that hits the fighting stance', () => {
     // A jab from above reaches down to the head of a standing fighter, not a crouched one.
     const above = { x: 0, y: 0.4 };
-    expect(swing(above, { x: 1, y: 0 }, POSES.idle)).toBe(JAB.damage);
+    expect(swing(above, { x: 1, y: 0 }, POSES.idle)).toBe(JAB.damage * STALE.freshBonus);
     expect(swing(above, { x: 1, y: 0 }, crouch)).toBe(0);
   });
 
   it('hits a fighter that leans into an attack the fighting stance stays clear of', () => {
     const ground = { x: 0, y: 0 };
     expect(swing(ground, edgeOfReach, POSES.idle)).toBe(0);
-    expect(swing(ground, edgeOfReach, leanIn)).toBe(JAB.damage);
+    expect(swing(ground, edgeOfReach, leanIn)).toBe(JAB.damage * STALE.freshBonus);
   });
 
   it('judges a hit in a match by the pose the fighter has on that frame', () => {
@@ -271,7 +276,7 @@ describe('hurtboxes per body part', () => {
       return fighter(step(state, []), 1).damage;
     };
     expect(strike(POSES.idle)).toBe(0);
-    expect(strike(leanIn)).toBe(JAB.damage);
+    expect(strike(leanIn)).toBe(JAB.damage * STALE.freshBonus);
   });
 
   it('gives every bone a hurtbox as thick as the part the view draws', () => {

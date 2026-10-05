@@ -239,8 +239,9 @@ describe('ground attack knockback', () => {
 
   it('sends a fighter off-stage at mid damage without a KO, so the fight goes on out there', () => {
     const state = firstHit(
-      // Melee hitstun (#153) keeps the target helpless for longer, so a lower percent than before.
-      faceOff(byId('forwardSmash').targetX, 50),
+      // Melee hitstun (#153) keeps the target helpless for longer, and a fresh smash (#157) hits a
+      // little harder, so a lower percent than before.
+      faceOff(byId('forwardSmash').targetX, 45),
       byId('forwardSmash').input,
     ).state;
     const edge = Math.max(...state.stage.platforms.map((p) => p.bounds.right));

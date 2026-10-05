@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { STALE } from './config';
 import { knockback, launchSpeed } from './combat';
 import { validateMove, type MoveDef, type SpawnDef } from './moves';
 import { POSES } from './pose-data';
@@ -149,16 +150,16 @@ describe('spawned objects (#45)', () => {
     }
     const target = fighter(state, 1);
     expect(state.objects).toEqual([]);
-    expect(target.damage).toBe(SHOT.hit.damage);
+    expect(target.damage).toBe(SHOT.hit.damage * STALE.freshBonus);
     expect(target.action).toBe('hitstun');
     expect(target.lastHitBy).toBe(0);
-    expect(fighter(state, 0).damageDealt).toBe(SHOT.hit.damage);
+    expect(fighter(state, 0).damageDealt).toBe(SHOT.hit.damage * STALE.freshBonus);
     expect(state.events).toContainEqual(
       expect.objectContaining({
         type: 'hit',
         attacker: 0,
         target: 1,
-        damage: SHOT.hit.damage,
+        damage: SHOT.hit.damage * STALE.freshBonus,
       }),
     );
     // Launched the way the shot flew, as hard as a hitbox with the same numbers.
