@@ -247,6 +247,12 @@ export const KNOCKBACK = {
  */
 export const DI = { maxDegrees: 18 } as const;
 
+/**
+ * Smash DI (#155), as in Melee: during hitlag each fresh flick of the stick from the centre to
+ * past `threshold` moves the hit fighter `distance` units that way.
+ */
+export const SDI = { distance: 0.5, threshold: 0.7 } as const;
+
 /** How long a press waits in the input buffer for the fighter to be able to act on it. */
 export const INPUT = { bufferFrames: 6 } as const;
 

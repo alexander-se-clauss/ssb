@@ -183,7 +183,7 @@ a playable build; it is done when that build works, not on a date.
       Melee dash with dash dance and pivot (#146 done), a short hop button (#147 done), auto-cancel windows (#148 done) and
       L-cancel (#149 done), repeated dodges get weaker (#150 done), dash and landing dust (#151 done), movement benchmarks as
       tests and a play-test sign-off (#152 done). Epic #142.
-- [ ] **S8 Combos and combat feel.** Melee knockback and hitstun (#153 done), DI (#154 done), SDI and crouch cancel,
+- [ ] **S8 Combos and combat feel.** Melee knockback and hitstun (#153 done), DI (#154 done), SDI (#155 done) and crouch cancel,
       stale moves, tech and knockdown, grabs and throws, screen shake and launch trails, each
       fighter's combos pinned as tests. Epic #143.
 
