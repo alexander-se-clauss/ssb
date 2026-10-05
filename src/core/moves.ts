@@ -423,7 +423,13 @@ export const validateMove = (move: MoveDef): void => {
     if (![damage, angle, baseKnockback, knockbackGrowth].every(Number.isFinite)) {
       fail('throw has a bad hit number');
     }
+    const scale = hit.hitlagScale ?? 1;
+    if (!(Number.isFinite(scale) && scale >= 0)) fail('throw has a bad hitlagScale');
     if (move.hitboxes.length > 0 || move.grab) fail('a throw cannot also hit or grab');
+    // Cancelled before it lets go, the throw would drop its catch without throwing.
+    if (move.cancels.some(({ from }) => from <= frame)) {
+      fail(`throw can be cancelled before it lets go (${frame})`);
+    }
   }
   if (
     move.landingLag !== undefined &&

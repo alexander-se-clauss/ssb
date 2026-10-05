@@ -6,6 +6,7 @@
 import { TRAINING } from './config';
 import { createFighter } from './fighter';
 import { NEUTRAL_INPUT, inputOf } from './input';
+import { findMove } from './move-data';
 import { isDowned } from './tech';
 import type {
   AdvantageWatch,
@@ -184,8 +185,14 @@ export const trackTraining = (prev: MatchState, next: MatchState): MatchState =>
   if (lastHit) {
     const attacker = next.fighters[lastHit.attacker];
     // A hitbox freezes its attacker too; an object's hit does not, so a fighter whose projectile
-    // lands is measured from what it is doing now, not from an unrelated move.
-    const byHitbox = attacker !== undefined && attacker.hitlagFrames > 0;
+    // lands is measured from what it is doing now, not from an unrelated move. A throw (#160)
+    // freezes only its target, yet the throw that let go is the move to measure from.
+    const byMove =
+      attacker !== undefined &&
+      (attacker.hitlagFrames > 0 ||
+        (attacker.action === 'attack' &&
+          attacker.moveId !== null &&
+          findMove(attacker.moveId).throw !== undefined));
     const base = training.comboActive ? training : { comboHits: 0, comboDamage: 0 };
     updated = {
       ...training,
@@ -194,7 +201,7 @@ export const trackTraining = (prev: MatchState, next: MatchState): MatchState =>
       comboActive: true,
       watch: {
         attacker: lastHit.attacker,
-        moveId: byHitbox && attacker.action === 'attack' ? attacker.moveId : null,
+        moveId: byMove && attacker.action === 'attack' ? attacker.moveId : null,
         moveFrame: attacker?.actionFrame ?? 0,
         frames: 0,
         attackerFree: null,

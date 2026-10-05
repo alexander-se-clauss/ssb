@@ -3,6 +3,7 @@ import { GRAB, TRAINING } from './config';
 import { findMove } from './move-data';
 import { moveTiming } from './moves';
 import { timeLeftFrames } from './rules';
+import { isDowned } from './tech';
 import { createMatch, step } from './simulation';
 import { BATTLEFIELD } from './stages';
 import { CAPSULE } from './registry';
@@ -202,7 +203,10 @@ describe('training mode', () => {
   });
 
   describe('frame advantage', () => {
-    /** Steps on with nothing pressed and returns the frames until each side can act. */
+    /**
+     * Steps on with nothing pressed and returns the frames until each side can act. A dummy down
+     * on the ground (#158) cannot act yet either.
+     */
     const measure = (hit: MatchState): number => {
       let state = hit;
       let attackerFree: number | null = null;
@@ -218,7 +222,9 @@ describe('training mode', () => {
         if (attackerFree === null && attacker.action === 'idle' && attacker.hitlagFrames === 0) {
           attackerFree = frames;
         }
-        if (targetFree === null && target.action !== 'hitstun' && target.hitlagFrames === 0) {
+        const targetStuck =
+          target.action === 'hitstun' || target.hitlagFrames > 0 || isDowned(target.action);
+        if (targetFree === null && !targetStuck) {
           targetFree = frames;
         }
       }
@@ -230,6 +236,20 @@ describe('training mode', () => {
       const settledState = run(hit, 120, [NONE]);
       expect(trainingOf(settledState).advantage).toBe(measure(hit));
     });
+
+    it.each(['up', 'forward', 'down'] as const)(
+      'measures a %s throw from the end of the throw, not the frame it lets go (#160)',
+      (way) => {
+        const stick = { up: { y: 1 }, forward: { x: 1 }, down: { y: -1 } }[way];
+        let state = step(faceOff(training(), { action: 'idle' }), [inputOf({ grab: true })]);
+        for (let i = 0; i < 30 && fighter(state, 0).action !== 'holding'; i += 1) {
+          state = step(state, [NONE]);
+        }
+        state = step(state, [inputOf(stick)]);
+        while (fighter(state, 1).action === 'grabbed') state = step(state, [NONE]);
+        expect(trainingOf(run(state, 200, [NONE])).advantage).toBe(measure(state));
+      },
+    );
 
     it('grows with the dummy percent, since hitstun does', () => {
       const low = run(jab(faceOff(training())), 120, [NONE]);

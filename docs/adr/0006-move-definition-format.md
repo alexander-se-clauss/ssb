@@ -310,6 +310,16 @@ type MoveDef = AttackMoveDef; // block and counter became fields instead (#50, #
   or lands; below it, it flinches. Both can act once hitstun is over.
 - Every move was retuned to the new units. The #42 KO windows still hold.
 
+### Amendment (2026-10-05, #160)
+
+- A move may have `throw: { frame, direction, hit }`, started from `holding` by a fresh stick
+  push. It has no hitboxes and no `grab`, and no cancel window may open on or before `frame`.
+- On `frame` the throw lets go: the held fighter is moved in front of the thrower (`direction`
+  1. or behind it (-1), faces the thrower, and takes `hit` through `applyHit`, staled like any
+     move. `moveTiming` counts `frame` as the move's one active frame.
+- Only the thrown fighter gets hitlag, so it can DI; the thrower plays on. The training frame
+  advantage therefore follows the throw move, not the thrower's hitlag.
+
 ## Consequences
 
 - New moves are data. Tests, tools and an AI agent can write and check them without new code.

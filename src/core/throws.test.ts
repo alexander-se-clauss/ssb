@@ -19,11 +19,16 @@ const holding = ({
   damage = 0,
   x = 0,
   facing = 1 as 1 | -1,
+  players = 2,
 } = {}): MatchState => {
   let state = run(
     createMatch({
       stageId: FINAL_DESTINATION.id,
-      players: [{ characterId: CAPSULE.id }, { characterId: target }],
+      players: [
+        { characterId: CAPSULE.id },
+        { characterId: target },
+        ...Array.from({ length: players - 2 }, () => ({ characterId: CAPSULE.id })),
+      ],
       rules: { mode: 'stock', stocks: 3, timeLimitSeconds: 120 },
       countdownFrames: 0,
     }),
@@ -37,6 +42,8 @@ const holding = ({
     facing: facing === 1 ? -1 : 1,
     damage,
   });
+  // A third player, if any, waits out of reach.
+  if (players > 2) state = withFighter(state, 2, { ...placed, position: { x: -6, y: 0 } });
   state = step(state, [GRAB_PRESS, NONE]);
   for (let i = 0; i < 30 && fighter(state, 0).action === 'attack'; i += 1) {
     state = step(state, [NONE, NONE]);
@@ -162,6 +169,52 @@ describe('throws (#160)', () => {
       expect.objectContaining({ type: 'hit', attacker: 0, target: 1 }),
     );
     expect(fighter(state, 0).staleMoves).toEqual(['forwardThrow']);
+  });
+
+  it('picks the throw by the way the stick was pushed, not a way it was held already', () => {
+    // Forward held from before the grab, then up pushed: an up throw.
+    const held = withFighter(holding(), 0, { previousInput: FORWARD });
+    const state = step(held, [inputOf({ x: 1, y: 0.9 }), NONE]);
+    expect(fighter(state, 0).moveId).toBe('upThrow');
+    // Forward held, up nudged short of a push: no throw, as forward is no fresh push.
+    const nudged = step(held, [inputOf({ x: 1, y: 0.4 }), NONE]);
+    expect(fighter(nudged, 0).action).toBe('holding');
+  });
+
+  it('lets go when the thrower is hit before the throw frame', () => {
+    let state = step(holding({ players: 3 }), [BACK, NONE, NONE]);
+    state = withFighter(state, 2, { position: { x: -0.8, y: 0 }, facing: 1 });
+    state = step(state, [NONE, NONE, inputOf({ attack: true })]);
+    for (let i = 0; i < 20 && fighter(state, 0).action === 'attack'; i += 1) {
+      state = step(state, [NONE, NONE, NONE]);
+    }
+    expect(fighter(state, 0)).toMatchObject({ action: 'hitstun', holding: null });
+    expect(fighter(state, 1)).toMatchObject({ heldBy: null });
+    expect(fighter(state, 1).action).not.toBe('grabbed');
+  });
+
+  it('whiffs harmlessly when someone else hits the held fighter mid-throw', () => {
+    let state = step(holding({ players: 3 }), [BACK, NONE, NONE]);
+    state = withFighter(state, 2, { position: { x: 1.7, y: 0 }, facing: -1 });
+    state = step(state, [NONE, NONE, inputOf({ attack: true })]);
+    for (let i = 0; i < 20 && fighter(state, 1).action !== 'hitstun'; i += 1) {
+      state = step(state, [NONE, NONE, NONE]);
+    }
+    expect(fighter(state, 1).heldBy).toBeNull();
+    expect(fighter(state, 0).holding).toBeNull();
+    const hitsByThrower = (s: MatchState) =>
+      s.events.filter((e) => e.type === 'hit' && e.attacker === 0).length;
+    let thrown = 0;
+    for (let i = 0; i < 30; i += 1) {
+      state = step(state, [NONE, NONE, NONE]);
+      thrown += hitsByThrower(state);
+    }
+    expect(thrown).toBe(0);
+  });
+
+  it('turns a back-thrown fighter to face the thrower it was swung behind', () => {
+    const state = thrown(holding({ damage: 40 }), BACK);
+    expect(fighter(state, 1).facing).toBe(1);
   });
 
   it('cannot be broken out of once it started', () => {

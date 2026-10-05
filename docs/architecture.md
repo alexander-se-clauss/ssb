@@ -104,11 +104,11 @@ fighter (`grabbed`; `heldBy`) run in their own branch of `updateFighter`, where 
 and the stick cuts `escapeFrames`. A fresh stick push while holding starts a throw (#160,
 `throwSlot`): a move in the `forwardThrow`, `backThrow`, `upThrow` or `downThrow` slot with a
 `MoveDef.throw`, which `resolveGrabs` lets go on its frame as a hit through `applyHit`, in front or
-behind, so the knockback formula, weight, DI and stale moves apply; once a throw starts the held
-fighter cannot break free. The held fighter and a release push stay on the holder's
+behind, so the knockback formula, weight, DI and stale moves apply. A throw freezes only its
+target, not the thrower; once a throw starts the held fighter cannot break free. The held fighter and a release push stay on the holder's
 platform. A grabbed training dummy holds still instead of mashing. F2 draws grab boxes in purple.
 Move data is one file per family in `move-data/` (`jab.ts`, `tilts.ts`, `smashes.ts`,
-`aerials.ts`, `ledge.ts`, `getup.ts`, `grab.ts`, and a file of specials per character, `rivet.ts` and `vela.ts`, each registered in `move-data/index.ts`). A move with a `landingLag` is an aerial:
+`aerials.ts`, `ledge.ts`, `getup.ts`, `grab.ts`, `throws.ts`, and a file of specials per character, `rivet.ts` and `vela.ts`, each registered in `move-data/index.ts`). A move with a `landingLag` is an aerial:
 landing while it runs ends it and puts the fighter in the `landing` action for that many frames
 (`landingLagFrames`). An aerial's `autoCancel` windows (#148, `auto-cancel.test.ts`) mark its
 first and last frames, clear of the hitboxes: landing in them costs only the normal landing lag,

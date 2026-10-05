@@ -25,7 +25,10 @@ export const isHolding = (fighter: FighterState): boolean =>
   fighter.action === 'pummel' ||
   (throwOf(fighter) !== undefined && fighter.holding !== null);
 
-/** The throw a fresh stick push while holding asks for (#160): the way it points most. */
+/**
+ * The throw a fresh stick push while holding asks for (#160): the way just pushed, the way it
+ * points most if both were. A way held from before picks no throw, so it cannot outweigh a push.
+ */
 export const throwSlot = (
   input: PlayerInput,
   previous: PlayerInput,
@@ -33,11 +36,11 @@ export const throwSlot = (
 ): 'forwardThrow' | 'backThrow' | 'upThrow' | 'downThrow' | undefined => {
   const pushed = (now: number, before: number): boolean =>
     Math.abs(now) >= GRAB.throwStick && Math.abs(before) < GRAB.throwStick;
-  if (!pushed(input.x, previous.x) && !pushed(input.y, previous.y)) return undefined;
-  if (Math.abs(input.x) > Math.abs(input.y)) {
-    return input.x * facing > 0 ? 'forwardThrow' : 'backThrow';
-  }
-  return input.y > 0 ? 'upThrow' : 'downThrow';
+  const x = pushed(input.x, previous.x) ? input.x : 0;
+  const y = pushed(input.y, previous.y) ? input.y : 0;
+  if (x === 0 && y === 0) return undefined;
+  if (Math.abs(x) > Math.abs(y)) return x * facing > 0 ? 'forwardThrow' : 'backThrow';
+  return y > 0 ? 'upThrow' : 'downThrow';
 };
 
 /** A circle that catches the fighter whose body it touches. */
@@ -163,7 +166,8 @@ export const resolveGrabs = (
     const held = at(holder.holding);
     if (!held) continue;
     const toss = throwOf(holder);
-    // A throw lets go on its frame (#160): a hit like any other, from in front or behind.
+    // A throw lets go on its frame (#160): a hit like any other, from in front or behind. A throw
+    // started on the frame the held one would break free wins: the throw input came first.
     if (toss && holder.actionFrame === toss.frame && holder.moveId !== null) {
       const way: 1 | -1 = holder.facing === toss.direction ? 1 : -1;
       const spot = {
@@ -172,7 +176,8 @@ export const resolveGrabs = (
       };
       const hit = staled(toss.hit, damageScale(holder.staleMoves, holder.moveId));
       const result = applyHit(
-        { ...held, position: spot, heldBy: null, escapeFrames: 0 },
+        // Facing the thrower, also when swung behind it.
+        { ...held, position: spot, facing: way === 1 ? -1 : 1, heldBy: null, escapeFrames: 0 },
         hit,
         way,
         holder.slot,
