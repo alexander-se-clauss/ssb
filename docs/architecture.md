@@ -81,6 +81,11 @@ down crouches and takes two thirds of a hit's knockback; below the tumble thresh
 the ground and only slides, by the horizontal part of the knockback, with no DI; SDI then moves
 it only along the ground. Holding down
 on a pass-through platform still drops through it, so there is no crouch cancel on one yet.
+Stale moves (#157, `stale.ts`, `STALE` in `config.ts`): `FighterState.staleMoves` holds the moves
+of a fighter's last nine hits, newest first, each use of a move once (on its first hit, also on a
+block but not when countered; for a spawned object, each object). A hit's damage, and so its knockback, is scaled by
+`damageScale`: 9% less for a copy in the newest slot down to 1% in the oldest, 5% more for a move
+not in the queue. A lost stock empties it.
 Move data is one file per family in `move-data/` (`jab.ts`, `tilts.ts`, `smashes.ts`,
 `aerials.ts`, `ledge.ts`, and a file of specials per character, `rivet.ts` and `vela.ts`, each registered in `move-data/index.ts`). A move with a `landingLag` is an aerial:
 landing while it runs ends it and puts the fighter in the `landing` action for that many frames

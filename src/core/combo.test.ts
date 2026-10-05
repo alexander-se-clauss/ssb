@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { INPUT } from './config';
+import { INPUT, STALE } from './config';
 import { MOVES, findMove, validateMoves } from './move-data';
 import { validateMove, type MoveDef } from './moves';
 import { step } from './simulation';
@@ -89,7 +89,11 @@ describe('jab combo', () => {
     }
     expect(hits).toEqual(['jab', 'jab2', 'jab3']);
     const damage = ['jab', 'jab2', 'jab3'].map((id) => findMove(id).hitboxes[0]?.damage ?? 0);
-    expect(fighter(state, 1).damage).toBe(damage.reduce((sum, d) => sum + d, 0));
+    // Three fresh moves (#157).
+    expect(fighter(state, 1).damage).toBeCloseTo(
+      damage.reduce((sum, d) => sum + d * STALE.freshBonus, 0),
+      9,
+    );
     // Jab 1 and 2 keep the target close; the kick sends it flying.
     expect(peak).toBeGreaterThan(1);
   });

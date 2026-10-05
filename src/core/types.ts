@@ -131,6 +131,11 @@ export interface FighterState {
   readonly falls: number;
   /** Total damage percent this fighter's attacks caused this match. */
   readonly damageDealt: number;
+  /**
+   * The moves of this fighter's last hits, newest first (#157): each use of a move counts once,
+   * on its first hit. Emptied when it loses a stock.
+   */
+  readonly staleMoves: readonly MoveId[];
   /** Who hit this fighter last since it respawned; gets the KO credit. */
   readonly lastHitBy: PlayerSlot | null;
   readonly hitstunFrames: number;

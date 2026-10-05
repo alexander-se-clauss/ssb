@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { STALE } from './config';
 import { activeGuard, applyHit } from './combat';
 import { findMove } from './move-data';
 import { validateMove, type MoveDef } from './moves';
@@ -111,9 +112,11 @@ describe("Rivet's block (#50)", () => {
     const { event, after } = attackGuard(guarding(), JAB);
     const rivet = fighter(after, 0);
     expect(event.guard).toBe('blocked');
-    expect(rivet.damage).toBeCloseTo(JAB_DAMAGE * GUARD.damageScale);
-    expect(event.damage).toBeCloseTo(JAB_DAMAGE * GUARD.damageScale);
-    expect(fighter(after, 1).damageDealt).toBeCloseTo(JAB_DAMAGE * GUARD.damageScale);
+    expect(rivet.damage).toBeCloseTo(JAB_DAMAGE * STALE.freshBonus * GUARD.damageScale);
+    expect(event.damage).toBeCloseTo(JAB_DAMAGE * STALE.freshBonus * GUARD.damageScale);
+    expect(fighter(after, 1).damageDealt).toBeCloseTo(
+      JAB_DAMAGE * STALE.freshBonus * GUARD.damageScale,
+    );
     // Still guarding, on the ground, not in hitstun.
     expect(rivet.action).toBe('attack');
     expect(rivet.moveId).toBe('ironGuard');
@@ -169,8 +172,10 @@ describe("Rivet's block (#50)", () => {
     };
     const { event, after } = attackGuard(incoming, NONE);
     expect(event.guard).toBe('blocked');
-    expect(event.damage).toBeCloseTo(shot.damage * GUARD.damageScale);
-    expect(fighter(after, 1).damageDealt).toBeCloseTo(shot.damage * GUARD.damageScale);
+    expect(event.damage).toBeCloseTo(shot.damage * STALE.freshBonus * GUARD.damageScale);
+    expect(fighter(after, 1).damageDealt).toBeCloseTo(
+      shot.damage * STALE.freshBonus * GUARD.damageScale,
+    );
     expect(fighter(after, 0).moveId).toBe('ironGuard');
     expect(after.objects).toEqual([]);
   });
@@ -189,7 +194,7 @@ describe("Rivet's block (#50)", () => {
   it('does not guard against a hit from behind (#10: front only)', () => {
     const { event, after } = attackGuard(guarding(-1), JAB);
     expect(event.guard).toBeUndefined();
-    expect(fighter(after, 0).damage).toBe(JAB_DAMAGE);
+    expect(fighter(after, 0).damage).toBe(JAB_DAMAGE * STALE.freshBonus);
     expect(fighter(after, 0).action).toBe('hitstun');
   });
 

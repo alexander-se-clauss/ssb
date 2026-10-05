@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { applyHit, hitstunOf, knockback, launchSpeed } from './combat';
-import { KNOCKBACK } from './config';
+import { KNOCKBACK, STALE } from './config';
 import { findMove } from './move-data';
 import type { HitDef } from './moves';
 import { CAPSULE, RIVET, VELA } from './registry';
@@ -104,7 +104,12 @@ describe('Melee knockback formula (#153)', () => {
     const smash = findMove('forwardSmash').hitboxes[0];
     expect(smash).toBeDefined();
     if (!smash) return;
-    const units = knockback(smash, f.damage, CAPSULE.stats.weight);
+    // A fresh smash (#157) deals a little more than its listed damage.
+    const units = knockback(
+      { ...smash, damage: smash.damage * STALE.freshBonus },
+      f.damage,
+      CAPSULE.stats.weight,
+    );
     expect(Math.hypot(f.velocity.x, f.velocity.y)).toBeCloseTo(launchSpeed(units), 9);
     expect(f.hitstunFrames).toBe(hitstunOf(units));
   });

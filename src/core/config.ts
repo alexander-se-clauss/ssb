@@ -249,6 +249,17 @@ export const KNOCKBACK = {
 export const CROUCH = { stick: 0.5, knockbackScale: 2 / 3 } as const;
 
 /**
+ * Stale moves (#157), as in Melee: each fighter remembers the moves of its last `queueLength`
+ * hits, newest first. Each copy of a move in that queue takes `weights[i]` of its damage away,
+ * more for recent ones; a move not in it gets `freshBonus`.
+ */
+export const STALE = {
+  queueLength: 9,
+  weights: [0.09, 0.08, 0.07, 0.06, 0.05, 0.04, 0.03, 0.02, 0.01],
+  freshBonus: 1.05,
+} as const;
+
+/**
  * Directional influence (#154), as in Melee: the stick held on the last frame of hitlag turns a
  * launch by up to `maxDegrees`, scaled by how far it points across the launch.
  */

@@ -1,6 +1,7 @@
 import { characterOf } from './character';
 import { CROUCH, HITLAG, KNOCKBACK } from './config';
 import { isCrouching } from './crouch';
+import { damageScale, queueBefore, queueMove, staled } from './stale';
 import { circleIntersectsCapsule, type Vec2 } from './math';
 import { findMove } from './move-data';
 import {
@@ -320,9 +321,17 @@ export const resolveCombat = (
       const hitbox = strikingHitbox(hitboxes, target, groupsHit);
       if (!hitbox) continue;
 
+      // Stale moves (#157): a use of a move joins the queue on its first hit, so its later hits
+      // are scaled by the queue as it was before that use.
+      const firstHit = attacker.hitTargets.length === 0;
+      const { moveId } = attacker;
+      const scale =
+        moveId === null
+          ? 1
+          : damageScale(queueBefore(attacker.staleMoves, moveId, firstHit), moveId);
       const result = applyHit(
         now,
-        hitbox.attack,
+        staled(hitbox.attack, scale),
         attacker.facing,
         attacker.slot,
         attacker.position,
@@ -332,6 +341,14 @@ export const resolveCombat = (
       const attackerNow = next[attacker.slot] ?? attacker;
       next[attacker.slot] = {
         ...attackerNow,
+        // Once per use, also when it hits two fighters on the same frame; not when countered.
+        staleMoves:
+          firstHit &&
+          moveId !== null &&
+          result.guard !== 'countered' &&
+          attackerNow.staleMoves === attacker.staleMoves
+            ? queueMove(attacker.staleMoves, moveId)
+            : attackerNow.staleMoves,
         hitTargets: [
           ...attackerNow.hitTargets,
           { slot: target.slot, group: hitbox.attack.group ?? 0 },

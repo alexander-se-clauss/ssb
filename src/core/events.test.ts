@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { STALE } from './config';
 import { activeHitboxes, knockback, launchSpeed } from './combat';
 import { findMove } from './move-data';
 import { moveTiming } from './moves';
@@ -41,7 +42,7 @@ const jabHit = (damage = 0): { event: HitEvent; before: MatchState } => {
 describe('match events for the view (#48)', () => {
   it("reports a hit's own damage, not the target's total", () => {
     const { event } = jabHit(50);
-    expect(event.damage).toBe(JAB_HIT.damage);
+    expect(event.damage).toBe(JAB_HIT.damage * STALE.freshBonus);
   });
 
   it('reports where the hit landed: on the hitbox that struck', () => {

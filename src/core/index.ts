@@ -30,5 +30,6 @@ export * from './moves';
 export * from './move-slots';
 export { MOVES, findMove } from './move-data';
 export { isArmed } from './objects';
+export { damageScale } from './stale';
 export { FixedStepClock } from './time';
 export { configureTraining, resetTraining } from './training';

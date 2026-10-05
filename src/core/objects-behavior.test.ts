@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { STALE } from './config';
 import { validateMove, type MoveDef, type ObjectBehavior, type SpawnDef } from './moves';
 import { POSES } from './pose-data';
 import { fighter, newMatch, run, settled, withFighter } from './test-helpers';
@@ -154,7 +155,7 @@ describe('projectile behaviours (#46)', () => {
     expect(fighter(early, 1).damage).toBe(0);
     expect(early.objects).toHaveLength(1);
     const armed = run(early, 1);
-    expect(fighter(armed, 1).damage).toBe(HIT.damage);
+    expect(fighter(armed, 1).damage).toBe(HIT.damage * STALE.freshBonus);
     expect(armed.objects).toEqual([]);
   });
 
@@ -225,7 +226,7 @@ describe('projectile behaviours (#46)', () => {
     let state = start;
     while (state.objects.length > 0 && state.frame < start.frame + 200) state = run(state, 1);
     const target = fighter(state, 1);
-    expect(target.damage).toBe(HIT.damage);
+    expect(target.damage).toBe(HIT.damage * STALE.freshBonus);
     expect(target.velocity.x).toBeLessThan(0);
   });
 
