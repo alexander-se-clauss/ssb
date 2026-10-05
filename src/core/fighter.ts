@@ -12,6 +12,7 @@ import {
 } from './ledge';
 import { approach, type Vec2 } from './math';
 import { influence } from './di';
+import { isSdiFlick, smashDi } from './sdi';
 import { baseDodge, dodgeFrames } from './dodge-frames';
 import { isGroundMovement, moveOnGround } from './ground-movement';
 import { findMove } from './move-data';
@@ -226,8 +227,16 @@ export const updateFighter = (
       fighter.hitlagFrames === 1 && fighter.action === 'hitstun'
         ? influence(fighter.knockback, input)
         : fighter.knockback;
+    // SDI (#155): each fresh flick while frozen by a hit moves the fighter a little that way.
+    const sdi = fighter.action === 'hitstun' && isSdiFlick(input, prev);
+    const position = sdi
+      ? smashDi(fighter.position, input, stage, character.stats.width / 2)
+      : fighter.position;
     return {
       ...fighter,
+      position,
+      // Lifted off the ground by a flick up, it is in the air.
+      grounded: fighter.grounded && position.y <= fighter.position.y,
       velocity: {
         x: fighter.velocity.x - fighter.knockback.x + knockback.x,
         y: fighter.velocity.y - fighter.knockback.y + knockback.y,
