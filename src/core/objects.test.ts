@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { knockback } from './combat';
+import { knockback, launchSpeed } from './combat';
 import { validateMove, type MoveDef, type SpawnDef } from './moves';
 import { POSES } from './pose-data';
 import { CAPSULE } from './registry';
@@ -20,7 +20,7 @@ const SHOT: SpawnDef = vi.hoisted(() => ({
   velocity: { x: 0.3, y: 0 },
   lifetime: 40,
   radius: 0.3,
-  hit: { damage: 6, angle: 30, baseKnockback: 0.15, knockbackGrowth: 0.003 },
+  hit: { damage: 6, angle: 30, baseKnockback: 10, knockbackGrowth: 97 },
 }));
 
 vi.mock('./move-data', async (importOriginal) => {
@@ -162,7 +162,7 @@ describe('spawned objects (#45)', () => {
       }),
     );
     // Launched the way the shot flew, as hard as a hitbox with the same numbers.
-    const speed = knockback(SHOT.hit, SHOT.hit.damage, CAPSULE.stats.weight);
+    const speed = launchSpeed(knockback(SHOT.hit, SHOT.hit.damage, CAPSULE.stats.weight));
     const radians = (SHOT.hit.angle * Math.PI) / 180;
     expect(target.velocity.x).toBeCloseTo(Math.cos(radians) * speed);
     expect(target.velocity.y).toBeCloseTo(Math.sin(radians) * speed);

@@ -4,7 +4,7 @@ import { POSES } from './pose-data';
 import { fighter, newMatch, run, settled, withFighter } from './test-helpers';
 import type { MatchState, SpawnedObject } from './types';
 
-const HIT = { damage: 5, angle: 40, baseKnockback: 0.15, knockbackGrowth: 0.003 };
+const HIT = { damage: 5, angle: 40, baseKnockback: 7, knockbackGrowth: 111 };
 
 /**
  * Two capsules on Battlefield, P1 at `x` facing right, P2 far away at the left edge unless

@@ -210,7 +210,7 @@ describe('training mode', () => {
           age: 0,
           lifetime: 60,
           radius: 0.4,
-          hit: { damage: 5, angle: 30, baseKnockback: 0.3, knockbackGrowth: 0.01 },
+          hit: { damage: 5, angle: 30, baseKnockback: 0, knockbackGrowth: 371 },
           behavior: { kind: 'straight' },
         },
       ],

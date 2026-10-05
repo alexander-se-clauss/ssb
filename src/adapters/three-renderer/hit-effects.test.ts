@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { GameEvent } from '../../core';
+import { launchSpeed, type GameEvent } from '../../core';
 import { burstFor } from './hit-effects';
 import { hasEffect } from './particles';
 
@@ -28,6 +28,13 @@ describe('hit and KO effects (#48)', () => {
     expect(smash?.power).toBeGreaterThan(jab?.power ?? 0);
     // A KO smash is already as big as it gets.
     expect(huge).toEqual(smash);
+  });
+
+  it('keeps sparks growing up to well past a smash at its KO percent (#153)', () => {
+    // A forward smash KOs a capsule at about 130 knockback.
+    const ko = burstFor(hit(launchSpeed(130)));
+    expect(ko?.count).toBeGreaterThan(burstFor(hit(launchSpeed(80)))?.count ?? 0);
+    expect(ko?.count).toBeLessThan(burstFor(hit(launchSpeed(200)))?.count ?? 0);
   });
 
   it('bursts where a fighter left the blast zone', () => {

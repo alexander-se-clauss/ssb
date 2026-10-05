@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { DODGE, HITSTUN_PER_KNOCKBACK, POSE } from './config';
+import { hitstunOf } from './combat';
+import { DODGE, KNOCKBACK, POSE } from './config';
 import { NEUTRAL_INPUT, inputOf } from './input';
 import { BONE_IDS, REST_POSE, type BoneId, type Pose } from './skeleton';
 import { POSES, blendPose, poseName, shortestTurn, targetPose, type PoseName } from './poses';
@@ -21,14 +22,16 @@ const STRIDE_BONES: readonly BoneId[] = [
   'lowerLegBack',
 ];
 
-const TUMBLE_HITSTUN = Math.round(POSE.tumbleSpeed * HITSTUN_PER_KNOCKBACK);
+/** The hitstun of the weakest launch that tumbles (#153). */
+const TUMBLE_HITSTUN = hitstunOf(KNOCKBACK.tumbleFrom);
 
-/** Puts fighter 0 into hitstun as a hit of `hitstunFrames` would. */
+/** Puts fighter 0 into hitstun as a hit of `hitstunFrames` would, tumbling if that strong. */
 const hit = (state: MatchState, hitstunFrames: number): MatchState =>
   withFighter(state, 0, {
     action: 'hitstun',
     actionFrame: 0,
     hitstunFrames,
+    tumbling: hitstunFrames >= TUMBLE_HITSTUN,
     grounded: false,
     velocity: { x: 0.3, y: 0.3 },
   });
@@ -46,8 +49,10 @@ describe('poses for movement states', () => {
     expect(poseName({ ...air, velocity: { x: 0, y: 0.2 } })).toBe('jump');
     expect(poseName({ ...air, velocity: { x: 0, y: -0.1 } })).toBe('fall');
     const stunned: FighterState = { ...standing, action: 'hitstun', actionFrame: 0 };
-    expect(poseName({ ...stunned, hitstunFrames: TUMBLE_HITSTUN - 1 })).toBe('hurt');
-    expect(poseName({ ...stunned, hitstunFrames: TUMBLE_HITSTUN })).toBe('tumble');
+    expect(poseName({ ...stunned, tumbling: false })).toBe('hurt');
+    expect(poseName({ ...stunned, tumbling: true })).toBe('tumble');
+    // A tumble goes on after its hitstun until the fighter acts (#153).
+    expect(poseName({ ...air, tumbling: true })).toBe('tumble');
   });
 
   it('tucks a roll while it travels and stands it up for its recovery', () => {
@@ -102,7 +107,8 @@ describe('poses for movement states', () => {
 
   it('keeps a tumble a tumble while the launch slows down', () => {
     let state = hit(settled(), TUMBLE_HITSTUN + 5);
-    while (fighter(state, 0).action === 'hitstun') {
+    // Until it lands: landing ends a tumble.
+    while (fighter(state, 0).action === 'hitstun' && !fighter(state, 0).grounded) {
       expect(poseName(fighter(state, 0))).toBe('tumble');
       state = step(state, []);
     }

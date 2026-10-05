@@ -145,7 +145,7 @@ describe("Rivet's block (#50)", () => {
   });
 
   it('blocks a projectile in a match, crediting its owner the reduced damage', () => {
-    const shot = { damage: 6, angle: 30, baseKnockback: 0.2, knockbackGrowth: 0.002 };
+    const shot = { damage: 6, angle: 30, baseKnockback: 25, knockbackGrowth: 65 };
     const state = guarding();
     const incoming: MatchState = {
       ...state,
@@ -203,14 +203,14 @@ describe("Rivet's block (#50)", () => {
     // The same hit on a fighter without a guard stuns for `breakStun` frames less.
     const open = applyHit(
       { ...fighter(guarding(), 0), action: 'idle', moveId: null },
-      { damage: event.damage, angle: 0, baseKnockback: 0.1, knockbackGrowth: 0 },
+      { damage: event.damage, angle: 0, baseKnockback: 20, knockbackGrowth: 0 },
       -1,
       1,
       { x: 0.5, y: 1 },
     );
     const broken = applyHit(
       fighter(guarding(), 0),
-      { damage: event.damage, angle: 0, baseKnockback: 0.1, knockbackGrowth: 0 },
+      { damage: event.damage, angle: 0, baseKnockback: 20, knockbackGrowth: 0 },
       -1,
       1,
       { x: 0.5, y: 1 },
@@ -221,7 +221,7 @@ describe("Rivet's block (#50)", () => {
 
   it('blocks a projectile flying at its front the same way', () => {
     const rivet: FighterState = fighter(guarding(), 0);
-    const shot = { damage: 6, angle: 30, baseKnockback: 0.2, knockbackGrowth: 0.002 };
+    const shot = { damage: 6, angle: 30, baseKnockback: 25, knockbackGrowth: 65 };
     const front = applyHit(rivet, shot, -1, 1, { x: 0.6, y: 0.8 });
     expect(front.guard).toBe('blocked');
     expect(front.damage).toBeCloseTo(shot.damage * GUARD.damageScale);

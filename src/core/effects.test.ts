@@ -112,7 +112,7 @@ describe('effect data (#47)', () => {
           velocity: { x: 0.2, y: 0 },
           lifetime: 30,
           radius: 0.3,
-          hit: { damage: 4, angle: 30, baseKnockback: 0.1, knockbackGrowth: 0.002 },
+          hit: { damage: 4, angle: 30, baseKnockback: 3, knockbackGrowth: 87 },
           effect: 'fire',
         },
       ],

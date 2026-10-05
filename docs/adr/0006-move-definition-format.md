@@ -293,6 +293,23 @@ type MoveDef = AttackMoveDef; // block and counter became fields instead (#50, #
 - The capsule's aerial landing lags are shorter for the faster tempo: nair 6, back air and up
   air 9, forward air 12, down air 15 (the punishable one).
 
+### Amendment (2026-10-05, #153)
+
+- Knockback follows Melee's formula. `baseKnockback` and `knockbackGrowth` are in Melee's units
+  (base in knockback units, growth in percent), and a character's `weight` is on Melee's scale
+  (capsule and Rivet 100, Vela 70). Knockback is
+  `((p / 10 + p * d / 20) * 200 / (weight + 100) * 1.4 + 18) * growth / 100 + base`, with `p` the
+  target's percent after the hit and `d` the hit's damage. Hitstun is `floor(knockback * 0.4)`.
+- A launch is `knockback * KNOCKBACK.speedPerUnit` stage units per frame. It lives in
+  `FighterState.knockback`, which is part of `velocity`, and shrinks by
+  `KNOCKBACK.decayPerFrame` along its direction each frame; gravity, fall speed and drift act on
+  the rest of `velocity`, the fighter's own speed. The two constants are Melee's, scaled by the
+  capsule's gravity against Mario's, so faster fallers drop out of a launch sooner. The ground
+  stops a launch's fall but not its slide.
+- From `KNOCKBACK.tumbleFrom` (80) on, the target tumbles (`FighterState.tumbling`) until it acts
+  or lands; below it, it flinches. Both can act once hitstun is over.
+- Every move was retuned to the new units. The #42 KO windows still hold.
+
 ## Consequences
 
 - New moves are data. Tests, tools and an AI agent can write and check them without new code.

@@ -55,7 +55,7 @@ export const FIGHTER = {
   airJumpVelocity: 0.32,
   shortHopVelocity: 0.26,
   airJumps: 1,
-  weight: 1,
+  weight: 100,
   landingLagFrames: 4,
 } as const satisfies CharacterStats;
 
@@ -98,7 +98,7 @@ export const VELA_STATS = {
   airJumpVelocity: 0.29,
   shortHopVelocity: 0.22,
   airJumps: 2,
-  weight: 0.82,
+  weight: 70,
 } as const satisfies CharacterStats;
 
 /** Rules every fighter shares, whatever its character. */
@@ -223,8 +223,23 @@ export const HELPLESS = { drift: 0.7, landingLagFrames: 10 } as const;
  */
 export const L_CANCEL = { windowFrames: 7, lockoutFrames: 20 } as const;
 
-/** Hitstun frames per unit of launch speed. */
-export const HITSTUN_PER_KNOCKBACK = 40;
+/**
+ * Knockback (#153, ADR 0006), as in Melee. A hit's knockback, in Melee's units, is
+ * `((p / 10 + p * d / 20) * 200 / (weight + 100) * 1.4 + 18) * growth / 100 + base`, with `p` the
+ * target's percent after the hit and `d` the hit's damage. It launches at `speedPerUnit` stage
+ * units per frame per unit, and that launch speed shrinks by `decayPerFrame` each frame along its
+ * direction, while gravity pulls on the fighter's own speed. Hitstun is the knockback times
+ * `hitstunPerUnit`, rounded down. From `tumbleFrom` on the fighter tumbles; below it, it flinches.
+ *
+ * The speeds are Melee's (0.03 per unit, decaying by 0.051) scaled by the capsule's gravity
+ * against Mario's (0.0175 / 0.095), so launches and falls keep Melee's proportions.
+ */
+export const KNOCKBACK = {
+  speedPerUnit: 0.0055,
+  decayPerFrame: 0.0094,
+  hitstunPerUnit: 0.4,
+  tumbleFrom: 80,
+} as const;
 
 /** How long a press waits in the input buffer for the fighter to be able to act on it. */
 export const INPUT = { bufferFrames: 6 } as const;
@@ -264,8 +279,6 @@ export const POSE = {
   runCycleFrames: 24,
   /** One full walking stride, slower and shorter than the run's. */
   walkCycleFrames: 36,
-  /** Launch speed from which a hit fighter tumbles instead of flinching. */
-  tumbleSpeed: 0.4,
 } as const;
 
 /** Training mode (#144): the dummy's percent range and how far one press in the panel moves it. */

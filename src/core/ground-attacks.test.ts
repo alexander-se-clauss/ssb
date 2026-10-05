@@ -239,7 +239,8 @@ describe('ground attack knockback', () => {
 
   it('sends a fighter off-stage at mid damage without a KO, so the fight goes on out there', () => {
     const state = firstHit(
-      faceOff(byId('forwardSmash').targetX, 60),
+      // Melee hitstun (#153) keeps the target helpless for longer, so a lower percent than before.
+      faceOff(byId('forwardSmash').targetX, 50),
       byId('forwardSmash').input,
     ).state;
     const edge = Math.max(...state.stage.platforms.map((p) => p.bounds.right));
@@ -249,7 +250,7 @@ describe('ground attack knockback', () => {
       next = step(next, [NONE]);
       furthest = Math.max(furthest, fighter(next, 1).position.x);
     }
-    expect(furthest).toBeGreaterThan(edge + 3);
+    expect(furthest).toBeGreaterThan(edge + 2.5);
     expect(koFrames(state)).toBeUndefined();
     // Holding back towards the stage and jumping once hitstun ends brings it home.
     let back = state;

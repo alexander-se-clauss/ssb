@@ -19,8 +19,8 @@ export const LEDGE_ATTACK: MoveDef = {
       priority: 1,
       damage: 8,
       angle: 30,
-      baseKnockback: 0.2,
-      knockbackGrowth: 0.003,
+      baseKnockback: 22,
+      knockbackGrowth: 56,
     },
     {
       anchor: { bone: 'lowerLegFront', at: 0.3 },
@@ -30,8 +30,8 @@ export const LEDGE_ATTACK: MoveDef = {
       priority: 0,
       damage: 6,
       angle: 30,
-      baseKnockback: 0.18,
-      knockbackGrowth: 0.0025,
+      baseKnockback: 18,
+      knockbackGrowth: 58,
     },
   ],
   poses: [

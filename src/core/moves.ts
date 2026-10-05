@@ -20,8 +20,12 @@ export interface HitDef {
   readonly damage: number;
   /** Launch angle in degrees, 0 = straight forward, 90 = straight up. */
   readonly angle: number;
+  /** Knockback in Melee's units (#153) that the hit gives at any percent. */
   readonly baseKnockback: number;
-  /** Extra knockback per percent of the target's damage. */
+  /**
+   * How much the knockback grows with the target's percent, in percent as in Melee (100 is
+   * neutral); `knockback` in `combat.ts` has the formula.
+   */
   readonly knockbackGrowth: number;
   /** Multiplies this hit's hitlag (`HITLAG` in config); default 1. */
   readonly hitlagScale?: number;

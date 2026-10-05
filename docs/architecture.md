@@ -44,7 +44,7 @@ landing gives them all back. The short hop button (`PlayerInput.shortHop`, #147)
 `jump`, but a ground jump from it leaves at the character's `shortHopVelocity` (about 30 frames in
 the air, `short-hop.test.ts`); the buffered press carries `shortHop`, and `FighterState.shortHop`
 remembers it through the jump squat. In the air it is the air jump, from a ledge the ledge jump; tap-jump stays a full jump. Core code reads a fighter's
-definition with `characterOf` (`character.ts`), so movement, knockback (divided by the target's
+definition with `characterOf` (`character.ts`), so movement, knockback (scaled by the target's
 `weight`), hurtboxes and bone hitboxes follow the character it plays. Looks stay in the view.
 Fighter bodies are core data too (`skeleton.ts`): a 2D skeleton of bones with lengths and parents,
 and poses as joint angles. `boneSegments` turns a pose into world joint positions;
@@ -66,8 +66,12 @@ each target once per `group`; when several touch one target, the highest `priori
 (`strikingHitbox`), and `hitTargets` records who each group already hit. Each hitbox sets its
 own damage, angle and knockback. A hit freezes attacker and target for `hitlagFrames`, longer for
 harder hits (`HITLAG` in `config.ts`): nothing moves, and the launch is held until it ends.
-In the air, horizontal speed above the character's `airSpeed` bleeds off at `FIGHTER_RULES.launchDecay`, so a
-sideways launch flies a set distance instead of drifting on almost undamped.
+Knockback and hitstun follow Melee's formula (#153, `KNOCKBACK` in `config.ts`,
+`knockback.test.ts`). A launch is kept apart in `FighterState.knockback`: it decays along its
+direction each frame while gravity acts on the fighter's own speed. A launch of 80 knockback or
+more makes the target tumble (`tumbling`) until it acts or lands. Other speed in the air above
+the character's `airSpeed`, such as from running off a ledge, bleeds off at
+`FIGHTER_RULES.launchDecay`.
 Move data is one file per family in `move-data/` (`jab.ts`, `tilts.ts`, `smashes.ts`,
 `aerials.ts`, `ledge.ts`, and a file of specials per character, `rivet.ts` and `vela.ts`, each registered in `move-data/index.ts`). A move with a `landingLag` is an aerial:
 landing while it runs ends it and puts the fighter in the `landing` action for that many frames
