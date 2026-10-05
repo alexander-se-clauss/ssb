@@ -517,14 +517,15 @@ export const updateFighter = (
     turnedFrom && turnedFrom.age < DODGE.turnGraceFrames
       ? { ...turnedFrom, age: turnedFrom.age + 1 }
       : null;
-  // Down with a button is a down attack or a sidestep on the platform, not a drop through it,
-  // also when the dodge waited in the buffer.
+  // Down with a button is a down attack, a sidestep or a grab (#159) on the platform, not a drop
+  // through it, also when the dodge or grab waited in the buffer.
   const waiting = fighter.buffer;
-  const dodgeComing =
+  const waitingFor = (wanted: (action: BufferedAction) => boolean): boolean =>
+    waiting !== null && wanted(waiting.action) && waiting.age < INPUT.bufferFrames;
+  const dodgeOrGrabComing =
     fighter.grounded &&
-    (dodgePress ||
-      (waiting !== null && isDodge(waiting.action) && waiting.age < INPUT.bufferFrames));
-  const wantsDrop = input.y < DROP_THRESHOLD && button === null && !dodgeComing;
+    (dodgePress || grabPress || waitingFor(isDodge) || waitingFor((action) => action === 'grab'));
+  const wantsDrop = input.y < DROP_THRESHOLD && button === null && !dodgeOrGrabComing;
 
   // Still supported by the platform we were standing on? Walking off an edge makes us airborne.
   const support = grounded ? stage.platforms.find((p) => standsOn(px, py, p)) : undefined;

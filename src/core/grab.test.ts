@@ -3,7 +3,7 @@ import { DODGE, GRAB } from './config';
 import { findMove } from './move-data';
 import { CAPSULE, RIVET } from './registry';
 import { createMatch, step } from './simulation';
-import { FINAL_DESTINATION } from './stages';
+import { BATTLEFIELD, FINAL_DESTINATION } from './stages';
 import { fighter, inputOf, run, withFighter } from './test-helpers';
 import type { MatchState, PlayerInput } from './types';
 
@@ -102,6 +102,32 @@ describe('grabs (#159)', () => {
     const pivoted = step(state, [GRAB_PRESS, NONE]);
     expect(fighter(pivoted, 0)).toMatchObject({ moveId: 'pivotGrab', facing: 1 });
     expect(fighter(grab(state), 0).action).toBe('holding');
+  });
+
+  it('grabs on a pass-through platform with the stick held down, not dropping through it', () => {
+    let state = createMatch({
+      stageId: BATTLEFIELD.id,
+      players: [{ characterId: CAPSULE.id }, { characterId: CAPSULE.id }],
+      rules: { mode: 'stock', stocks: 3, timeLimitSeconds: 120 },
+      countdownFrames: 0,
+    });
+    state = withFighter(state, 0, {
+      position: { x: 3, y: 2.2 },
+      velocity: { x: 0, y: 0 },
+      grounded: true,
+      action: 'idle',
+    });
+    const downGrab = inputOf({ y: -1, grab: true });
+    // Pressed together, and with down held first.
+    expect(fighter(step(state, [downGrab, NONE]), 0)).toMatchObject({
+      moveId: 'grab',
+      grounded: true,
+    });
+    const crouched = step(state, [inputOf({ y: -0.3 }), NONE]);
+    expect(fighter(step(crouched, [downGrab, NONE]), 0)).toMatchObject({
+      moveId: 'grab',
+      grounded: true,
+    });
   });
 
   it('pummels the held fighter for a little damage with attack', () => {
