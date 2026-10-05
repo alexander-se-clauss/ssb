@@ -77,10 +77,11 @@ export interface SpawnDef {
 }
 
 /**
- * What a press asks for, kept in the input buffer: a move slot, a dodge or a jump. Block and
- * counter are moves in the `downSpecial` slot (#50, #51).
+ * What a press asks for, kept in the input buffer: a move slot, a dodge, a jump or a grab (#159),
+ * which picks its standing, dash or pivot move when it starts. Block and counter are moves in the
+ * `downSpecial` slot (#50, #51).
  */
-export type BufferedAction = PressSlot | DodgeKind | 'jump';
+export type BufferedAction = PressSlot | DodgeKind | 'jump' | 'grab';
 
 /**
  * The ground dodges (#35): a sidestep into the background or out towards the camera, or a roll
@@ -146,6 +147,18 @@ export interface CounterDef {
   readonly into: MoveId;
 }
 
+/**
+ * A grab box (#159): on frames `[from, to)` a circle at `anchor` catches the first fighter whose
+ * body it touches, instead of hitting it. It ignores blocks and counters; only invulnerability,
+ * such as a dodge's, escapes it.
+ */
+export interface GrabBoxDef {
+  readonly anchor: HitboxAnchor;
+  readonly radius: number;
+  readonly from: number;
+  readonly to: number;
+}
+
 export interface PoseKey {
   readonly frame: number;
   readonly pose: Pose;
@@ -204,6 +217,8 @@ export interface AttackMoveDef {
   readonly guard?: GuardDef;
   /** Makes the move a counter (#51). */
   readonly counter?: CounterDef;
+  /** Makes the move a grab (#159); it has no hitboxes then. */
+  readonly grab?: GrabBoxDef;
 }
 
 /** Every move is an attack move; a block is one with a `guard` (#50). */
@@ -215,10 +230,11 @@ export interface MoveTiming {
   readonly totalFrames: number;
 }
 
-/** Startup, active and recovery are not stored; they follow from the hitbox windows. */
+/** Startup, active and recovery are not stored; they follow from the hitbox or grab windows. */
 export const moveTiming = (move: MoveDef): MoveTiming => {
-  const starts = move.hitboxes.map((hitbox) => hitbox.from);
-  const ends = move.hitboxes.map((hitbox) => hitbox.to);
+  const windows = [...move.hitboxes, ...(move.grab ? [move.grab] : [])];
+  const starts = windows.map((window) => window.from);
+  const ends = windows.map((window) => window.to);
   const startupFrames = starts.length > 0 ? Math.min(...starts) : move.totalFrames;
   const activeFrames = ends.length > 0 ? Math.max(...ends) - startupFrames : 0;
   return { startupFrames, activeFrames, totalFrames: move.totalFrames };
@@ -369,6 +385,16 @@ export const validateMove = (move: MoveDef): void => {
     }
     if (to > move.totalFrames) fail(`counter ends after the move (${to})`);
     if (guard) fail('a move cannot both guard and counter');
+  }
+  if (move.grab) {
+    const { from, to, radius } = move.grab;
+    if (!Number.isInteger(from) || !Number.isInteger(to) || from < 0 || to <= from) {
+      fail(`grab box has an empty or broken window [${from}, ${to})`);
+    }
+    if (to > move.totalFrames) fail(`grab box ends after the move (${to})`);
+    if (!(radius > 0)) fail('grab box needs a positive radius');
+    checkAnchor(move.grab.anchor, 'grab box');
+    if (move.hitboxes.length > 0) fail('a grab cannot also have hitboxes');
   }
   if (
     move.landingLag !== undefined &&

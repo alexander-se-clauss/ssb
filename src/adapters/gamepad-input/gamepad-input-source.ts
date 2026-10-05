@@ -13,6 +13,7 @@ const BUTTON = {
   b: 1, // right face button (Circle)
   x: 2, // left face button (Square)
   y: 3, // top face button (Triangle)
+  rightBumper: 5, // Z on a GameCube pad
   leftTrigger: 6,
   rightTrigger: 7,
   start: 9,
@@ -32,6 +33,7 @@ export const GAMEPAD_LABELS = {
   special: 'B',
   dodge: 'L / R',
   shortHop: 'Y',
+  grab: 'Right bumper (Z)',
   start: 'Start',
 } as const;
 
@@ -42,7 +44,7 @@ const browserGamepads: GamepadReader = () => navigator.getGamepads();
 
 /**
  * One gamepad as a player's input, with Melee's layout: A attacks, B specials, X jumps (Y short
- * hops, #147), the triggers dodge, Start starts, the left stick or d-pad moves. The browser Gamepad API has no events for
+ * hops, #147), the triggers dodge, the right bumper grabs (#159), Start starts, the left stick or d-pad moves. The browser Gamepad API has no events for
  * buttons, so `sample()` polls the pad; the app calls it once per frame.
  */
 export class GamepadInputSource implements InputSource {
@@ -74,6 +76,8 @@ export class GamepadInputSource implements InputSource {
       special: is(BUTTON.b),
       shield: is(BUTTON.leftTrigger) || is(BUTTON.rightTrigger),
       shortHop: is(BUTTON.y),
+      // The right bumper sits where Melee's Z is, and grabs like it (#159).
+      grab: is(BUTTON.rightBumper),
       start: is(BUTTON.start),
     };
   }

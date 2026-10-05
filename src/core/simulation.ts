@@ -3,6 +3,7 @@ import { trackStick } from './attack-input';
 import { resolveCombat } from './combat';
 import { createFighter, updateFighter } from './fighter';
 import { NEUTRAL_INPUT } from './input';
+import { resolveGrabs } from './grab';
 import { findMove } from './move-data';
 import { insideZone, limitObjects, moveObjects, resolveObjectHits, spawnObjects } from './objects';
 import { validateCharacter } from './character';
@@ -219,12 +220,14 @@ const playStep = (state: MatchState, inputs: readonly PlayerInput[]): MatchState
     ...spawned.filter((object) => insideZone(object, state.stage.blastZone)),
   ]);
   const shots = resolveObjectHits(flying, combat.fighters);
-  const events = [...combat.events, ...shots.events];
+  // Grabs (#159) after all hits: a hit this frame breaks a grab up, or stops a catch.
+  const grabs = resolveGrabs(shots.fighters, state.stage);
+  const events = [...combat.events, ...shots.events, ...grabs.events];
 
-  const fallen = shots.fighters.filter(
+  const fallen = grabs.fighters.filter(
     (f) => f.action !== 'eliminated' && isOutsideBlastZone(f, state),
   );
-  const afterKos = shots.fighters.map((fighter) =>
+  const afterKos = grabs.fighters.map((fighter) =>
     fallen.includes(fighter) ? handleKo(fighter, state, events) : fighter,
   );
   const fighters = creditKos(afterKos, fallen);

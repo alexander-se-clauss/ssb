@@ -4,6 +4,7 @@ import {
   CROUCH,
   DODGE,
   FIGHTER_RULES,
+  GRAB,
   HELPLESS,
   INPUT,
   KNOCKBACK,
@@ -33,8 +34,10 @@ import {
   type DownedAction,
 } from './tech';
 import { baseDodge, dodgeFrames } from './dodge-frames';
+import { mashes } from './grab';
 import { isGroundMovement, moveOnGround } from './ground-movement';
 import { findMove } from './move-data';
+import { standsOn } from './stages';
 import { PRESS_SLOTS, isAerialSlot, moveSlot } from './move-slots';
 import { nextPose } from './poses';
 import { REST_POSE } from './skeleton';
@@ -44,7 +47,6 @@ import type {
   BufferedInput,
   FighterAction,
   FighterState,
-  PlatformDef,
   PlayerInput,
   PlayerSlot,
   StageDef,
@@ -88,6 +90,9 @@ export const createFighter = (
     staleMoves: [],
     techWindow: 0,
     techLockout: 0,
+    holding: null,
+    heldBy: null,
+    escapeFrames: 0,
     hitstunFrames: 0,
     landingLagFrames: 0,
     lCancelPress: null,
@@ -103,6 +108,11 @@ export const createFighter = (
     pose: REST_POSE,
   };
 };
+
+/** The grab a grab press asks for (#159): a dash grab out of a dash or run, a pivot grab out of a
+ * run turn, the standing grab otherwise. */
+const grabSlot = (action: FighterAction): 'grab' | 'dashGrab' | 'pivotGrab' =>
+  action === 'dash' || action === 'run' ? 'dashGrab' : action === 'runTurn' ? 'pivotGrab' : 'grab';
 
 const isControllable = (action: FighterAction): boolean =>
   isGroundMovement(action) || action === 'airborne';
@@ -153,11 +163,6 @@ const restFrom = (fighter: FighterState, dodgeStarted = false): number =>
     ? 0
     : Math.min(fighter.dodgeRestFrames + 1, DODGE.repeat.wearOffFrames);
 
-const standsOn = (x: number, y: number, platform: PlatformDef): boolean =>
-  x >= platform.bounds.left &&
-  x <= platform.bounds.right &&
-  Math.abs(y - platform.bounds.top) < 1e-6;
-
 /**
  * Advances one fighter by one frame: control, physics, stage collision and its body pose.
  * Combat between fighters and blast zones are handled by the simulation afterwards.
@@ -184,6 +189,7 @@ export const updateFighter = (
       ? 'special'
       : null;
   const dodgePress = pressed(input, prev, 'shield');
+  const grabPress = pressed(input, prev, 'grab');
   const isAerial = (id: MoveId): boolean =>
     PRESS_SLOTS.some((slot) => isAerialSlot(slot) && moves[slot] === id);
   // During an aerial the dodge button L-cancels (#149) instead of asking for an air dodge.
@@ -209,6 +215,9 @@ export const updateFighter = (
           }
         : null;
     if (button === null) {
+      // The grab button grabs on the ground (#159); in the air it does nothing.
+      if (grabPress)
+        return grounded ? { action: 'grab', face: fighter.facing, age: 0 } : jumpPress();
       if (!dodgePress || lCancelling) return jumpPress();
       // The dodge button dodges on the ground (#35), and in the air once per airtime (#36). On
       // the ground the stick sideways rolls along the stage plane; up, down or centred sidesteps
@@ -444,6 +453,37 @@ export const updateFighter = (
     return { ...next, pose: nextPose(next, frame) };
   }
 
+  // In a grab (#159): the holder stands still and pummels with attack; the held fighter hangs
+  // where the simulation puts it, breaking free in time, sooner the more it mashes. The
+  // simulation settles the catch, the pummel's hit and the release. Presses are not kept.
+  if (fighter.action === 'holding' || fighter.action === 'pummel' || fighter.action === 'grabbed') {
+    const actionFrame = fighter.actionFrame + 1;
+    const base: FighterState = {
+      ...fighter,
+      velocity: { x: 0, y: 0 },
+      knockback: { x: 0, y: 0 },
+      actionFrame,
+      buffer: null,
+      invulnerableFrames: Math.max(fighter.invulnerableFrames - 1, 0),
+      dodgeRestFrames: restFrom(fighter),
+      ...techTimers(fighter, false),
+      stick,
+      previousInput: input,
+    };
+    const escape = fighter.escapeFrames - 1 - mashes(input, prev) * GRAB.mash.frames;
+    const next: FighterState =
+      fighter.action === 'grabbed'
+        ? { ...base, escapeFrames: Math.max(escape, 0) }
+        : fighter.action === 'pummel'
+          ? actionFrame >= GRAB.pummel.totalFrames
+            ? { ...base, action: 'holding', actionFrame: 0 }
+            : base
+          : button === 'attack'
+            ? { ...base, action: 'pummel', actionFrame: 0 }
+            : base;
+    return { ...next, pose: nextPose(next, frame) };
+  }
+
   let { x: px, y: py } = fighter.position;
   // The fighter's own speed. What is left of a launch (#153) moves it on top and decays on its
   // own, so gravity and drift act on the fighter while the launch fades, as in Melee.
@@ -477,14 +517,15 @@ export const updateFighter = (
     turnedFrom && turnedFrom.age < DODGE.turnGraceFrames
       ? { ...turnedFrom, age: turnedFrom.age + 1 }
       : null;
-  // Down with a button is a down attack or a sidestep on the platform, not a drop through it,
-  // also when the dodge waited in the buffer.
+  // Down with a button is a down attack, a sidestep or a grab (#159) on the platform, not a drop
+  // through it, also when the dodge or grab waited in the buffer.
   const waiting = fighter.buffer;
-  const dodgeComing =
+  const waitingFor = (wanted: (action: BufferedAction) => boolean): boolean =>
+    waiting !== null && wanted(waiting.action) && waiting.age < INPUT.bufferFrames;
+  const dodgeOrGrabComing =
     fighter.grounded &&
-    (dodgePress ||
-      (waiting !== null && isDodge(waiting.action) && waiting.age < INPUT.bufferFrames));
-  const wantsDrop = input.y < DROP_THRESHOLD && button === null && !dodgeComing;
+    (dodgePress || grabPress || waitingFor(isDodge) || waitingFor((action) => action === 'grab'));
+  const wantsDrop = input.y < DROP_THRESHOLD && button === null && !dodgeOrGrabComing;
 
   // Still supported by the platform we were standing on? Walking off an edge makes us airborne.
   const support = grounded ? stage.platforms.find((p) => standsOn(px, py, p)) : undefined;
@@ -504,8 +545,9 @@ export const updateFighter = (
 
   const kept = fighter.buffer && fighter.buffer.age < INPUT.bufferFrames ? fighter.buffer : null;
   let buffer = latest(press(grounded), kept && { ...kept, age: kept.age + 1 });
-  const slotMove = (action: BufferedAction): MoveId | undefined => {
-    const id = isDodge(action) || action === 'jump' ? undefined : moves[action];
+  const slotMove = (wanted: BufferedAction): MoveId | undefined => {
+    if (wanted === 'grab') return grounded ? moves[grabSlot(action)] : undefined;
+    const id = isDodge(wanted) || wanted === 'jump' ? undefined : moves[wanted];
     // A block starts only on the ground (#50).
     return id !== undefined && !grounded && findMove(id).guard ? undefined : id;
   };
@@ -520,6 +562,15 @@ export const updateFighter = (
     // The turn is settled once a move starts; a roll cancelled out of it must not undo it.
     turnedFrom = null;
   };
+  /** The way a buffered press starts its move: a grab the way the fighter faces now (#159). */
+  const faceOf = (queued: BufferedInput): 1 | -1 =>
+    queued.action !== 'grab'
+      ? queued.face
+      : action === 'runTurn'
+        ? facing === 1
+          ? -1
+          : 1
+        : facing;
   let dodgeStarted = false;
   /** Starts a buffered dodge; `face` is the way a roll travels. */
   const startDodge = (dodge: DodgeKind, face: 1 | -1): void => {
@@ -639,7 +690,7 @@ export const updateFighter = (
     // Crouched to jump, as in Melee: an attack pressed now is still a ground attack, so a stick
     // flicked up for an up smash does not lose it to tap-jump.
     if (buffer && bufferedMove !== undefined) {
-      startMove(bufferedMove, buffer.face);
+      startMove(bufferedMove, faceOf(buffer));
     } else if (actionFrame >= stats.jumpSquatFrames || !grounded) {
       // A second press during the squat is not kept for a double jump at take-off.
       if (buffer?.action === 'jump') buffer = null;
@@ -652,8 +703,14 @@ export const updateFighter = (
       action = 'airborne';
       actionFrame = 0;
     }
+  } else if (action === 'grabRelease') {
+    // Pushed apart after a grab (#159): unable to act for a moment; a press waits in the buffer.
+    if (actionFrame >= GRAB.release.frames || !grounded) {
+      action = grounded ? 'idle' : 'airborne';
+      actionFrame = 0;
+    }
   } else if (buffer && bufferedMove !== undefined) {
-    startMove(bufferedMove, buffer.face);
+    startMove(bufferedMove, faceOf(buffer));
   } else if (buffer && bufferedDodge !== undefined) {
     startDodge(bufferedDodge, buffer.face);
   } else if (bufferedJump) {

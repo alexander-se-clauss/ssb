@@ -29,6 +29,7 @@ describe('GamepadInputSource', () => {
       special: false,
       shield: false,
       shortHop: false,
+      grab: false,
       start: false,
     });
   });
@@ -42,6 +43,9 @@ describe('GamepadInputSource', () => {
     expect(source.sample()).toMatchObject({ jump: true, shortHop: false });
     set(pad([3]));
     expect(source.sample()).toMatchObject({ jump: false, shortHop: true });
+    // The right bumper, where Melee's Z is, grabs (#159).
+    set(pad([5]));
+    expect(source.sample()).toMatchObject({ grab: true, shield: false });
   });
 
   it('keeps tap-jump a full jump', () => {

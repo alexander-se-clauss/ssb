@@ -289,6 +289,21 @@ export const KNOCKDOWN = {
 } as const;
 
 /**
+ * Grabs (#159). A caught fighter is held `holdDistance` in front of its holder. It breaks free
+ * after `hold.baseFrames` plus `hold.perPercent` frames per percent it has; each fresh button
+ * press or stick flick (past `mash.stick`) cuts `mash.frames` more. A pummel hits on `hitFrame`
+ * for `damage` and is over after `totalFrames`. A release pushes both `distance` apart, unable to
+ * act for `frames`.
+ */
+export const GRAB = {
+  holdDistance: 0.9,
+  hold: { baseFrames: 90, perPercent: 0.5 },
+  mash: { frames: 3, stick: 0.7 },
+  pummel: { totalFrames: 20, hitFrame: 8, damage: 1.5 },
+  release: { frames: 30, distance: 1.0 },
+} as const;
+
+/**
  * Directional influence (#154), as in Melee: the stick held on the last frame of hitlag turns a
  * launch by up to `maxDegrees`, scaled by how far it points across the launch.
  */

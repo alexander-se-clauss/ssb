@@ -62,6 +62,8 @@ export const dummyInput = (
 ): PlayerInput => {
   const di = diStick(state, dummy, settings);
   if (di) return di;
+  // Held in a grab (#159) it lets go of everything, so its jumps or dodges do not mash it free.
+  if (dummy.action === 'grabbed') return NEUTRAL_INPUT;
   switch (settings.behaviour) {
     case 'stand':
       return NEUTRAL_INPUT;
@@ -128,7 +130,7 @@ export const resetTraining = (state: MatchState): MatchState => {
 /** Hitstun or the freeze of a hit: the next hit on such a dummy continues the combo. */
 /** Hit and not free to act: in hitstun or hitlag, or down after a tumble (#158). */
 const stunned = (f: FighterState): boolean =>
-  f.action === 'hitstun' || f.hitlagFrames > 0 || isDowned(f.action);
+  f.action === 'hitstun' || f.hitlagFrames > 0 || isDowned(f.action) || f.action === 'grabbed';
 
 /** The attacker is busy while frozen, while the move that hit plays on, or in its landing lag. */
 const attackerBusy = (f: FighterState, watch: AdvantageWatch): boolean =>

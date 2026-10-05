@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {
   TICK_RATE,
   activeEffects,
+  activeGrabBox,
   activeHitboxes,
   blendPose,
   characterOf,
@@ -60,8 +61,8 @@ interface FighterVisual {
   /** Every material of the body, flashed while invulnerable and tinted in hitstun. */
   readonly materials: readonly THREE.MeshStandardMaterial[];
   readonly skeleton: SkeletonDef;
-  /** Debug overlay: one sphere per active hitbox, grown as moves need more. */
-  readonly hitboxes: THREE.Mesh[];
+  /** Debug overlay: one sphere per active hitbox or grab box, grown as moves need more. */
+  readonly hitboxes: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[];
   /** Debug overlay: one shape per hurtbox, in world space. */
   readonly hurtboxes: ReadonlyMap<BoneId, THREE.Mesh>;
   /** Shared by the fighter's hurtboxes, recoloured while it is invulnerable. */
@@ -309,19 +310,28 @@ export class ThreeView implements GameView {
       mesh.rotation.set(0, 0, Math.atan2(-(box.end.x - box.start.x), box.end.y - box.start.y));
     }
 
-    const hitboxes = this.showBoxes ? activeHitboxes(fighter) : [];
-    while (visual.hitboxes.length < hitboxes.length) {
+    // Red hitboxes, and a purple grab box (#159) while a grab can catch.
+    const grabBox = this.showBoxes ? activeGrabBox(fighter) : undefined;
+    const boxes = [
+      ...(this.showBoxes ? activeHitboxes(fighter) : []).map((box) => ({
+        ...box,
+        color: BOX_COLORS.hitbox,
+      })),
+      ...(grabBox ? [{ ...grabBox, color: BOX_COLORS.grab }] : []),
+    ];
+    while (visual.hitboxes.length < boxes.length) {
       const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 16), overlay(BOX_COLORS.hitbox));
       mesh.renderOrder = 2;
       visual.hitboxes.push(mesh);
       this.scene.add(mesh);
     }
     visual.hitboxes.forEach((mesh, index) => {
-      const hitbox = hitboxes[index];
-      mesh.visible = hitbox !== undefined;
-      if (!hitbox) return;
-      mesh.position.set(hitbox.center.x, hitbox.center.y, 0);
-      mesh.scale.setScalar(hitbox.radius);
+      const box = boxes[index];
+      mesh.visible = box !== undefined;
+      if (!box) return;
+      mesh.position.set(box.center.x, box.center.y, 0);
+      mesh.scale.setScalar(box.radius);
+      mesh.material.color.setHex(box.color);
     });
 
     // The body box where it is drawn, for the camera.

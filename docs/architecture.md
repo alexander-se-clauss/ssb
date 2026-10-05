@@ -57,7 +57,7 @@ places each character's parts on the bones (`body-layout.ts`), kept within the b
 look matches the hurtboxes.
 Terms, as in Melee: a **hurtbox** is where a fighter can be hit (one per body part), a **hitbox**
 is where an attack hits (`activeHitboxes`). F2 shows both in the running game: yellow hurtboxes,
-blue while invulnerable, red hitboxes (`debug-colors.ts`).
+blue while invulnerable, red hitboxes, purple grab boxes (`debug-colors.ts`).
 Attacks are moves (ADR 0006): plain-data `MoveDef`s in `move-data/`, played by one move runner
 in `fighter.ts`. A fighter in the `attack` action stores only the move's id and its frame
 (`actionFrame`), and `activeHitboxes` reads the definition to find which hitboxes are on. A
@@ -93,8 +93,18 @@ tumbling fighter that lands inside the window techs in place or rolls (`tech`, `
 rolls (`getup`, `getupForward`, `getupBack`) or plays the `getupAttack` move slot. These actions
 run in their own branch of `updateFighter`; each is invulnerable at first and then open to a tech
 chase. Landing in a tumble stops what is left of the launch.
+Grabs (#159, `grab.ts`, `GRAB` in `config.ts`): the grab button (`PlayerInput.grab`) buffers a
+`grab`, which starts the `grab`, `dashGrab` (out of a dash or run) or `pivotGrab` (out of a run
+turn, facing back) move slot. A grab move has a grab box (`MoveDef.grab`) instead of hitboxes.
+`resolveGrabs` runs in the simulation after all hits of a frame: it ends grabs a hit or KO broke
+up, pushes both apart into `grabRelease` once the held fighter's `escapeFrames` run out, lands a
+pummel's damage, and lets active grab boxes catch a fighter that is not invulnerable (a block or
+counter does not stop it). The holder (`holding`, `pummel`; `FighterState.holding`) and the held
+fighter (`grabbed`; `heldBy`) run in their own branch of `updateFighter`, where mashing buttons
+and the stick cuts `escapeFrames`. The held fighter and a release push stay on the holder's
+platform. A grabbed training dummy holds still instead of mashing. F2 draws grab boxes in purple.
 Move data is one file per family in `move-data/` (`jab.ts`, `tilts.ts`, `smashes.ts`,
-`aerials.ts`, `ledge.ts`, `getup.ts`, and a file of specials per character, `rivet.ts` and `vela.ts`, each registered in `move-data/index.ts`). A move with a `landingLag` is an aerial:
+`aerials.ts`, `ledge.ts`, `getup.ts`, `grab.ts`, and a file of specials per character, `rivet.ts` and `vela.ts`, each registered in `move-data/index.ts`). A move with a `landingLag` is an aerial:
 landing while it runs ends it and puts the fighter in the `landing` action for that many frames
 (`landingLagFrames`). An aerial's `autoCancel` windows (#148, `auto-cancel.test.ts`) mark its
 first and last frames, clear of the hitboxes: landing in them costs only the normal landing lag,

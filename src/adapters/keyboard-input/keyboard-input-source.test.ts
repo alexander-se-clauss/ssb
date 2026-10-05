@@ -38,6 +38,17 @@ describe('KeyboardInputSource', () => {
     expect(right.sample()).toMatchObject({ shortHop: true, jump: false });
   });
 
+  it('has a grab key for each player (#159)', () => {
+    const target = new EventTarget();
+    const left = new KeyboardInputSource(PLAYER_ONE_KEYS, target);
+    const right = new KeyboardInputSource(PLAYER_TWO_KEYS, target);
+    target.dispatchEvent(key('keydown', 'KeyC'));
+    expect(left.sample()).toMatchObject({ grab: true, shield: false, attack: false });
+    expect(right.sample().grab).toBe(false);
+    target.dispatchEvent(key('keydown', 'Numpad3'));
+    expect(right.sample().grab).toBe(true);
+  });
+
   it('keeps a tap that is released before the next sample', () => {
     const target = new EventTarget();
     const source = new KeyboardInputSource(PLAYER_ONE_KEYS, target);
@@ -67,6 +78,7 @@ describe('describeKeys', () => {
       special: 'G',
       dodge: 'H',
       shortHop: 'V',
+      grab: 'C',
       start: 'Enter',
     });
     expect(describeKeys(PLAYER_TWO_KEYS)).toEqual({
@@ -78,6 +90,7 @@ describe('describeKeys', () => {
       special: '/',
       dodge: 'Right Shift',
       shortHop: 'Num 1',
+      grab: 'Num 3',
       start: 'Enter',
     });
   });

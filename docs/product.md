@@ -110,6 +110,11 @@ Smash meets Monster Hunter: defense is about commitment and timing, not a panic 
 - **Everything is move data.** Frames, bone-attached hitboxes, damage, knockback, cancel windows,
   block and counter are fields, not per-character code. Specials can spawn objects
   (projectiles, traps) with their own hitbox, movement, lifetime and damage.
+- **Grabs beat dodges.** The grab button (Melee's Z: right bumper, C, Num 3) grabs standing, out
+  of a dash or run, or pivoting out of a run turn (#159). It goes through a block or counter and
+  catches a fighter in dodge endlag; a whiff leaves the grabber open. The holder pummels with
+  attack; the held fighter breaks free in time, later at higher percent and sooner by mashing,
+  and both are pushed apart into a short grab release.
 - Air jumps are per character (default one). Blast zones are large enough for off-stage combat.
 
 ## Fighters
@@ -185,7 +190,7 @@ a playable build; it is done when that build works, not on a date.
       L-cancel (#149 done), repeated dodges get weaker (#150 done), dash and landing dust (#151 done), movement benchmarks as
       tests and a play-test sign-off (#152 done). Epic #142.
 - [ ] **S8 Combos and combat feel.** Melee knockback and hitstun (#153 done), DI (#154 done), SDI (#155 done), crouch cancel (#156 done),
-      stale moves (#157 done), tech and knockdown (#158 done), grabs and throws, screen shake and launch trails, each
+      stale moves (#157 done), tech and knockdown (#158 done), grabs (#159 done), throws, screen shake and launch trails, each
       fighter's combos pinned as tests. Epic #143.
 
 Later, not yet planned: charged smashes, rebindable keys, a CPU

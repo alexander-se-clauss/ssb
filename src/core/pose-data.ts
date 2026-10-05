@@ -55,7 +55,9 @@ export type PoseName =
   | 'guard'
   | 'counterStance'
   | 'counterStrike'
-  | 'thruster';
+  | 'thruster'
+  | 'grab'
+  | 'held';
 
 /**
  * Melee-style key poses. Angles are relative to the parent bone (0 = straight on, positive turns
@@ -721,5 +723,31 @@ export const POSES: Readonly<Record<PoseName, Pose>> = {
     lowerLegFront: 25,
     upperLegBack: 210,
     lowerLegBack: 35,
+  },
+  // Grab (#159): leaning in, both arms reaching out at chest height to catch and hold.
+  grab: {
+    torso: 20,
+    head: -12,
+    upperArmFront: 68,
+    lowerArmFront: -5,
+    upperArmBack: 78,
+    lowerArmBack: -10,
+    upperLegFront: 145,
+    lowerLegFront: 45,
+    upperLegBack: 205,
+    lowerLegBack: 20,
+  },
+  // Held (#159): hanging in the holder's grip, head back, arms and legs limp.
+  held: {
+    torso: -15,
+    head: -20,
+    upperArmFront: 150,
+    lowerArmFront: 20,
+    upperArmBack: 165,
+    lowerArmBack: 15,
+    upperLegFront: 172,
+    lowerLegFront: 18,
+    upperLegBack: 192,
+    lowerLegBack: 12,
   },
 };

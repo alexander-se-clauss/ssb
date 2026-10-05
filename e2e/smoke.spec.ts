@@ -537,6 +537,61 @@ test('player one moves right when D is held', async ({ page }) => {
   await page.keyboard.up('KeyD');
 });
 
+test('player one walks up to player two and grabs it, and it mashes free', async ({
+  page,
+}, testInfo) => {
+  await startMatch(page);
+  // Player two starts on a side platform of Battlefield: down drops it to the main floor.
+  await page.evaluate(() => window.__SSB__?.hold(1, { y: -1 }));
+  await expect
+    .poll(async () => (await gameState(page)).fighters[1]?.position.y, FRAMES_TIMEOUT)
+    .toBe(0);
+  await page.evaluate(() => window.__SSB__?.release(1));
+  // Walks right in the browser, frame by frame, until in reach, then grabs (#159).
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        const walk = () => {
+          const [p1, p2] = window.__SSB__?.state()?.fighters ?? [];
+          if (p1 && p2 && Math.abs(p2.position.x - p1.position.x) < 1.3) {
+            window.__SSB__?.hold(0, { grab: true });
+            resolve();
+            return;
+          }
+          window.__SSB__?.hold(0, { x: p1 && p2 && p2.position.x < p1.position.x ? -0.5 : 0.5 });
+          requestAnimationFrame(walk);
+        };
+        walk();
+      }),
+  );
+  await expect
+    .poll(async () => (await gameState(page)).fighters[1]?.action, FRAMES_TIMEOUT)
+    .toBe('grabbed');
+  expect((await gameState(page)).fighters[0]?.action).toBe('holding');
+  await page.screenshot({ path: testInfo.outputPath('grab.png') });
+  // Player two mashes attack until it breaks free; both are pushed apart.
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        let down = false;
+        const mash = () => {
+          if (window.__SSB__?.state()?.fighters[1]?.action !== 'grabbed') {
+            window.__SSB__?.release(1);
+            resolve();
+            return;
+          }
+          down = !down;
+          window.__SSB__?.hold(1, { attack: down });
+          requestAnimationFrame(mash);
+        };
+        mash();
+      }),
+  );
+  const released = await gameState(page);
+  expect(released.fighters.map((f) => f.action)).toEqual(['grabRelease', 'grabRelease']);
+  await page.evaluate(() => window.__SSB__?.release(0));
+});
+
 test('a match starts with READY, fighters wait for GO!, then move', async ({ page }) => {
   await startMatch(page);
   const banner = page.getByRole('status');
