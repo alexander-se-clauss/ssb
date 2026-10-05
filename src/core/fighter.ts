@@ -284,6 +284,8 @@ export const updateFighter = (
       buffer: null,
       invulnerableFrames: Math.max(fighter.invulnerableFrames - 1, 0),
       dodgeRestFrames: restFrom(fighter),
+      // The tech timers (#158) run on; a press here is a ledge option, not a tech.
+      ...techTimers(fighter, false),
       stick,
       previousInput: input,
     };
@@ -341,6 +343,7 @@ export const updateFighter = (
       buffer: null,
       invulnerableFrames: Math.max(fighter.invulnerableFrames - 1, 0),
       dodgeRestFrames: restFrom(fighter),
+      ...techTimers(fighter, false),
       stick,
       previousInput: input,
     };
@@ -382,7 +385,7 @@ export const updateFighter = (
       buffer: null,
       invulnerableFrames: Math.max(fighter.invulnerableFrames - 1, 0),
       dodgeRestFrames: restFrom(fighter),
-      techLockout: Math.max(fighter.techLockout - 1, 0),
+      ...techTimers(fighter, false),
       stick,
       previousInput: input,
     };

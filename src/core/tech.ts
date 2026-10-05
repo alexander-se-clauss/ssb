@@ -45,7 +45,8 @@ export const getupOption = (
   }
   const way = rollWay(input.x, facing);
   if (way !== 0) return way === 1 ? 'getupForward' : 'getupBack';
-  if (input.y >= TECH.stick || pressed(input, previous, 'jump')) return 'getup';
+  const jumped = pressed(input, previous, 'jump') || pressed(input, previous, 'shortHop');
+  if (input.y >= TECH.stick || jumped) return 'getup';
   return null;
 };
 

@@ -138,6 +138,23 @@ describe('teching a tumble (#158)', () => {
     expect(fighter(state, 1).action).toBe('tech');
   });
 
+  it('lets the lockout run out while hanging from a ledge, so a later tumble can tech', () => {
+    const hanging = withFighter(tumbling(), 1, {
+      action: 'ledge',
+      actionFrame: 0,
+      ledge: 0,
+      grounded: false,
+      velocity: { x: 0, y: 0 },
+      knockback: { x: 0, y: 0 },
+      tumbling: false,
+      techWindow: TECH.windowFrames,
+      techLockout: TECH.lockoutFrames,
+    });
+    const later = run(hanging, TECH.lockoutFrames, [NONE, NONE]);
+    expect(fighter(later, 1).action).toBe('ledge');
+    expect(fighter(later, 1)).toMatchObject({ techWindow: 0, techLockout: 0 });
+  });
+
   it('lands as before from a hit that did not make it tumble', () => {
     const flinched = withFighter(tumbling(), 1, { tumbling: false });
     let state = flinched;
@@ -167,6 +184,11 @@ describe('knockdown and getups (#158)', () => {
     const bounced = run(knockedDown(), KNOCKDOWN.bounceFrames - 1, [NONE, up]);
     expect(fighter(bounced, 1).action).toBe('knockdown');
     expect(fighter(step(bounced, [NONE, up]), 1).action).toBe('getup');
+  });
+
+  it('gets up with the short hop button too, like a jump', () => {
+    const bounced = run(knockedDown(), KNOCKDOWN.bounceFrames - 1);
+    expect(fighter(step(bounced, [NONE, inputOf({ shortHop: true })]), 1).action).toBe('getup');
   });
 
   it('gets up on its own after lying too long', () => {
