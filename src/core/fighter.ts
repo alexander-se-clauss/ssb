@@ -223,8 +223,9 @@ export const updateFighter = (
   // age; the stick is still tracked, so a stick held through the freeze is not read as a flick.
   if (fighter.hitlagFrames > 0) {
     // DI (#154): the stick on the last frame of the freeze turns the launch it releases.
+    // A slide along the ground after a crouch cancel (#156) stays as it is.
     const knockback =
-      fighter.hitlagFrames === 1 && fighter.action === 'hitstun'
+      fighter.hitlagFrames === 1 && fighter.action === 'hitstun' && !fighter.grounded
         ? influence(fighter.knockback, input)
         : fighter.knockback;
     // SDI (#155): each fresh flick while frozen by a hit moves the fighter a little that way.

@@ -5,6 +5,7 @@
  * so hurtboxes follow it and the view only interpolates and draws it.
  */
 import { DODGE, LEDGE, POSE } from './config';
+import { isCrouching } from './crouch';
 import { findMove } from './move-data';
 import type { MoveDef } from './moves';
 import { POSES, type PoseName } from './pose-data';
@@ -57,6 +58,7 @@ export const poseName = (fighter: FighterState): PoseName | null => {
       // Decided by the launch, not the current speed, so a tumble stays a tumble as it slows.
       return fighter.tumbling ? 'tumble' : 'hurt';
     case 'idle':
+      return isCrouching(fighter) ? 'crouch' : 'idle';
     case 'eliminated':
       return 'idle';
   }
