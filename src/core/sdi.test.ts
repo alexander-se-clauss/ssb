@@ -131,6 +131,28 @@ describe('smash DI during hitlag (#155)', () => {
     expect(after.position.y).toBe(0);
   });
 
+  it('keeps it out of the stage over several flicks: out past the edge, then down', () => {
+    const edge = FINAL_DESTINATION.platforms[0]?.bounds.right ?? 0;
+    const half = CAPSULE.stats.width / 2;
+    let state = withFighter(faceOff(CAPSULE.id, 3), 1, {
+      position: { x: edge - 0.2, y: 0 },
+      grounded: true,
+      velocity: { x: 0, y: 0 },
+      knockback: { x: 0, y: 0 },
+      action: 'hitstun',
+      hitstunFrames: 30,
+      hitlagFrames: 5,
+      previousInput: NONE,
+    });
+    state = run(state, 1, [NONE, inputOf({ x: 1 })]);
+    state = run(state, 1, [NONE, NONE]);
+    state = run(state, 1, [NONE, inputOf({ y: -1 })]);
+    const after = fighter(state, 1);
+    // Part of its body is still over the stage, so it stays on top of it.
+    expect(after.position.x - half).toBeLessThan(edge);
+    expect(after.position.y).toBe(0);
+  });
+
   it('stops at the side of the stage instead of pushing into it', () => {
     const edge = FINAL_DESTINATION.platforms[0]?.bounds.right ?? 0;
     const half = CAPSULE.stats.width / 2;

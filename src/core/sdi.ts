@@ -26,10 +26,12 @@ export const smashDi = (
   let x = position.x + (input.x / length) * SDI.distance;
   let y = position.y + (input.y / length) * SDI.distance;
   for (const { bounds, passThrough } of stage.platforms) {
-    // Not down through a platform it stands on or is above, also when flicked off its edge.
-    const wasOver = position.x >= bounds.left && position.x <= bounds.right;
-    const isOver = x >= bounds.left && x <= bounds.right;
-    if ((wasOver || isOver) && position.y >= bounds.top && y < bounds.top) y = bounds.top;
+    // Not down through a platform any part of its body is over, before or after the flick, so
+    // flicks out past an edge and then down still stop on top.
+    const over = (at: number) => at + halfWidth > bounds.left && at - halfWidth < bounds.right;
+    if ((over(position.x) || over(x)) && position.y >= bounds.top && y < bounds.top) {
+      y = bounds.top;
+    }
     // Not sideways into a solid platform beside it.
     if (passThrough || y >= bounds.top || y <= bounds.bottom) continue;
     if (position.x - halfWidth >= bounds.right) x = Math.max(x, bounds.right + halfWidth);
