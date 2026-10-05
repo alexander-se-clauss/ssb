@@ -11,6 +11,7 @@ import {
   type LedgeClimb,
 } from './ledge';
 import { approach, type Vec2 } from './math';
+import { influence } from './di';
 import { baseDodge, dodgeFrames } from './dodge-frames';
 import { isGroundMovement, moveOnGround } from './ground-movement';
 import { findMove } from './move-data';
@@ -220,8 +221,18 @@ export const updateFighter = (
   // Frozen by a hit: everything stands still. A press is still buffered, and the buffer does not
   // age; the stick is still tracked, so a stick held through the freeze is not read as a flick.
   if (fighter.hitlagFrames > 0) {
+    // DI (#154): the stick on the last frame of the freeze turns the launch it releases.
+    const knockback =
+      fighter.hitlagFrames === 1 && fighter.action === 'hitstun'
+        ? influence(fighter.knockback, input)
+        : fighter.knockback;
     return {
       ...fighter,
+      velocity: {
+        x: fighter.velocity.x - fighter.knockback.x + knockback.x,
+        y: fighter.velocity.y - fighter.knockback.y + knockback.y,
+      },
+      knockback,
       hitlagFrames: fighter.hitlagFrames - 1,
       buffer: latest(press(fighter.grounded), fighter.buffer),
       lCancelPress: pressLCancel(fighter.lCancelPress, dodgePress && lCancelling),

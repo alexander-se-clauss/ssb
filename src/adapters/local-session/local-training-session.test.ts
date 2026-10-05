@@ -5,6 +5,7 @@ import { LocalTrainingSession } from './local-training-session';
 const SETTINGS: TrainingSettings = {
   dummy: 1,
   behaviour: 'stand',
+  di: 'none',
   percent: 30,
   freezePercent: false,
 };

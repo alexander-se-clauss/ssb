@@ -16,7 +16,7 @@ const match = (): MatchState =>
     players: [{ characterId: CAPSULE.id }, { characterId: CAPSULE.id }],
     rules: { mode: 'stock', stocks: 1, timeLimitSeconds: 60 },
     countdownFrames: 0,
-    training: { dummy: 1, behaviour: 'stand', percent: 0, freezePercent: false },
+    training: { dummy: 1, behaviour: 'stand', di: 'none', percent: 0, freezePercent: false },
   });
 
 const withTraining = (state: MatchState, patch: Partial<TrainingState>): MatchState => {

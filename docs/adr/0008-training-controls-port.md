@@ -20,7 +20,7 @@ Training is data in the match, and the session gets a second, optional port to s
 
 - **Core** carries `MatchState.training` (settings plus measurements), started by
   `MatchConfig.training`. `step` replaces the dummy's input with `dummyInput` (stand, crouch,
-  jump, dodge), lets KO-ed fighters respawn without a match end, then `trackTraining` updates the
+  jump, dodge, and from #154 a held DI while a hit freezes it: none, survival or combo), lets KO-ed fighters respawn without a match end, then `trackTraining` updates the
   combo counter (hits while the dummy stays in hitstun or hitlag) and follows the last hit until
   attacker and dummy can both act, which gives the frame advantage. A frozen dummy is held at its
   percent. Everything stays pure, deterministic and serializable.

@@ -241,6 +241,12 @@ export const KNOCKBACK = {
   tumbleFrom: 80,
 } as const;
 
+/**
+ * Directional influence (#154), as in Melee: the stick held on the last frame of hitlag turns a
+ * launch by up to `maxDegrees`, scaled by how far it points across the launch.
+ */
+export const DI = { maxDegrees: 18 } as const;
+
 /** How long a press waits in the input buffer for the fighter to be able to act on it. */
 export const INPUT = { bufferFrames: 6 } as const;
 
