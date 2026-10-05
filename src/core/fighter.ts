@@ -811,7 +811,9 @@ export const updateFighter = (
   };
   // Eased before combat, so hurtboxes built from the pose match this frame's body.
   return { ...moved, pose: nextPose(moved, frame) };
-}; /**
+};
+
+/**
  * What is left of a launch after one more frame (#153): slower by `KNOCKBACK.decayPerFrame` along
  * its direction, and stopped rather than reversed.
  */

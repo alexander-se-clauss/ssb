@@ -1,4 +1,4 @@
-import type { GameEvent } from '../../core';
+import { launchSpeed, type GameEvent } from '../../core';
 
 /** A one-off spray of particles for a match event (#48). */
 export interface Burst {
@@ -10,8 +10,11 @@ export interface Burst {
   readonly power: number;
 }
 
-/** Launch speed (units per frame) at which a hit's sparks are as big as they get: a KO smash. */
-const STRONGEST_LAUNCH = 1.2;
+/**
+ * Launch speed (units per frame) at which a hit's sparks are as big as they get: 200 knockback
+ * (#153), harder than a smash at its KO percent.
+ */
+const STRONGEST_LAUNCH = launchSpeed(200);
 
 /**
  * The burst an event shows: sparks where a hit landed, more and faster the harder it launched,

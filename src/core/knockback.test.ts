@@ -136,6 +136,21 @@ describe('Melee knockback formula (#153)', () => {
   });
 });
 
+describe('a launch and a block (#153)', () => {
+  it('drops what is left of a launch when a block takes a hit', () => {
+    const rivetFaceOff = withFighter(faceOff(RIVET.id, 0.9, 0), 1, {
+      action: 'attack',
+      moveId: 'ironGuard',
+      actionFrame: (findMove('ironGuard').guard?.from ?? 0) + 1,
+      velocity: { x: 0.1, y: 0 },
+      knockback: { x: 0.1, y: 0 },
+    });
+    const blocked = applyHit(fighter(rivetFaceOff, 1), hit(5, 20, 50), 1, 0, { x: 0, y: 0 });
+    expect(blocked.guard).toBe('blocked');
+    expect(blocked.target.knockback).toEqual({ x: 0, y: 0 });
+  });
+});
+
 describe('tumble and flinch (#153)', () => {
   it(`tumbles from ${KNOCKBACK.tumbleFrom} knockback on, and only flinches below it`, () => {
     const weak = applyHit(fighter(faceOff(CAPSULE.id, 0.9, 0), 1), hit(5, 40, 0), 1, 0, {
