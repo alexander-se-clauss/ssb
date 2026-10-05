@@ -10,17 +10,18 @@ npm ci
 npm run dev      # open http://localhost:5173
 ```
 
-| Device     | Move               | Jump          | Short hop | Aim up   | Drop / fast-fall | Attack | Special | Dodge       | Start |
-| ---------- | ------------------ | ------------- | --------- | -------- | ---------------- | ------ | ------- | ----------- | ----- |
-| Left keys  | A / D              | Space         | V         | W        | S                | F      | G       | H           | Enter |
-| Right keys | ← / →              | Num 0         | Num 1     | ↑        | ↓                | .      | /       | Right Shift | Enter |
-| Gamepad    | Left stick / D-pad | X or stick up | Y         | Stick up | Stick down       | A      | B       | L / R       | Start |
+| Device     | Move               | Jump          | Short hop | Aim up   | Drop / fast-fall | Attack | Special | Dodge       | Grab             | Start |
+| ---------- | ------------------ | ------------- | --------- | -------- | ---------------- | ------ | ------- | ----------- | ---------------- | ----- |
+| Left keys  | A / D              | Space         | V         | W        | S                | F      | G       | H           | C                | Enter |
+| Right keys | ← / →              | Num 0         | Num 1     | ↑        | ↓                | .      | /       | Right Shift | Num 3            | Enter |
+| Gamepad    | Left stick / D-pad | X or stick up | Y         | Stick up | Stick down       | A      | B       | L / R       | Right bumper (Z) | Start |
 
 A direction held while pressing attack gives a tilt; pressing the direction and attack together
 (or flicking the stick) gives a smash. Dodge on its own (or with up on the keyboard) sidesteps into
 the background, with down towards the camera; with left or right held it rolls that way (away from
 where you face, it rolls back without turning). In the air, dodge is an air dodge the way the stick points (once until you land or
-are hit). There is no shield: dodging is the defence.
+are hit). There is no shield: dodging is the defence, and grab beats a dodge in its endlag; while
+holding, attack pummels, and the held player mashes any button or the stick to break free.
 
 Menus: Enter or Space to start, arrow keys or W/S to move, Enter to pick; a gamepad moves with
 the stick or d-pad, Start or A picks and B goes back. Esc or the Back button goes back. On character

@@ -269,6 +269,11 @@
   text-align: center;
 }
 
+/* Rows a little tighter than the heads, so all actions fit a 720-pixel screen. */
+.menu-table td {
+  padding-block: 7px;
+}
+
 .menu-table td:first-child {
   text-align: left;
   color: var(--k-muted);
@@ -462,7 +467,7 @@
     letter-spacing: 0.15em;
   }
   .menu-table :is(th, td) {
-    padding: 4px;
+    padding: 3px 4px;
     font-size: 0.72rem;
     overflow-wrap: anywhere;
   }

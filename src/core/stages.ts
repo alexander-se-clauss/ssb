@@ -1,4 +1,10 @@
-import type { StageDef } from './types';
+import type { PlatformDef, StageDef } from './types';
+
+/** Feet at `(x, y)` stand on top of `platform`. */
+export const standsOn = (x: number, y: number, platform: PlatformDef): boolean =>
+  x >= platform.bounds.left &&
+  x <= platform.bounds.right &&
+  Math.abs(y - platform.bounds.top) < 1e-6;
 
 /** A Battlefield-style layout: one solid main stage and three pass-through platforms. */
 export const BATTLEFIELD: StageDef = {

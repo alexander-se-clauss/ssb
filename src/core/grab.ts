@@ -7,8 +7,16 @@ import { characterOf } from './character';
 import { anchorPoint, touchesBody } from './combat';
 import { GRAB } from './config';
 import { findMove } from './move-data';
+import { standsOn } from './stages';
 import type { Vec2 } from './math';
-import type { FighterAction, FighterState, GameEvent, PlayerInput, PlayerSlot } from './types';
+import type {
+  FighterAction,
+  FighterState,
+  GameEvent,
+  PlayerInput,
+  PlayerSlot,
+  StageDef,
+} from './types';
 
 /** The holder's side of a grab: holding, or pummelling. */
 export const isHolding = (action: FighterAction): boolean =>
@@ -40,9 +48,16 @@ export const mashes = (input: PlayerInput, previous: PlayerInput): number => {
   return buttons + (flicked(input.x, previous.x) || flicked(input.y, previous.y) ? 1 : 0);
 };
 
-/** Where a holder holds its catch: at arm's length in front, on the holder's feet. */
-const heldPosition = (holder: FighterState): Vec2 => ({
-  x: holder.position.x + holder.facing * GRAB.holdDistance,
+/** Keeps `x` on the platform the holder stands on, so nobody in a grab hangs past its edge. */
+const onHoldersGround = (x: number, holder: FighterState, stage: StageDef): number => {
+  const { x: hx, y: hy } = holder.position;
+  const ground = stage.platforms.find((platform) => standsOn(hx, hy, platform));
+  return ground ? Math.min(Math.max(x, ground.bounds.left), ground.bounds.right) : x;
+};
+
+/** Where a holder holds its catch: at arm's length in front, on the holder's ground. */
+const heldPosition = (holder: FighterState, stage: StageDef): Vec2 => ({
+  x: onHoldersGround(holder.position.x + holder.facing * GRAB.holdDistance, holder, stage),
   y: holder.position.y,
 });
 
@@ -56,11 +71,21 @@ const freed = (fighter: FighterState): FighterState => ({
   escapeFrames: 0,
 });
 
-/** Both pushed apart into the short grab release, the holder back and the held one away. */
-const release = (holder: FighterState, held: FighterState): [FighterState, FighterState] => {
+/**
+ * Both pushed apart into the short grab release, the holder back and the held one away, but not
+ * off the holder's ground: the release plays out on the stage.
+ */
+const release = (
+  holder: FighterState,
+  held: FighterState,
+  stage: StageDef,
+): [FighterState, FighterState] => {
   const push = (fighter: FighterState, way: number): FighterState => ({
     ...fighter,
-    position: { x: fighter.position.x + way * (GRAB.release.distance / 2), y: fighter.position.y },
+    position: {
+      x: onHoldersGround(fighter.position.x + way * (GRAB.release.distance / 2), holder, stage),
+      y: fighter.position.y,
+    },
     velocity: { x: 0, y: 0 },
     action: 'grabRelease',
     actionFrame: 0,
@@ -85,6 +110,7 @@ const catchable = (fighter: FighterState): boolean =>
  */
 export const resolveGrabs = (
   fighters: readonly FighterState[],
+  stage: StageDef,
 ): { fighters: FighterState[]; events: GameEvent[] } => {
   const next = [...fighters];
   const events: GameEvent[] = [];
@@ -119,7 +145,7 @@ export const resolveGrabs = (
     if (!held) continue;
     // Broke free: both pushed apart.
     if (held.escapeFrames <= 0) {
-      const [h, t] = release(holder, held);
+      const [h, t] = release(holder, held, stage);
       set(h);
       set(t);
       continue;
@@ -134,13 +160,14 @@ export const resolveGrabs = (
         attacker: holder.slot,
         target: held.slot,
         damage,
-        position: heldPosition(holder),
+        position: heldPosition(holder, stage),
         launch: 0,
       });
     }
     // The catch stays at arm's length.
     const now = at(held.slot);
-    if (now) set({ ...now, position: heldPosition(holder), facing: holder.facing === 1 ? -1 : 1 });
+    if (now)
+      set({ ...now, position: heldPosition(holder, stage), facing: holder.facing === 1 ? -1 : 1 });
   }
 
   // Grab boxes catch, in slot order: a fighter caught or catching this frame is taken.
@@ -175,7 +202,7 @@ export const resolveGrabs = (
       moveId: null,
       hitTargets: [],
       buffer: null,
-      position: heldPosition(holder),
+      position: heldPosition(holder, stage),
       velocity: { x: 0, y: 0 },
       knockback: { x: 0, y: 0 },
       facing: holder.facing === 1 ? -1 : 1,

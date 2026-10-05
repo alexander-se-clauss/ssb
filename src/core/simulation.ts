@@ -221,7 +221,7 @@ const playStep = (state: MatchState, inputs: readonly PlayerInput[]): MatchState
   ]);
   const shots = resolveObjectHits(flying, combat.fighters);
   // Grabs (#159) after all hits: a hit this frame breaks a grab up, or stops a catch.
-  const grabs = resolveGrabs(shots.fighters);
+  const grabs = resolveGrabs(shots.fighters, state.stage);
   const events = [...combat.events, ...shots.events, ...grabs.events];
 
   const fallen = grabs.fighters.filter(

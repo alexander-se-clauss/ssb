@@ -199,6 +199,51 @@ describe('grabs (#159)', () => {
     expect(fighter(state, 1).action).not.toBe('grabbed');
   });
 
+  it('lets go when the held fighter is hit', () => {
+    let state = grab(faceOff(0.8, CAPSULE.id, 3));
+    // P3 comes round the front and jabs the held fighter.
+    state = withFighter(state, 2, { position: { x: 1.7, y: 0 }, facing: -1 });
+    state = step(state, [NONE, NONE, inputOf({ attack: true })]);
+    for (let i = 0; i < 20 && fighter(state, 1).action !== 'hitstun'; i += 1) {
+      state = step(state, [NONE, NONE, NONE]);
+    }
+    expect(fighter(state, 1)).toMatchObject({ action: 'hitstun', heldBy: null });
+    expect(fighter(state, 0).holding).toBeNull();
+    expect(fighter(state, 0).action).not.toMatch(/holding|pummel/);
+  });
+
+  it('settles a grab of each other on the same frame for the lower slot', () => {
+    const state = grab(faceOff(), GRAB_PRESS);
+    expect(fighter(state, 0).action).toBe('holding');
+    expect(fighter(state, 1).action).toBe('grabbed');
+  });
+
+  describe('at the edge of the stage', () => {
+    const EDGE = FINAL_DESTINATION.platforms[0]?.bounds.right ?? 0;
+    /** P1 at the edge facing off it, P2 between it and the edge. */
+    const atEdge = (): MatchState =>
+      withFighter(withFighter(faceOff(), 0, { position: { x: EDGE - 0.3, y: 0 } }), 1, {
+        position: { x: EDGE - 0.05, y: 0 },
+      });
+
+    it('holds the catch on the stage, not in the air past it', () => {
+      const state = grab(atEdge());
+      expect(fighter(state, 1).action).toBe('grabbed');
+      expect(fighter(state, 1).position.x).toBeLessThanOrEqual(EDGE);
+    });
+
+    it('pushes both apart on the stage, so both sit out the whole release', () => {
+      let state = grab(atEdge());
+      while (fighter(state, 1).action === 'grabbed') state = step(state, [NONE, NONE]);
+      for (const slot of [0, 1]) {
+        expect(fighter(state, slot).position.x).toBeLessThanOrEqual(EDGE);
+      }
+      state = run(state, GRAB.release.frames - 1, [NONE, NONE]);
+      expect(fighter(state, 0).action).toBe('grabRelease');
+      expect(fighter(state, 1).action).toBe('grabRelease');
+    });
+  });
+
   it('is not a hit: a catch deals no damage and does not stale the grab', () => {
     const state = caught();
     expect(fighter(state, 1).damage).toBe(0);

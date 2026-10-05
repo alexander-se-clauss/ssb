@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TRAINING } from './config';
+import { GRAB, TRAINING } from './config';
 import { findMove } from './move-data';
 import { moveTiming } from './moves';
 import { timeLeftFrames } from './rules';
@@ -115,6 +115,37 @@ describe('training mode', () => {
         if (fighter(state, 1).action === 'sidestepIn' && before !== 'sidestepIn') dodges += 1;
       }
       expect(dodges).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  describe('grabs (#159)', () => {
+    /** The dummy caught standing, then set to `behaviour`. */
+    const grabbed = (behaviour: TrainingSettings['behaviour']): MatchState => {
+      let state = step(faceOff(training(), { action: 'idle' }), [inputOf({ grab: true })]);
+      for (let i = 0; i < 30 && fighter(state, 1).action !== 'grabbed'; i += 1) {
+        state = step(state, [NONE]);
+      }
+      const { settings } = trainingOf(state);
+      return { ...state, training: { ...trainingOf(state), settings: { ...settings, behaviour } } };
+    };
+
+    it.each(['jump', 'dodge'] as const)(
+      'lets a dummy that would %s hang on for the full hold, not mash free',
+      (behaviour) => {
+        let state = grabbed(behaviour);
+        expect(fighter(state, 1).action).toBe('grabbed');
+        state = run(state, GRAB.hold.baseFrames - 1, [NONE]);
+        expect(fighter(state, 1).action).toBe('grabbed');
+      },
+    );
+
+    it('counts pummels as one combo, the dummy held in between', () => {
+      let state = grabbed('stand');
+      for (let pummel = 0; pummel < 2; pummel += 1) {
+        state = step(state, [ATTACK]);
+        state = run(state, GRAB.pummel.totalFrames + 1, [NONE]);
+      }
+      expect(trainingOf(state)).toMatchObject({ comboHits: 2, comboActive: true });
     });
   });
 

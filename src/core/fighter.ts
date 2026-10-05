@@ -37,6 +37,7 @@ import { baseDodge, dodgeFrames } from './dodge-frames';
 import { mashes } from './grab';
 import { isGroundMovement, moveOnGround } from './ground-movement';
 import { findMove } from './move-data';
+import { standsOn } from './stages';
 import { PRESS_SLOTS, isAerialSlot, moveSlot } from './move-slots';
 import { nextPose } from './poses';
 import { REST_POSE } from './skeleton';
@@ -46,7 +47,6 @@ import type {
   BufferedInput,
   FighterAction,
   FighterState,
-  PlatformDef,
   PlayerInput,
   PlayerSlot,
   StageDef,
@@ -162,11 +162,6 @@ const restFrom = (fighter: FighterState, dodgeStarted = false): number =>
   dodgeStarted || baseDodge(fighter.action) !== undefined
     ? 0
     : Math.min(fighter.dodgeRestFrames + 1, DODGE.repeat.wearOffFrames);
-
-const standsOn = (x: number, y: number, platform: PlatformDef): boolean =>
-  x >= platform.bounds.left &&
-  x <= platform.bounds.right &&
-  Math.abs(y - platform.bounds.top) < 1e-6;
 
 /**
  * Advances one fighter by one frame: control, physics, stage collision and its body pose.
