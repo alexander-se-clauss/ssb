@@ -77,6 +77,23 @@ left shows the combo (hits while the dummy stays in hitstun, and their damage; l
 runs), the last hit's frame advantage, and the first player's current or last move with its
 frame, phase (startup, active, endlag), active frames and total.
 
+## Movement feel
+
+Fast and Melee-near (S7): quick hops, instant fast falls, a snappy dash with dash dance and
+pivot, and aerials that are cheap to land, so neutral is about spacing and reading the opponent.
+The numbers below are pinned per fighter in `movement-benchmarks.test.ts`; changing one is a
+deliberate change to the feel. Frames at 60 per second.
+
+| Fighter | Full hop | Short hop | Fast fall from the top | Dash dance window | To full run |
+| ------- | -------- | --------- | ---------------------- | ----------------- | ----------- |
+| Capsule | 40       | 29        | 9                      | 10                | 13          |
+| Rivet   | 37       | 29        | 9                      | 10                | 13          |
+| Vela    | 46       | 30        | 11                     | 9                 | 12          |
+
+A short-hop neutral air, from the press until the fighter can act again, takes 38 frames (Vela
+39), 36 with an L-cancel (Vela 37). A roll covers 2.2 units and gives control back after 31 frames, a
+sidestep after 23; repeated dodges get weaker (#150).
+
 ## Combat concept (planned)
 
 Smash meets Monster Hunter: defense is about commitment and timing, not a panic button.
@@ -162,10 +179,10 @@ a playable build; it is done when that build works, not on a date.
       for fire, hits and KOs (#47, #48), Rivet's block and Vela's counter on the down special
       (#50, #51) as cancel targets with the dodge (#52), Vela as fighter 2 (#53), and side
       specials for both (#49). Epics #6, #7, #9.
-- [ ] **S7 Movement tuning.** A Melee-near tempo: training mode first (#144 done), faster air physics (#145 done),
+- [x] **S7 Movement tuning.** A Melee-near tempo: training mode first (#144 done), faster air physics (#145 done),
       Melee dash with dash dance and pivot (#146 done), a short hop button (#147 done), auto-cancel windows (#148 done) and
       L-cancel (#149 done), repeated dodges get weaker (#150 done), dash and landing dust (#151 done), movement benchmarks as
-      tests. Epic #142.
+      tests and a play-test sign-off (#152 done). Epic #142.
 - [ ] **S8 Combos and combat feel.** Melee knockback and hitstun, DI, SDI and crouch cancel,
       stale moves, tech and knockdown, grabs and throws, screen shake and launch trails, each
       fighter's combos pinned as tests. Epic #143.
