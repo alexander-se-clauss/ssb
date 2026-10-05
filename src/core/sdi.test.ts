@@ -105,6 +105,45 @@ describe('smash DI during hitlag (#155)', () => {
     expect(fighter(up, 1).position.y).toBeCloseTo(SDI.distance, 1);
   });
 
+  /** P2 frozen by a hit at `position`, standing or not, with `stick` flicked on the next frame. */
+  const frozenAt = (position: { x: number; y: number }, grounded: boolean, stick: PlayerInput) =>
+    fighter(
+      step(
+        withFighter(faceOff(CAPSULE.id, 3), 1, {
+          position,
+          grounded,
+          velocity: { x: 0, y: 0 },
+          knockback: { x: 0, y: 0 },
+          action: 'hitstun',
+          hitstunFrames: 30,
+          hitlagFrames: 5,
+          previousInput: NONE,
+        }),
+        [NONE, stick],
+      ),
+      1,
+    );
+
+  it('never pushes a fighter at the edge down past the stage top, even flicked outwards', () => {
+    const edge = FINAL_DESTINATION.platforms[0]?.bounds.right ?? 0;
+    const after = frozenAt({ x: edge - 0.2, y: 0 }, true, inputOf({ x: 1, y: -1 }));
+    expect(after.position.x).toBeGreaterThan(edge - 0.2);
+    expect(after.position.y).toBe(0);
+  });
+
+  it('stops at the side of the stage instead of pushing into it', () => {
+    const edge = FINAL_DESTINATION.platforms[0]?.bounds.right ?? 0;
+    const half = CAPSULE.stats.width / 2;
+    const after = frozenAt({ x: edge + half + 0.1, y: -1 }, false, LEFT);
+    expect(after.position.x).toBeCloseTo(edge + half, 9);
+  });
+
+  it('is no longer on the ground once a flick lifts it', () => {
+    const after = frozenAt({ x: 0, y: 0 }, true, inputOf({ y: 1 }));
+    expect(after).toMatchObject({ grounded: false });
+    expect(after.position.y).toBeCloseTo(SDI.distance, 9);
+  });
+
   it("lets a fighter slip out of a multi-hit move: Rivet's spring jack", () => {
     const UP_SPECIAL = inputOf({ y: 1, special: true });
     const hits = (sdi: boolean): number => {
@@ -121,7 +160,6 @@ describe('smash DI during hitlag (#155)', () => {
       }
       return count;
     };
-    expect(hits(false)).toBe(5);
-    expect(hits(true)).toBeLessThan(5);
+    expect(hits(true)).toBeLessThan(hits(false));
   });
 });

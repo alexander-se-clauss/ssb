@@ -75,7 +75,7 @@ the character's `airSpeed`, such as from running off a ledge, bleeds off at
 a fighter holds on the last frame of hitlag turns `knockback` by up to 18 degrees, the most when
 held across the launch. Smash DI (#155, `sdi.ts`, `SDI` in `config.ts`): during hitlag each fresh
 flick of the stick from the centre moves the hit fighter a fixed distance that way, never down
-through a platform it stands on.
+through a platform it stands on or is above, nor sideways into a solid one.
 Move data is one file per family in `move-data/` (`jab.ts`, `tilts.ts`, `smashes.ts`,
 `aerials.ts`, `ledge.ts`, and a file of specials per character, `rivet.ts` and `vela.ts`, each registered in `move-data/index.ts`). A move with a `landingLag` is an aerial:
 landing while it runs ends it and puts the fighter in the `landing` action for that many frames
