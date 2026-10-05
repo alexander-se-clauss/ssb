@@ -1,26 +1,44 @@
 /**
- * Grabs (#159): a grab box catches instead of hitting, the holder can pummel, and the held fighter
- * breaks free in time, sooner when it mashes. Run by the simulation after all hits of a frame, as
+ * Grabs (#159): a grab box catches instead of hitting, the holder can pummel or throw (#160), and
+ * the held fighter breaks free in time, sooner when it mashes. Run by the simulation after all hits of a frame, as
  * a catch, a pummel or a release changes two fighters at once.
  */
 import { characterOf } from './character';
-import { anchorPoint, touchesBody } from './combat';
+import { anchorPoint, applyHit, touchesBody } from './combat';
 import { GRAB } from './config';
 import { findMove } from './move-data';
+import { damageScale, queueMove, staled } from './stale';
 import { standsOn } from './stages';
+import type { ThrowDef } from './moves';
 import type { Vec2 } from './math';
-import type {
-  FighterAction,
-  FighterState,
-  GameEvent,
-  PlayerInput,
-  PlayerSlot,
-  StageDef,
-} from './types';
+import type { FighterState, GameEvent, PlayerInput, PlayerSlot, StageDef } from './types';
 
-/** The holder's side of a grab: holding, or pummelling. */
-export const isHolding = (action: FighterAction): boolean =>
-  action === 'holding' || action === 'pummel';
+/** The throw the fighter's move is (#160), if it is in one. */
+const throwOf = (fighter: FighterState): ThrowDef | undefined =>
+  fighter.action === 'attack' && fighter.moveId !== null
+    ? findMove(fighter.moveId).throw
+    : undefined;
+
+/** The holder's side of a grab: holding, pummelling, or throwing until the throw lets go. */
+export const isHolding = (fighter: FighterState): boolean =>
+  fighter.action === 'holding' ||
+  fighter.action === 'pummel' ||
+  (throwOf(fighter) !== undefined && fighter.holding !== null);
+
+/** The throw a fresh stick push while holding asks for (#160): the way it points most. */
+export const throwSlot = (
+  input: PlayerInput,
+  previous: PlayerInput,
+  facing: 1 | -1,
+): 'forwardThrow' | 'backThrow' | 'upThrow' | 'downThrow' | undefined => {
+  const pushed = (now: number, before: number): boolean =>
+    Math.abs(now) >= GRAB.throwStick && Math.abs(before) < GRAB.throwStick;
+  if (!pushed(input.x, previous.x) && !pushed(input.y, previous.y)) return undefined;
+  if (Math.abs(input.x) > Math.abs(input.y)) {
+    return input.x * facing > 0 ? 'forwardThrow' : 'backThrow';
+  }
+  return input.y > 0 ? 'upThrow' : 'downThrow';
+};
 
 /** A circle that catches the fighter whose body it touches. */
 export interface GrabBox {
@@ -100,7 +118,7 @@ const release = (
 const catchable = (fighter: FighterState): boolean =>
   fighter.action !== 'eliminated' &&
   fighter.action !== 'grabbed' &&
-  !isHolding(fighter.action) &&
+  !isHolding(fighter) &&
   fighter.invulnerableFrames === 0 &&
   fighter.hitlagFrames === 0;
 
@@ -126,25 +144,59 @@ export const resolveGrabs = (
     if (!now) continue;
     if (now.heldBy !== null) {
       const holder = at(now.heldBy);
-      const intact =
-        now.action === 'grabbed' && holder?.holding === now.slot && isHolding(holder.action);
+      const intact = now.action === 'grabbed' && holder?.holding === now.slot && isHolding(holder);
       if (!intact)
         set(now.action === 'grabbed' ? freed(now) : { ...now, heldBy: null, escapeFrames: 0 });
     }
     if (now.holding !== null) {
       const held = at(now.holding);
-      const intact =
-        isHolding(now.action) && held?.heldBy === now.slot && held.action === 'grabbed';
-      if (!intact) set(isHolding(now.action) ? freed(now) : { ...now, holding: null });
+      const intact = isHolding(now) && held?.heldBy === now.slot && held.action === 'grabbed';
+      if (!intact) {
+        const holdingOnly = now.action === 'holding' || now.action === 'pummel';
+        set(holdingOnly ? freed(now) : { ...now, holding: null });
+      }
     }
   }
 
   for (const holder of [...next]) {
-    if (!isHolding(holder.action) || holder.holding === null) continue;
+    if (!isHolding(holder) || holder.holding === null) continue;
     const held = at(holder.holding);
     if (!held) continue;
-    // Broke free: both pushed apart.
-    if (held.escapeFrames <= 0) {
+    const toss = throwOf(holder);
+    // A throw lets go on its frame (#160): a hit like any other, from in front or behind.
+    if (toss && holder.actionFrame === toss.frame && holder.moveId !== null) {
+      const way: 1 | -1 = holder.facing === toss.direction ? 1 : -1;
+      const spot = {
+        x: onHoldersGround(holder.position.x + way * GRAB.holdDistance, holder, stage),
+        y: holder.position.y,
+      };
+      const hit = staled(toss.hit, damageScale(holder.staleMoves, holder.moveId));
+      const result = applyHit(
+        { ...held, position: spot, heldBy: null, escapeFrames: 0 },
+        hit,
+        way,
+        holder.slot,
+        holder.position,
+      );
+      set(result.target);
+      set({
+        ...holder,
+        holding: null,
+        staleMoves: queueMove(holder.staleMoves, holder.moveId),
+        damageDealt: holder.damageDealt + result.damage,
+      });
+      events.push({
+        type: 'hit',
+        attacker: holder.slot,
+        target: held.slot,
+        damage: result.damage,
+        position: spot,
+        launch: result.launch,
+      });
+      continue;
+    }
+    // Broke free: both pushed apart. Not once a throw started.
+    if (!toss && held.escapeFrames <= 0) {
       const [h, t] = release(holder, held, stage);
       set(h);
       set(t);

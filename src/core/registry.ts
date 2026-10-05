@@ -34,6 +34,10 @@ export const CAPSULE: CharacterDef = {
     grab: 'grab',
     dashGrab: 'dashGrab',
     pivotGrab: 'pivotGrab',
+    forwardThrow: 'forwardThrow',
+    backThrow: 'backThrow',
+    upThrow: 'upThrow',
+    downThrow: 'downThrow',
   },
 };
 

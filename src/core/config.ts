@@ -293,7 +293,7 @@ export const KNOCKDOWN = {
  * after `hold.baseFrames` plus `hold.perPercent` frames per percent it has; each fresh button
  * press or stick flick (past `mash.stick`) cuts `mash.frames` more. A pummel hits on `hitFrame`
  * for `damage` and is over after `totalFrames`. A release pushes both `distance` apart, unable to
- * act for `frames`.
+ * act for `frames`. A fresh stick push past `throwStick` while holding starts a throw (#160).
  */
 export const GRAB = {
   holdDistance: 0.9,
@@ -301,6 +301,8 @@ export const GRAB = {
   mash: { frames: 3, stick: 0.7 },
   pummel: { totalFrames: 20, hitFrame: 8, damage: 1.5 },
   release: { frames: 30, distance: 1.0 },
+  /** A fresh push of the stick past this while holding throws that way (#160). */
+  throwStick: 0.5,
 } as const;
 
 /**

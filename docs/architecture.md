@@ -101,7 +101,11 @@ up, pushes both apart into `grabRelease` once the held fighter's `escapeFrames` 
 pummel's damage, and lets active grab boxes catch a fighter that is not invulnerable (a block or
 counter does not stop it). The holder (`holding`, `pummel`; `FighterState.holding`) and the held
 fighter (`grabbed`; `heldBy`) run in their own branch of `updateFighter`, where mashing buttons
-and the stick cuts `escapeFrames`. The held fighter and a release push stay on the holder's
+and the stick cuts `escapeFrames`. A fresh stick push while holding starts a throw (#160,
+`throwSlot`): a move in the `forwardThrow`, `backThrow`, `upThrow` or `downThrow` slot with a
+`MoveDef.throw`, which `resolveGrabs` lets go on its frame as a hit through `applyHit`, in front or
+behind, so the knockback formula, weight, DI and stale moves apply; once a throw starts the held
+fighter cannot break free. The held fighter and a release push stay on the holder's
 platform. A grabbed training dummy holds still instead of mashing. F2 draws grab boxes in purple.
 Move data is one file per family in `move-data/` (`jab.ts`, `tilts.ts`, `smashes.ts`,
 `aerials.ts`, `ledge.ts`, `getup.ts`, `grab.ts`, and a file of specials per character, `rivet.ts` and `vela.ts`, each registered in `move-data/index.ts`). A move with a `landingLag` is an aerial:
